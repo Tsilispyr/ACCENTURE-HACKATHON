@@ -1,0 +1,24 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets -- never commit real values (see notes/02-METHODOLOGY.md section 2)
+.env
+
+# Test artifacts
+.pytest_cache/
+
+# Rendered graph diagrams (regenerated on demand, not source)
+graph-*.png
+
+# Per-run deploy logs (scripts/deploy.sh) -- numbered, never deleted locally,
+# but not meant for git (same convention as the root-level logs/ folder).
+logs/
+.python-version

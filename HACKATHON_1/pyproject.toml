@@ -1,0 +1,45 @@
+[project]
+name = "hackathon1"
+version = "0.1.0"
+description = "Hackathon 1 -- CodeHub ticket triage-and-resolution service (LangGraph: routing + orchestrator-workers + multi-agent supervisor + async), FastAPI, Langfuse-traced, MinIO report storage."
+readme = "README.md"
+authors = [
+    { name = "Tsilispyr", email = "spyrostsl456@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "python-dotenv>=1.2.3",
+    "pydantic>=2.13.5",
+    # LangChain / LangGraph
+    "langchain-core>=1.6.2",
+    "langchain-openai>=1.6.1",
+    "langchain>=1.4.0",
+    "langgraph>=1.2.11",
+    # Observability
+    "langfuse>=4.15.1",
+    # Service
+    "fastapi>=0.141.1",
+    "uvicorn[standard]>=0.52.4",
+    "requests>=2.34.2",
+    # Report storage
+    "minio>=7.2.20",
+]
+
+[project.scripts]
+hackathon1 = "hackathon1:main"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "httpx>=0.28.1",
+]
+
+[tool.pytest.ini_options]
+# Lets "async def test_..." functions run without a @pytest.mark.asyncio
+# decorator on every one -- this project's nodes/tests are genuinely async.
+asyncio_mode = "auto"

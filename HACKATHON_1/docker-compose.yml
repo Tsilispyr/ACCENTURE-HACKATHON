@@ -1,0 +1,69 @@
+# App-side compose file, deliberately kept separate from the infra stack
+# (./docker-compose-langfuse.yaml) -- per project/HACKATHON1.md's own
+# request for "2 docker compose files ... very relevant and depending on
+# each other". Connects to it via the "langfuse-infra" external network
+# that file declares (see its own `networks:` block).
+#
+# No `depends_on` targeting infra services here: Compose's
+# depends_on/health-condition mechanism only works within one compose
+# invocation, it cannot span two independently-managed compose files/
+# projects. Cross-file dependency ordering happens in scripts/deploy.sh
+# instead -- see that file for why.
+
+services:
+  hackathon1-app:
+    build: .
+    image: hackathon1-app:0.1.0 # explicit version, not :latest, per HACKATHON1.md
+    container_name: hackathon1-app
+    restart: unless-stopped
+    ports:
+      # 8010, not 8000 -- avoids docerz's own :8000, and ports already used
+      # on this machine (ThingsBoard 8080/1883/7070/5683-5688, another MinIO
+      # on 9000/9001) per project/stack-guide.md section 9.
+      - "8010:8000"
+    depends_on:
+      app-db-init:
+        condition: service_completed_successfully
+    env_file: .env
+    environment:
+      # In-network DNS names, override whatever .env has for local/non-docker dev
+      - LANGFUSE_HOST=http://langfuse-web:3000
+      - LANGFUSE_BASE_URL=http://langfuse-web:3000
+      - MINIO_ENDPOINT=minio:9000
+    networks:
+      - langfuse-infra
+    healthcheck:
+      # No curl/wget in python:3.12-slim by default -- reuse the python
+      # already on PATH instead of adding a package just for this.
+      test: [ "CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/').read()\"" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # One-shot container to ensure the app's database exists in the infra Postgres.
+  # This avoids running a second heavy Postgres server, saving WSL RAM.
+  app-db-init:
+    image: postgres:17-alpine
+    container_name: hackathon1-db-init
+    restart: "no"
+    networks:
+      - langfuse-infra
+    environment:
+      PGPASSWORD: "postgrepassQWqw!@12"
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        # Wait for the infra postgres to be ready
+        until pg_isready -h langfuse-postgres -U gtgh; do
+          echo "Waiting for infra postgres..."
+          sleep 2
+        done
+        # Create the hackathon1 database if it doesn't exist
+        psql -h langfuse-postgres -U gtgh -d langfuse -tAc "SELECT 1 FROM pg_database WHERE datname='hackathon1'" | grep -q 1 \
+          || psql -h langfuse-postgres -U gtgh -d langfuse -c "CREATE DATABASE hackathon1 OWNER gtgh"
+        echo "Database 'hackathon1' is ready."
+
+networks:
+  langfuse-infra:
+    external: true

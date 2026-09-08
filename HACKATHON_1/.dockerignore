@@ -1,0 +1,25 @@
+# Without this, "COPY . ." bakes the whole folder into the image.
+#
+# .env is the important one: baking secrets into an image layer means anyone
+# who can pull the image can read your Azure, Langfuse, and MinIO keys, and
+# deleting the file in a later layer does NOT remove it from history.
+# Credentials are already passed at runtime via docker-compose.yml's
+# `env_file:`/`environment:` block.
+.env
+*.env
+!.env.example
+
+# A Windows virtualenv is useless inside a Linux container and is large --
+# dependencies are installed from pyproject.toml/uv.lock during the build.
+.venv/
+__pycache__/
+*.py[oc]
+.pytest_cache/
+
+.git/
+.gitignore
+.vscode/
+
+# NOTE: README.md must NOT be excluded -- pyproject.toml declares
+# readme = "README.md", so the build backend fails with
+# "failed to open file /app/README.md" if it is missing from the context.
