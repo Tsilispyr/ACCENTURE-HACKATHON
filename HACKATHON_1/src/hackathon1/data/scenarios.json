@@ -8,7 +8,7 @@
     "answers into the workflow; giving the mock systems a consistent internal",
     "state is what makes the simulation honest rather than what makes it cheat.",
     "",
-    "Four services, four deliberately different resolution paths:",
+    "Six services, six deliberately different resolution paths:",
     "  payment-service   two steps, low-risk then high-risk -- both sides of the",
     "                    approval fork inside one incident, plus a flaky metrics",
     "                    backend on the first call (FR15).",
@@ -17,6 +17,10 @@
     "  order-service     one action that auto-executes with no approver, because",
     "                    the service is low impact. Symptoms deliberately",
     "                    resemble payment-service; the correct action differs.",
+    "  catalog-service   one low-risk pool resize fully resolves the incident;",
+    "                    the running process reloads the new ceiling.",
+    "  inventory-service scaling only partially helps; an approved restart is",
+    "                    required to reclaim leaked connections.",
     "  reporting-service nothing available fixes it. Exists so the replan loop",
     "                    has to give up and escalate (FR13/FR14) rather than",
     "                    always finding a happy ending.",
@@ -315,6 +319,81 @@
         "rollback_change": {
           "effect": "none",
           "message": "Change {change_id} rolled back; new deployments will not acquire the leaked connections. Processes started before the rollback still hold theirs."
+        }
+      }
+    },
+
+    "catalog-service": {
+      "_scenario": "Pool saturation resolved by scaling alone. This service reloads its connection pool configuration without a restart, so the low-risk action is a complete fix.",
+      "flaky_metrics": false,
+      "metrics": {
+        "error_rate": {"baseline": 0.2, "incident": 14.0, "unit": "%", "breach_pct": 100},
+        "db_connections_used_pct": {"baseline": 40.0, "incident": 100.0, "unit": "%", "breach_pct": 40},
+        "response_time_p95_ms": {"baseline": 180.0, "incident": 2400.0, "unit": "ms", "breach_pct": 50},
+        "db_query_latency_p95_ms": {"baseline": 32.0, "incident": 38.0, "unit": "ms", "breach_pct": 50},
+        "cpu_pct": {"baseline": 35.0, "incident": 37.0, "unit": "%", "breach_pct": 50},
+        "requests_per_min": {"baseline": 900.0, "incident": 1320.0, "unit": "rpm", "breach_pct": 40}
+      },
+      "logs": [
+        {"minutes_ago": 12, "level": "ERROR", "message": "Database connection timeout after 3000ms", "count": 184},
+        {"minutes_ago": 12, "level": "WARN", "message": "CatalogPool - Pool utilisation 100% (10/10 active, 27 threads awaiting, mean hold time 21ms)", "count": 63},
+        {"minutes_ago": 13, "level": "WARN", "message": "Inbound request rate 1320/min exceeds provisioned capacity of 900/min", "count": 9},
+        {"minutes_ago": 18, "level": "INFO", "message": "Health probe succeeded", "count": 3}
+      ],
+      "recent_changes": [],
+      "remediation": {
+        "scale_connection_pool": {
+          "effect": "full",
+          "message": "Connection pool ceiling updated from 10 to {new_size}; configuration reloaded by the running process."
+        },
+        "restart_service": {
+          "effect": "full",
+          "message": "Rolling restart completed across 3 replicas; service is accepting traffic."
+        },
+        "rollback_change": {
+          "effect": "none",
+          "message": "Change {change_id} rolled back."
+        }
+      }
+    },
+
+    "inventory-service": {
+      "_scenario": "Pool saturation is caused by a connection leak. Scaling reduces the immediate pressure but does not resolve the incident; an approved restart reclaims the leaked connections and restores health.",
+      "flaky_metrics": false,
+      "metrics": {
+        "error_rate": {"baseline": 0.3, "incident": 11.0, "unit": "%", "breach_pct": 100},
+        "db_connections_used_pct": {"baseline": 42.0, "incident": 100.0, "unit": "%", "breach_pct": 40},
+        "response_time_p95_ms": {"baseline": 220.0, "incident": 3100.0, "unit": "ms", "breach_pct": 50},
+        "db_query_latency_p95_ms": {"baseline": 40.0, "incident": 1800.0, "unit": "ms", "breach_pct": 50},
+        "cpu_pct": {"baseline": 36.0, "incident": 39.0, "unit": "%", "breach_pct": 50},
+        "requests_per_min": {"baseline": 1100.0, "incident": 1110.0, "unit": "rpm", "breach_pct": 40}
+      },
+      "logs": [
+        {"minutes_ago": 16, "level": "ERROR", "message": "Database connection timeout after 5000ms", "count": 267},
+        {"minutes_ago": 16, "level": "WARN", "message": "InventoryPool - 22 connections checked out for longer than 900s; pool utilisation 100%", "count": 48},
+        {"minutes_ago": 17, "level": "WARN", "message": "Connection leak suspected in StockReservationRepository", "count": 19},
+        {"minutes_ago": 20, "level": "INFO", "message": "Inventory health probe succeeded", "count": 4}
+      ],
+      "recent_changes": [],
+      "remediation": {
+        "scale_connection_pool": {
+          "effect": "partial",
+          "message": "Connection pool ceiling updated from 30 to {new_size}; existing leaked connections remain held.",
+          "metrics": {"error_rate": 8.2, "db_connections_used_pct": 96.0, "response_time_p95_ms": 2450.0, "db_query_latency_p95_ms": 1400.0}
+        },
+        "restart_service": {
+          "requires": ["scale_connection_pool"],
+          "effect": "full",
+          "message": "Approved rolling restart completed across 4 replicas; leaked connections were reclaimed and service is accepting traffic.",
+          "without_prerequisite": {
+            "effect": "partial",
+            "message": "Rolling restart completed across 4 replicas; service is accepting traffic.",
+            "metrics": {"error_rate": 9.5, "db_connections_used_pct": 98.0, "response_time_p95_ms": 2700.0}
+          }
+        },
+        "rollback_change": {
+          "effect": "none",
+          "message": "Change {change_id} rolled back."
         }
       }
     },
