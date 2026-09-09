@@ -66,8 +66,10 @@ set_env_value() {
         # Delimiter is | and the value is escaped, because these are API keys:
         # they routinely contain / and & , which sed would otherwise eat.
         local escaped
-        escaped="$(printf '%s' "$value" | sed -e 's/[\|&]/\&/g')"
-        sed -i "s|^${key}=.*|${key}=\"${escaped}\"|" "$ENV_FILE"
+        escaped="$(printf '%s' "$value" | sed -e 's/[\|&]/\\&/g')"
+        # An attached backup suffix works with both BSD (macOS) and GNU sed.
+        sed -i.bak "s|^${key}=.*|${key}=\"${escaped}\"|" "$ENV_FILE"
+        rm -f "$ENV_FILE.bak"
     else
         printf '%s="%s"\n' "$key" "$value" >> "$ENV_FILE"
     fi
@@ -127,10 +129,19 @@ preflight_credentials() {
 
 preflight_profile() {
     local mem_total_kb mem_total_gb mem_avail_gb cpus
-    mem_total_kb="$(awk '/^MemTotal:/{print $2}' /proc/meminfo)"
+    if [ "$(uname -s)" = "Darwin" ]; then
+        mem_total_kb=$(( $(sysctl -n hw.memsize) / 1024 ))
+        mem_avail_gb="$(vm_stat | awk '
+            /page size of/ { page_size = $8 }
+            /Pages free:/ { gsub(/\./, "", $3); print int($3 * page_size / 1024 / 1024 / 1024) }
+        ')"
+        cpus="$(sysctl -n hw.logicalcpu)"
+    else
+        mem_total_kb="$(awk '/^MemTotal:/{print $2}' /proc/meminfo)"
+        mem_avail_gb=$(( $(awk '/^MemAvailable:/{print $2}' /proc/meminfo) / 1024 / 1024 ))
+        cpus="$(nproc)"
+    fi
     mem_total_gb=$(( mem_total_kb / 1024 / 1024 ))
-    mem_avail_gb=$(( $(awk '/^MemAvailable:/{print $2}' /proc/meminfo) / 1024 / 1024 ))
-    cpus="$(nproc)"
 
     if [ "$mem_total_gb" -ge "$MEM_THRESHOLD_GB" ]; then
         DEPLOY_PROFILE="full"
