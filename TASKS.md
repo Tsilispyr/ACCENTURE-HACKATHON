@@ -11,6 +11,9 @@ compare and take from selectively, never merged into by us).
 
 Legend: `[ ]` todo · `[~]` in progress · `[x]` done & verified · `[!]` blocked
 
+**Start here:** [`HACKATHON_1/architecture/infrastructure.md`](HACKATHON_1/architecture/infrastructure.md)
+— what every file does, how to use `scripts/` and `compose/`, and the traps.
+
 ---
 
 ## Status at a glance
@@ -18,7 +21,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done & verified · `[!]` blocke
 | | Workstream | Done | Notes |
 |---|---|---|---|
 | **A** | Runtime & API | 0 / 7 | not started |
-| **B** | Infra & Delivery | 3 / 8 | B1, B2, B3 landed and verified |
+| **B** | Infra & Delivery | 3.5 / 8 | B1, B2, B3 done; B8 docs part-written |
 | **C** | Integration | 0 / 1 | waits on roles 2–4 |
 
 ---
@@ -70,8 +73,15 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done & verified · `[!]` blocke
 - [ ] **B7 · `scripts/verify.sh`** — the demo script. Domain-agnostic: payload from
       `scripts/scenarios/*.json`, expected field names in a list at the top.
       ⚠ Cannot use `/api/public/traces` (404 in v4 events_only) — assert via ClickHouse.
-- [ ] **B8 · Docs** — `architecture/` (required by §13, missing); README rewrite;
-      mark `stack-guide.md` historical (it still describes the old v2 stack).
+- [~] **B8 · Docs** — `architecture/infrastructure.md` **written**: file-by-file reference, how to
+      use `scripts/` and `compose/`, a cookbook, and the gotchas (Node heap trap, events_only
+      mode, never `down -v`). Still to do: README rewrite for the incident domain, and marking
+      `stack-guide.md` historical in its own front matter.
+- [x] **Packaging: pip fallback** — `requirements.txt` / `requirements-dev.txt` exported from
+      `uv.lock` (with hashes). `uv.lock` stays the source of truth; these are a convenience so
+      pip users are not blocked. Note the Docker path never needed `uv` installed — the
+      Dockerfile pulls the binary from a registry image, so `deploy.sh` works with only Docker.
+      Regenerate with the `uv export` commands in `architecture/infrastructure.md` section 3.
 
 ## A — Runtime & API
 
