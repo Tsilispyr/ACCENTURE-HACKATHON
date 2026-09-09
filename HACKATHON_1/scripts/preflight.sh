@@ -128,7 +128,7 @@ preflight_credentials() {
 # ---------------------------------------------------------------------------
 
 preflight_profile() {
-    local mem_total_kb mem_total_gb mem_avail_gb cpus
+    local mem_total_kb mem_avail_kb mem_total_gb mem_avail_gb cpus
     if [ "$(uname -s)" = "Darwin" ]; then
         mem_total_kb=$(( $(sysctl -n hw.memsize) / 1024 ))
         mem_avail_gb="$(vm_stat | awk '
@@ -138,7 +138,17 @@ preflight_profile() {
         cpus="$(sysctl -n hw.logicalcpu)"
     else
         mem_total_kb="$(awk '/^MemTotal:/{print $2}' /proc/meminfo)"
-        mem_avail_gb=$(( $(awk '/^MemAvailable:/{print $2}' /proc/meminfo) / 1024 / 1024 ))
+        # MemAvailable is display-only (see note above -- the profile
+        # decision never uses it) and is absent from /proc/meminfo on some
+        # non-Linux procfs shims (e.g. Git Bash/MSYS on Windows), so
+        # degrade gracefully instead of blowing up the arithmetic
+        # expansion on an empty operand.
+        mem_avail_kb="$(awk '/^MemAvailable:/{print $2}' /proc/meminfo)"
+        if [ -n "$mem_avail_kb" ]; then
+            mem_avail_gb=$(( mem_avail_kb / 1024 / 1024 ))
+        else
+            mem_avail_gb="?"
+        fi
         cpus="$(nproc)"
     fi
     mem_total_gb=$(( mem_total_kb / 1024 / 1024 ))
