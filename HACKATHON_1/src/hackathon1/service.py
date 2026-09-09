@@ -16,7 +16,12 @@ from uvicorn import run
 
 from hackathon1.graph import app_graph
 from hackathon1.llm import llm  # loads .env as a side effect, see llm.py
-from hackathon1.tools import check_known_issue, lookup_sla_hours
+from hackathon1.tools import (
+    get_incident_history,
+    get_service_metrics,
+    search_knowledge_base,
+    search_logs,
+)
 from hackathon1.tracing import get_callback_handlers
 
 
@@ -26,14 +31,26 @@ class IncidentRequest(BaseModel):
     severity: str
 
 
-# Lightweight conversational agent for GET /chat -- the Day3 prebuilt-agent
-# pattern (see docerz/day21's agent.py), given real CodeHub domain tools
-# instead of a generic calculator.
+# Lightweight conversational agent for GET /chat, repointed onto the incident
+# domain after tools.py was rewritten (the old lookup_sla_hours /
+# check_known_issue no longer exist).
+#
+# Read-only investigation tools ONLY. The Tier 2 remediation tools --
+# scale_connection_pool, restart_service, rollback_change -- are deliberately
+# withheld here. They mutate the simulated estate and carry a risk level that
+# is supposed to pass the approval gate in the graph; a chat endpoint has no
+# approval step, so binding them to it would be a way to run a high-risk action
+# without one. That is precisely the control tools.py exists to enforce, and it
+# should not have a side door.
 _chat_agent = create_agent(
     model=llm,
-    tools=[lookup_sla_hours, check_known_issue],
-    system_prompt="You are a CodeHub support assistant. Use the provided tools "
-    "to answer questions about SLAs and known issues.",
+    tools=[search_logs, get_service_metrics, search_knowledge_base, get_incident_history],
+    system_prompt=(
+        "You are an IT operations assistant. Use the provided read-only tools to "
+        "investigate services: application logs, metrics against baseline, "
+        "operational runbooks and past incidents. You can diagnose, but you "
+        "cannot change anything."
+    ),
 )
 
 app = FastAPI(title="Hackathon 1 -- CodeHub Ticket Triage")
