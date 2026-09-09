@@ -84,6 +84,21 @@ degrading it.
 > never actually run — this machine can only ever select `lean`. Before relying on it, force it on
 > a bigger box: `MEM_THRESHOLD_GB=1 bash scripts/deploy.sh`.
 
+### What lean costs you
+
+**Only Grafana**, and today that is nothing at all — Grafana has no provisioned datasource yet, so
+it would start blank, and it is a bonus item rather than a mandatory requirement. Verified working
+on `lean`: Langfuse tracing (events reach ClickHouse), MinIO report storage, the app and API, and
+all six other infra services healthy.
+
+Get it back on demand when the dashboards exist: `docker start grafana-app` (~256 MiB),
+`docker stop grafana-app` to release it again.
+
+The two other differences are not functional: smaller Node heaps (marginally more GC under heavy
+ingestion) and a longer health `start_period` (Docker waits longer before calling a probe failed —
+it does not slow anything down). `lean` does **not** disable tracing, drop spans, or degrade the
+workflow. Full detail: `architecture/infrastructure.md` section 5.
+
 ---
 
 ## Status at a glance

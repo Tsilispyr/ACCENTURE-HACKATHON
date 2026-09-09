@@ -138,6 +138,7 @@ pip install -e .
 | `architecture/infrastructure.md` | This file. |
 | `README.md` | Project overview and setup. |
 | `TASKS.md` (repo root) | Live task board for roles 1 + 5. |
+| `hackathon 1- handout.docx.pdf` (repo root) | **The requirements of record.** Committed so the spec is versioned with the implementation and every section reference in these docs resolves to a fixed document. |
 | `troubleshooting-guide.md` | Error → cause → fix, searchable by the actual error text. |
 | `stack-guide.md` | **Historical.** Describes the older Langfuse **v2** stack (Postgres-backed traces, `/mnt/d/...` paths). Sections 6 and 9 are still worth reading; the rest no longer matches what runs. |
 
@@ -277,6 +278,42 @@ diff /tmp/before.yaml /tmp/after.yaml     # expect ONLY the lines you meant to c
 A limit is a **ceiling, not a reservation** — it stops one runaway container from taking the host,
 it does not lower baseline usage. On lean the real saving comes from not starting Grafana and from
 bounding the Node heaps.
+
+### What you actually lose on lean
+
+Measured on this machine, not estimated. Everything below was re-checked while running `lean`:
+
+| Capability | On lean | Evidence |
+|---|---|---|
+| Langfuse tracing | **works** | events land in ClickHouse `events_core` |
+| MinIO report storage | **works** | objects written to `hackathon1-reports` |
+| App, API and the graph | **works** | `GET /` returns 200; incidents run end to end |
+| postgres · clickhouse · redis · minio · langfuse-web · langfuse-worker | **all running and healthy** | `docker ps` |
+| **Grafana** | **not started** | the only thing actually withheld |
+
+So the single functional difference is Grafana — and today that costs **nothing**, because Grafana
+has no provisioned datasource yet (its only mount is its own data volume), so it would start blank.
+It is also a **bonus** item in the requirements, not a mandatory one, so `lean` forfeits no marks.
+
+This begins to matter once the Grafana dashboards land. At that point a lean machine simply starts
+it on demand:
+
+```bash
+docker start grafana-app          # ~256 MiB, then http://localhost:3001
+docker stop grafana-app           # give the memory back
+```
+
+Two further differences, neither of them functional:
+
+- **Smaller Node heaps** (640/512 MB vs 1536/1024 MB). V8 collects more often, so there is
+  marginally more GC CPU under heavy trace ingestion. Not observable at the volumes this project
+  produces.
+- **Longer health `start_period`** (180s vs 60s). Purely how long Docker waits before counting a
+  probe as a failure — it does not slow the service down, it stops a normal boot being reported
+  as unhealthy.
+
+What `lean` is *not*: it does not disable tracing, drop spans, reduce retention, or degrade the
+workflow in any way. It stops one optional container and bounds two Node heaps.
 
 ### Changing a limit
 
