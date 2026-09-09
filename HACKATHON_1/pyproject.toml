@@ -49,5 +49,6 @@ testpaths = ["tests"]
 markers = [
     "workflow: real compiled graph with mocked external dependencies",
     "api_contract: agreed five-field incident request and API-to-workflow boundary",
-    "pending: explicitly skipped acceptance placeholders awaiting team implementation",
+    "acceptance: real graph and real tools, scripted LLM only",
+    "live: requires the deployed stack; skipped unless it is reachable",
 ]
