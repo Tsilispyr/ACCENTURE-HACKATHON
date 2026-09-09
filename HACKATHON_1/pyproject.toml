@@ -43,3 +43,9 @@ dev = [
 # Lets "async def test_..." functions run without a @pytest.mark.asyncio
 # decorator on every one -- this project's nodes/tests are genuinely async.
 asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "workflow: real compiled graph with mocked external dependencies",
+    "api_contract: agreed five-field incident request and API-to-workflow boundary",
+    "pending: explicitly skipped acceptance placeholders awaiting team implementation",
+]

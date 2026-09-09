@@ -1,0 +1,107 @@
+[
+  {
+    "Incident ID": "INC-2001",
+    "Service": "identity-service",
+    "Severity": "Unknown",
+    "Description": "Login failures have increased. Token validation errors are appearing, while identity-provider latency remains normal.",
+    "Error": "Token validation failed."
+  },
+  {
+    "Incident ID": "INC-2002",
+    "Service": "identity-service",
+    "Severity": "HIGH",
+    "Description": "Newly issued tokens fail validation after a signing-key rotation. Older sessions continue to work, and provider connectivity is healthy.",
+    "Error": "Token signing key identifier is not present in the accepted key set."
+  },
+  {
+    "Incident ID": "INC-2003",
+    "Service": "identity-service",
+    "Severity": "CRITICAL",
+    "Description": "All browser sign-ins fail following an authentication configuration deployment. Requests reach the identity provider and return promptly.",
+    "Error": "Token audience does not match the configured application audience."
+  },
+  {
+    "Incident ID": "INC-2004",
+    "Service": "identity-service",
+    "Severity": "HIGH",
+    "Description": "Sign-in requests stall for more than ten seconds. Both login requests and health probes to the identity provider show elevated latency.",
+    "Error": "Identity-provider request timed out after 10000 ms."
+  },
+  {
+    "Incident ID": "INC-2005",
+    "Service": "identity-service",
+    "Severity": "MEDIUM",
+    "Description": "Users sign in successfully but are immediately sent back to the login page. The issue occurs only behind a recently added proxy.",
+    "Error": "Session cookie missing on the authentication callback request."
+  },
+  {
+    "Incident ID": "INC-2006",
+    "Service": "identity-service",
+    "Severity": "LOW",
+    "Description": "One user is unable to sign in after repeatedly entering an incorrect password. Other users in the same organization can sign in.",
+    "Error": "Account temporarily locked after repeated failed login attempts."
+  },
+  {
+    "Incident ID": "INC-2007",
+    "Service": "identity-service",
+    "Severity": "HIGH",
+    "Description": "Tokens are rejected only by instances on one host. The host clock is several minutes ahead of the identity provider.",
+    "Error": "Token rejected because its expiration time is earlier than the validator's current time."
+  },
+  {
+    "Incident ID": "INC-2008",
+    "Service": "identity-service",
+    "Severity": "MEDIUM",
+    "Description": "Password-reset links are delivered but are rejected immediately for newly requested resets. Ordinary password-based sign-in continues to work.",
+    "Error": "Password-reset token signature is invalid."
+  },
+  {
+    "Incident ID": "INC-2009",
+    "Service": "identity-service",
+    "Severity": "HIGH",
+    "Description": "Users can complete the password step, but multi-factor verification codes are not arriving. The delivery provider is returning service errors.",
+    "Error": "Multi-factor message delivery failed: provider HTTP 503."
+  },
+  {
+    "Incident ID": "INC-2010",
+    "Service": "identity-service",
+    "Severity": "MEDIUM",
+    "Description": "Single sign-on fails for one organization after its application URL changed. Other organizations can still sign in.",
+    "Error": "Redirect URI does not match a registered callback URI."
+  },
+  {
+    "Incident ID": "INC-2011",
+    "Service": "identity-service",
+    "Severity": "HIGH",
+    "Description": "Sign-ins succeed, but users cannot access pages they previously had permission to view. Role claims are missing from newly issued tokens.",
+    "Error": "HTTP 403: required application role claim is missing."
+  },
+  {
+    "Incident ID": "INC-2012",
+    "Service": "identity-service",
+    "Severity": "HIGH",
+    "Description": "Authentication failures rise during the morning login peak. The identity provider returns rate-limit responses rather than timing out.",
+    "Error": "HTTP 429: too many authentication requests."
+  },
+  {
+    "Incident ID": "INC-2013",
+    "Service": "identity-service",
+    "Severity": "HIGH",
+    "Description": "One region cannot retrieve the identity provider's discovery document. Database access and general network connectivity are working.",
+    "Error": "TLS handshake failed while loading identity-provider discovery metadata."
+  },
+  {
+    "Incident ID": "INC-2014",
+    "Service": "identity-service",
+    "Severity": "Unknown",
+    "Description": "Several users report being logged out unexpectedly. There is no confirmed start time, browser pattern, or server-side error yet.",
+    "Error": "No error message reported."
+  },
+  {
+    "Incident ID": "INC-2015",
+    "Service": "identity-service",
+    "Severity": "MEDIUM",
+    "Description": "Existing users can sign in, but newly provisioned users are rejected. The account synchronization job has not completed since yesterday.",
+    "Error": "User record not found in the application's account directory."
+  }
+]

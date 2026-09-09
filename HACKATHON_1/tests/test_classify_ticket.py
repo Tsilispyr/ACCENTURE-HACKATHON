@@ -3,7 +3,7 @@ notes/02-METHODOLOGY.md section 5. asyncio_mode = "auto" (pyproject.toml)
 means these `async def test_...` functions run with no
 @pytest.mark.asyncio decorator needed."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -11,11 +11,10 @@ from hackathon1.graph import Classification, classify_ticket
 
 
 # POSITIVE TEST: valid ticket text gets classified from the (mocked) LLM
-async def test_classify_ticket_returns_category_and_complexity():
+async def test_classify_ticket_returns_category_and_complexity(mock_llm):
     fake_result = Classification(category="billing", complexity="simple")
-    with patch("hackathon1.graph.llm") as mock_llm:
-        mock_llm.with_structured_output.return_value.ainvoke = AsyncMock(return_value=fake_result)
-        result = await classify_ticket({"ticket_id": "T-1", "ticket_text": "I was charged twice"})
+    mock_llm.with_structured_output.return_value.ainvoke = AsyncMock(return_value=fake_result)
+    result = await classify_ticket({"ticket_id": "T-1", "ticket_text": "I was charged twice"})
     assert result == {"category": "billing", "complexity": "simple"}
 
 

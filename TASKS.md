@@ -208,12 +208,29 @@ workflow. Full detail: `architecture/infrastructure.md` section 5.
 |---|---|---|
 | `tools-features` | `tools.py` (8 tools, 3 risk tiers), `world.py`, `models.py`, `data/scenarios.json` | merged, tested |
 | `feature/langgraph-workflow` | incident graph with `interrupt()` HITL, `IncidentAdapter` Protocol, workflow tests | merged, tested |
+| `testing-suite` | top-level `tests/`, API contract suite, workflow tests, fixtures, `data/simulated/` request examples | merged, placeholders fixed |
 | `maria/containerization` | `GET /health`, `GET /incidents/{id}`, postgres host port 5433, `DATABASE_URL` fix | merged, conflict resolved |
 
 **Written here to close the gap between them:** `adapters.py` — `LiveIncidentAdapter`, the binding
 neither branch could write alone. `graph.py` talks to a Protocol and imports no tools; `tools.py`
 knows nothing about the graph. Tools produce facts, the LLM supplies judgement, and policy
 (`tools.effective_risk`) owns safety — the model may raise the risk level, never lower it.
+
+### Testing suite: placeholders resolved
+
+**70 passed, 10 skipped, 0 failed.** What was fixed, and why each mattered:
+
+| Placeholder | Reality | Effect |
+|---|---|---|
+| `conftest.mock_llm` patched `graph.get_llm` | no such function; modules do `from hackathon1.llm import llm` | autouse fixture → **all 71 tests errored at setup** |
+| offline guard blocked every `socket.connect` | Windows asyncio builds its self-pipe on 127.0.0.1 | **64 errors**; now blocks non-loopback only |
+| `scenarios` fixture did `[Scenario(**i) for i in raw]` | `incidents.json` is a mapping; iterating yields keys | `**` on a str; now returns the dict, still validated |
+| `service.get_chat_agent` expected | agent was built at import time | now `lru_cache`d and lazy — importing `service` no longer builds an agent |
+| `tool_interfaces.py` guessed the tool API | wrong: async (they are sync), `get_service_metrics` returns a mapping not a list, no single `execute_remediation` | rewritten; **all 8 signatures machine-verified against `tools.py`** |
+| five-field request `xfail(strict=True)` | API took the old 3 lowercase fields | implemented `Incident ID / Service / Severity / Description / Error`; scaffolding removed per its own instruction |
+
+`data/simulated/` (API request examples) and `src/hackathon1/data/scenarios.json` (world simulation
+ground truth) are **not** duplicates — different purposes, both needed.
 
 ### Still open
 

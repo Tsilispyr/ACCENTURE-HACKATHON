@@ -13,11 +13,11 @@ Postgres database) if that ever changes.
 
 from __future__ import annotations
 
-import uuid
+from functools import lru_cache
 
 from fastapi import FastAPI, HTTPException
 from langchain.agents import create_agent
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from uvicorn import run
 
 from hackathon1.graph import app_graph
@@ -32,9 +32,26 @@ from hackathon1.tracing import get_callback_handlers
 
 
 class IncidentRequest(BaseModel):
-    service: str
-    description: str
-    severity: str
+    """The agreed five-field incident request, matching the handout's example.
+
+    The wire field names are the handout's exact labels -- "Incident ID",
+    "Service", ... -- so aliases carry them while the Python attributes stay
+    snake_case. Pydantic reports the *alias* in validation errors, which is what
+    lets a caller who omits "Severity" see that name back rather than an
+    internal one.
+
+    Every field is required on purpose: a silently-defaulted severity or a
+    generated incident id would let a malformed request reach the workflow and
+    be investigated as though it were real.
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    incident_id: str = Field(alias="Incident ID")
+    service: str = Field(alias="Service")
+    severity: str = Field(alias="Severity")
+    description: str = Field(alias="Description")
+    error: str = Field(alias="Error")
 
 
 # In-memory store for GET /incidents/{id} -- keyed by ticket_id, populated by
@@ -46,6 +63,11 @@ _incidents_store: dict[str, dict] = {}
 # domain after tools.py was rewritten (the old lookup_sla_hours /
 # check_known_issue no longer exist).
 #
+# Built lazily and cached, not at import time. Constructing an agent is a real
+# side effect of importing this module otherwise -- it binds tools and an LLM
+# client before anyone has asked for one, which slows startup and makes the
+# module awkward to import in a test that never touches /chat.
+#
 # Read-only investigation tools ONLY. The Tier 2 remediation tools --
 # scale_connection_pool, restart_service, rollback_change -- are deliberately
 # withheld here. They mutate the simulated estate and carry a risk level that
@@ -53,16 +75,20 @@ _incidents_store: dict[str, dict] = {}
 # approval step, so binding them to it would be a way to run a high-risk action
 # without one. That is precisely the control tools.py exists to enforce, and it
 # should not have a side door.
-_chat_agent = create_agent(
-    model=llm,
-    tools=[search_logs, get_service_metrics, search_knowledge_base, get_incident_history],
-    system_prompt=(
-        "You are an IT operations assistant. Use the provided read-only tools to "
-        "investigate services: application logs, metrics against baseline, "
-        "operational runbooks and past incidents. You can diagnose, but you "
-        "cannot change anything."
-    ),
-)
+@lru_cache(maxsize=1)
+def get_chat_agent():
+    """The /chat agent, created on first use and reused thereafter."""
+    return create_agent(
+        model=llm,
+        tools=[search_logs, get_service_metrics, search_knowledge_base, get_incident_history],
+        system_prompt=(
+            "You are an IT operations assistant. Use the provided read-only tools to "
+            "investigate services: application logs, metrics against baseline, "
+            "operational runbooks and past incidents. You can diagnose, but you "
+            "cannot change anything."
+        ),
+    )
+
 
 app = FastAPI(title="Hackathon 1 -- CodeHub Ticket Triage")
 
@@ -82,7 +108,7 @@ async def health():
 @app.get("/chat")
 async def chat(message: str):
     try:
-        response = await _chat_agent.ainvoke({"messages": [("user", message)]})
+        response = await get_chat_agent().ainvoke({"messages": [("user", message)]})
         return {"response": response["messages"][-1].content, "status": "success"}
     except Exception as e:
         return {
@@ -100,10 +126,17 @@ async def create_incident(incident: IncidentRequest):
     stub that echoed input in docerz/day21's version of this endpoint into
     the actual business logic. Stores the result so GET /incidents/{id}
     can retrieve it afterwards."""
-    ticket_id = f"T-{uuid.uuid4().hex[:8]}"
+    # The caller's incident id is preserved, never replaced with a generated
+    # one -- an operator who posts INC-1042 has to be able to find INC-1042
+    # afterwards, and the id is how this correlates to their own systems.
+    ticket_id = incident.incident_id
     initial_state = {
         "ticket_id": ticket_id,
-        "ticket_text": incident.description,
+        # Both the description and the error text reach the workflow. The error
+        # line is usually the most diagnostic part of the report, and dropping
+        # it silently would leave the graph investigating a vaguer incident
+        # than the one that was actually filed.
+        "ticket_text": f"{incident.description}\nError: {incident.error}",
         "category": None,
         "complexity": None,
         "messages": [],
@@ -117,7 +150,7 @@ async def create_incident(incident: IncidentRequest):
         initial_state, config={"callbacks": get_callback_handlers()}
     )
     response_body = {
-        "ticket_id": ticket_id,
+        "incident_id": ticket_id,
         "service": incident.service,
         "severity": incident.severity,
         "category": result.get("category"),
