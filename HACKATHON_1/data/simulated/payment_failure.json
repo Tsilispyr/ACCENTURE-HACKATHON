@@ -1,0 +1,107 @@
+[
+  {
+    "Incident ID": "INC-1001",
+    "Service": "payment-service",
+    "Severity": "Unknown",
+    "Description": "Customers report payment failures for approximately 15 minutes. Failures have increased to 18%, and database connections are at 100% utilization.",
+    "Error": "Database connection timeout."
+  },
+  {
+    "Incident ID": "INC-1002",
+    "Service": "payment-service",
+    "Severity": "HIGH",
+    "Description": "Payment attempts intermittently time out during the evening checkout peak. The database connection pool shows no idle connections, while the external payment gateway remains reachable.",
+    "Error": "Timed out waiting 5000 ms for an available database connection."
+  },
+  {
+    "Incident ID": "INC-1003",
+    "Service": "payment-service",
+    "Severity": "CRITICAL",
+    "Description": "All payment attempts started failing immediately after a deployment. Application instances are running, but new database connections are rejected.",
+    "Error": "Database authentication failed for the application user."
+  },
+  {
+    "Incident ID": "INC-1004",
+    "Service": "payment-service",
+    "Severity": "HIGH",
+    "Description": "Card payments take more than 30 seconds and then fail. Internal database queries complete normally, but calls to the external gateway are slow.",
+    "Error": "Payment gateway request exceeded the 30000 ms timeout."
+  },
+  {
+    "Incident ID": "INC-1005",
+    "Service": "payment-service",
+    "Severity": "MEDIUM",
+    "Description": "Several customers report two charges for one checkout after retrying a request that appeared to time out. Both charge references refer to the same order.",
+    "Error": "Duplicate capture detected for the same merchant order reference."
+  },
+  {
+    "Incident ID": "INC-1006",
+    "Service": "payment-service",
+    "Severity": "LOW",
+    "Description": "One customer cannot pay with a particular card. Other customers and other cards are completing payments normally.",
+    "Error": "Payment declined by issuing bank: insufficient funds."
+  },
+  {
+    "Incident ID": "INC-1007",
+    "Service": "payment-service",
+    "Severity": "HIGH",
+    "Description": "Payments fail only in one deployment region. The same checkout succeeds in the other region, and affected instances cannot resolve the gateway hostname.",
+    "Error": "Temporary failure in name resolution for the payment gateway."
+  },
+  {
+    "Incident ID": "INC-1008",
+    "Service": "payment-service",
+    "Severity": "HIGH",
+    "Description": "The payment gateway is reachable, but new connections fail during TLS negotiation. Application database health remains normal.",
+    "Error": "TLS certificate verification failed: certificate has expired."
+  },
+  {
+    "Incident ID": "INC-1009",
+    "Service": "payment-service",
+    "Severity": "MEDIUM",
+    "Description": "Payments are accepted by the provider, but orders remain marked as unpaid. Callback deliveries repeatedly receive errors from the application.",
+    "Error": "Payment callback returned HTTP 500 before updating order status."
+  },
+  {
+    "Incident ID": "INC-1010",
+    "Service": "payment-service",
+    "Severity": "HIGH",
+    "Description": "Payment failures rise during a promotional campaign. The gateway returns many rate-limit responses, while CPU and database connection usage remain normal.",
+    "Error": "HTTP 429: gateway request limit exceeded; retry after 30 seconds."
+  },
+  {
+    "Incident ID": "INC-1011",
+    "Service": "payment-service",
+    "Severity": "MEDIUM",
+    "Description": "Refund requests are failing, but new payments still succeed. The refund worker cannot write to its local temporary directory.",
+    "Error": "No space left on device while writing refund batch output."
+  },
+  {
+    "Incident ID": "INC-1012",
+    "Service": "payment-service",
+    "Severity": "HIGH",
+    "Description": "Checkouts using stored payment methods fail after a configuration update. Newly entered payment methods continue to work.",
+    "Error": "Stored payment token rejected: token audience does not match merchant configuration."
+  },
+  {
+    "Incident ID": "INC-1013",
+    "Service": "payment-service",
+    "Severity": "MEDIUM",
+    "Description": "Only cross-currency checkouts fail. Same-currency payments complete normally, and the application reports failures when requesting exchange-rate data.",
+    "Error": "Exchange-rate service returned HTTP 503."
+  },
+  {
+    "Incident ID": "INC-1014",
+    "Service": "payment-service",
+    "Severity": "Unknown",
+    "Description": "Support received three reports that checkout keeps spinning. The affected browser sessions and payment references have not yet been collected.",
+    "Error": "No error message reported."
+  },
+  {
+    "Incident ID": "INC-1015",
+    "Service": "payment-service",
+    "Severity": "HIGH",
+    "Description": "Payment requests fail intermittently after a database failover. Application logs show connection resets, but newly established connections sometimes succeed.",
+    "Error": "Connection reset by peer while committing a payment transaction."
+  }
+]

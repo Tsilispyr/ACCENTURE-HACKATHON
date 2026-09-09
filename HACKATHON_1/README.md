@@ -1,89 +1,160 @@
-# Hackathon 1 -- CodeHub Ticket Triage
+# AI-Powered IT Incident Resolution Agent
 
-A LangGraph service that triages and resolves CodeHub support tickets, combining the patterns `project/HACKATHON1.md` names explicitly: **Orchestrator-Workers**, **Multi-Agent Supervisor**, and **Async LangGraph**, plus both of Day3's routing mechanisms (`add_conditional_edges` and `Command`). No real business case has been assigned yet -- this uses the CodeHub support-ticket domain that runs through the whole curriculum as a placeholder, easy to swap once one lands. Traced via Langfuse, reports uploaded to MinIO.
-
-## Architecture
-
-Two independent, connected Docker Compose stacks -- per `HACKATHON1.md`'s own request for "2 docker compose files ... depending on each other":
+A stateful, multi-pattern LangGraph service that triages, investigates, diagnoses, remediates and
+verifies IT incidents against a simulated enterprise estate. Traced with Langfuse, reports archived
+to MinIO, state persisted in Postgres, and runnable from a clean checkout with one command.
 
 ```
-project/
-├── docker-compose-langfuse.yaml   infra: Postgres, ClickHouse, Redis, MinIO, Langfuse v4, Grafana
-│                                   -> network "langfuse-infra" (declared here, external:true below)
-└── HACKATHON_1/
-    ├── docker-compose.yml         app: hackathon1-app, joins "langfuse-infra" as external
-    ├── Dockerfile
-    └── src/hackathon1/            this service
+Incident ──► Triage ──► Investigation (parallel) ──► Diagnosis ──► Remediation plan + risk
+                                                                            │
+                                                          low/medium ◄──────┴──────► high
+                                                               │                      │
+                                                               │              Human approval
+                                                               │                      │
+                                                               └──────► Execute ◄─────┘
+                                                                            │
+                                                                         Verify
+                                                                        ╱      ╲
+                                                                  Resolved    Failed
+                                                                       │         │
+                                                                     Close    Replan (bounded)
 ```
 
-The app reaches Postgres/ClickHouse/Redis/MinIO/Langfuse purely via that shared Docker network and their Compose service DNS names (`langfuse-web`, `minio`, ...) -- every backend port in the infra file is bound to `127.0.0.1` on the *host*, so this is the only way a separate container can reach them (no nginx/load balancer needed).
-
-### The graph
-
-```
-START -> classify_ticket
-           -> route_after_classify
-                -> "orchestrator" (complex tickets):
-                     orchestrator -> dispatch_sections (Send fan-out)
-                       -> investigate_section x N (parallel, async)
-                            -> synthesize_incident_report (fan-in, uploads report to MinIO) -> END
-                -> "supervisor" (simple tickets):
-                     supervisor (Command) -> billing_agent / tech_agent / account_agent
-                       -> Command(goto=<other specialist, at most once> | END)
-```
-
-Every node is `async def`, invoked only via `await app_graph.ainvoke(...)`.
-
-## Setup
+## Quick start
 
 ```bash
-cp .env.example .env   # fill in Azure OpenAI / Langfuse / MinIO values
-uv sync
-uv run pytest -v
+# WSL / Linux / macOS, or Git Bash (which re-execs itself into WSL)
+bash scripts/deploy.sh
+
+# PowerShell or cmd
+.\scripts\deploy.ps1
 ```
 
-## Local dev (no Docker)
+The only thing you supply is your four `AZURE_OPENAI_*` values — preflight asks once and writes
+them to `.env`. Everything else ships pre-filled. Then open **http://localhost:8010/ui**.
 
-```bash
-uv run uvicorn hackathon1.service:app --reload
+| Service | URL | Credentials |
+|---|---|---|
+| Web UI | http://localhost:8010/ui | — |
+| API docs | http://localhost:8010/docs | — |
+| Langfuse traces | http://localhost:3000 | `user@example.com` / `12345678` |
+| Grafana dashboards | http://localhost:3001 | `gtgh` / `grafanapassQWqw!@12` |
+| MinIO console | http://localhost:9091 | `minio` / `miniopassQWqw!@12` |
+
+## API
+
 ```
-With no infra stack running, `tracing.py` and `storage.py` both degrade gracefully (tracing silently disabled, report upload skipped with a `WARNING` log) rather than failing requests.
-
-## Docker deploy
-
-From `project/`:
-```bash
-bash HACKATHON_1/scripts/deploy.sh
+POST /incidents               submit an incident and run the workflow
+GET  /incidents/{id}          retrieve its current state
+POST /incidents/{id}/approve  approve or reject a high-risk remediation
+GET  /health                  liveness plus which subsystems are actually live
+GET  /ui                      operator web page
+GET  /chat                    read-only investigation assistant
 ```
-Brings up the infra stack first (if not already healthy), then this app -- see `scripts/deploy.sh` for why that ordering can't just be `depends_on` in one compose file.
 
-Every run writes its own numbered, timestamped log to `logs/run-NNNN-<timestamp>.log` (mirrored to the terminal at the same time via `tee`) -- nothing is ever overwritten or deleted, so past runs stay available for comparison. `logs/` is gitignored, same convention as the project-root `logs/` folder.
+`POST /incidents` takes the five fields from the requirements, verbatim:
 
-## Smoke test
-
-```bash
-uv run python -m hackathon1.apiclient
+```json
+{
+  "Incident ID": "INC-1042",
+  "Service": "payment-service",
+  "Severity": "Unknown",
+  "Description": "Customers report payment failures for approximately 15 minutes.",
+  "Error": "Database connection timeout."
+}
 ```
-Adapted as-is from `day21/src/day21/apiclient.py` (only the port changed) per the explicit "use as is, don't define as a pytest test" instruction -- no timeout/retry/error handling, deliberately.
 
-## URLs
+**`thread_id` is the incident id.** That single convention is what makes retrieval and
+approval-resume work without a second store.
 
-| Service | URL |
+## How it is built
+
+**Three layers, deliberately separated.**
+
+| | Responsibility |
 |---|---|
-| App | http://localhost:8010 |
-| Langfuse (traces) | http://localhost:3000 |
-| Grafana (dashboards) | http://localhost:3001 |
+| `tools.py` + `world.py` | **Facts.** Eight tools over a simulated estate. No LLM. |
+| `adapters.py` | **Judgement.** Triage, diagnosis and planning reason over the evidence tools produced. |
+| `tools.effective_risk` | **Safety.** A risk floor the model may raise but never lower. |
 
-See `stack-guide.md` and `troubleshooting-guide.md` for infra-level setup/errors.
+`graph.py` talks to an `IncidentAdapter` protocol and imports no tools; `tools.py` knows nothing
+about the graph. `adapters.LiveIncidentAdapter` binds them, and
+`DeterministicIncidentAdapter` substitutes for it in tests with no I/O at all.
 
-## Known limitations / deferred work
+**Two properties worth defending:**
 
-Per the approved plan, everything below is intentional and deferred, not accidentally missing:
+1. **The approval gate cannot be talked past.** Risk comes from a static policy floor derived from
+   the action and its context. A model assessment can raise it and is ignored if it tries to lower
+   it — because incident text is attacker-controllable in any real deployment, and a control the
+   model can argue with is decorative. If the risk call fails outright, the policy floor stands.
+2. **Remediation never reports success.** Execution returns an operator-style receipt of what it
+   did; whether the incident is *fixed* is decided separately by observing service health. That is
+   what gives the replan loop something real to react to, instead of a model declaring victory.
 
-- **No Docker resource limits yet** -- sized recommendations exist (`postgres` 256m, `clickhouse` 1g, `redis` 128m + `maxmemory`, `minio` 256m, `langfuse-worker`/`langfuse-web` 512m each, `grafana` 256m, `hackathon1-app` 512m) but aren't applied; validate with `docker stats` first.
-- **No machine-capability-aware deployment** (laptop vs. dev-machine resource profile) yet.
-- **Dockerfile runs as root** -- add a non-root user before anything production-facing.
-- `grafana/grafana-enterprise:latest` and MinIO's untagged image in the infra file aren't pinned yet.
-- **`MemorySaver` checkpointing** (in-memory, not durable across restarts) -- fine for this skeleton phase, a `PostgresSaver` swap is a later concern.
-- Not doing: full `.yaml`->`.yml` normalization of the existing infra file lineage, retiring `docker-compose.v3.yaml`, fixing the unrelated broken root-level `docker-compose.yml` stub, or any CI/CD pipeline (`HACKATHON1.md` itself: "no need for more actions").
-- `apiclient.py` stays unhardened (no timeout/retry/exception handling) -- intentional, per the "use as is" instruction.
+Approval is also **per plan revision** — approving one plan does not authorise a different one
+produced by a later replan.
+
+## Tools
+
+| Tier | Tools | Risk |
+|---|---|---|
+| Investigation (read-only) | `search_logs`, `get_service_metrics`, `search_knowledge_base`, `get_incident_history` | none |
+| Remediation | `scale_connection_pool` · `restart_service` · `rollback_change` | low · high (medium on allowlisted services) · always high |
+| Verification | `check_service_health` | none |
+
+The remediation tools deliberately span the risk scale. With a single high-risk action the approval
+router would be a constant that always routes one way; the spread makes it a decision.
+
+The estate is not uniform, which is what makes the workflow's behaviour meaningful:
+
+| Service | Correct remediation |
+|---|---|
+| `payment-service` | scale the pool, **then** restart — scaling alone is partial |
+| `identity-service` | roll back the change |
+| `order-service` | restart |
+| `reporting-service` | nothing works — exercises the bounded-retry path |
+
+`get_service_metrics` also fails its **first** call for a service, by design, so the tool-failure
+path is exercised on a normal run rather than only under contrivance.
+
+## Testing
+
+```bash
+uv run pytest -v                      # 96 tests, no network, no API costs
+uv run pytest tests/live -v           # end-to-end against the deployed stack
+```
+
+| Suite | What it covers |
+|---|---|
+| `tests/test_tools.py` | The tools, weighted towards the risk policy the approval gate rests on |
+| `tests/test_incident_workflow.py` | The compiled graph with a deterministic adapter |
+| `tests/acceptance/` | Real graph, real tools, real evidence; only the LLM is scripted |
+| `tests/api/` | The five-field request contract, parametrised over the supplied examples |
+| `tests/live/` | The deployed container, including Langfuse trace correlation. Skips itself when the stack is not running |
+
+The acceptance tests wrap each tool in a spy that records the call and then **delegates to the real
+implementation**, so every assertion about a tool call is about a call that actually happened, and
+the evidence reaching the diagnosis is the estate's real data.
+
+## Deployment
+
+Two Compose stacks joined by one network: the infrastructure (Postgres, ClickHouse, Redis, MinIO,
+Langfuse, Grafana) and this app. `scripts/deploy.sh` orders them, since Compose's own `depends_on`
+cannot span two files.
+
+Deployment sizes itself to the machine: `scripts/preflight.sh` reads total RAM and picks a `lean` or
+`full` resource profile. Grafana does not start on `lean` — it is a bonus service and lean exists to
+free its ~256 MiB.
+
+**Full reference — what every file does, how to drive `scripts/` and `compose/`, a cookbook and the
+traps:** [`architecture/infrastructure.md`](architecture/infrastructure.md).
+
+## Known limitations
+
+- The `full` resource profile has been rendered and validated but never actually run; the
+  development machine can only ever select `lean`.
+- Grafana's ClickHouse plugin downloads at container start, so a first run on a new machine needs
+  internet or the dashboards have no datasource.
+- `stack-guide.md` describes the older Langfuse v2 stack and is kept only as history; sections 6 and
+  9 are still accurate, the rest is not.
+- `apiclient.py` is deliberately unhardened — no timeouts, no retries. It is a smoke test.

@@ -3,9 +3,11 @@ import requests
 url = "http://localhost:8010"
 
 incident = {
-    "service": "Payment Service",
-    "description": "Payments are failing after today's deployment",
-    "severity": "HIGH"
+    "Incident ID": "INC-1042",
+    "Service": "payment-service",
+    "Severity": "Unknown",
+    "Description": "Customers report payment failures for approximately 15 minutes.",
+    "Error": "Database connection timeout."
 }
 response = requests.get(url )
 response.raise_for_status()

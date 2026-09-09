@@ -18,7 +18,7 @@ services:
       PGTZ: UTC
 
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5433:5432"
 
     volumes:
       - langfuse_postgres_data:/var/lib/postgresql/data
@@ -104,7 +104,11 @@ services:
   # Local S3-compatible blob storage
   # ============================================================
   minio:
-    image: cgr.dev/chainguard/minio
+    # Pinned by digest, not tag: Chainguard's free tier publishes only :latest,
+    # so there is no version tag to pin to. A digest is the stronger pin anyway --
+    # it names exactly one image and cannot be moved underneath us.
+    # Currently RELEASE.2026-07-17T12-07-51Z.
+    image: cgr.dev/chainguard/minio@sha256:2a30e1a6d9e024631e9fed795773c40de5f819db80875f23dc00f7a4ca4f2246
     container_name: langfuse-minio
     restart: always
 
@@ -178,7 +182,7 @@ services:
       # --------------------------------------------------------
       # PostgreSQL
       # --------------------------------------------------------
-      DATABASE_URL: "postgresql://gtgh:postgrepassQWqw!@12@postgres:5432/langfuse"
+      DATABASE_URL: "postgresql://gtgh:postgrepassQWqw!%4012@postgres:5432/langfuse"
 
       # --------------------------------------------------------
       # Langfuse
@@ -281,7 +285,7 @@ services:
       # --------------------------------------------------------
       # PostgreSQL
       # --------------------------------------------------------
-      DATABASE_URL: "postgresql://gtgh:postgrepassQWqw!@12@postgres:5432/langfuse"
+      DATABASE_URL: "postgresql://gtgh:postgrepassQWqw!%4012@postgres:5432/langfuse"
 
       # --------------------------------------------------------
       # Authentication / Langfuse
@@ -303,8 +307,8 @@ services:
       LANGFUSE_INIT_USER_EMAIL: "user@example.com"
       LANGFUSE_INIT_USER_NAME: "pipis"
       LANGFUSE_INIT_USER_PASSWORD: "12345678"
-      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: "pk-lf-112ba62c-d4ae-40e2-a58d-bd47c4a13ab4"
-      LANGFUSE_INIT_PROJECT_SECRET_KEY: "sk-lf-fb354a93-e3e5-4de9-8177-87b0bddab178"
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: "pk-lf-35e3bc70-ee1d-4ca7-a974-784defdf3366"
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: "sk-lf-2c2ca70a-090b-4e02-ac9d-0ce151a6376c"
 
       # --------------------------------------------------------
       # ClickHouse
@@ -374,7 +378,9 @@ services:
   # 7. Grafana - OPTIONAL
   # ============================================================
   grafana:
-    image: grafana/grafana-enterprise:latest
+    # Pinned: :latest meant a teammate cloning next week could get a different
+    # Grafana than the dashboards were built and tested against.
+    image: grafana/grafana-enterprise:13.2.1
     container_name: grafana-app
     restart: always
 
@@ -397,8 +403,19 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: "grafanapassQWqw!@12"
       GF_SERVER_HTTP_PORT: "3001"
 
+      # Downloaded at container start, so this needs internet on first run.
+      # Langfuse v4 keeps traces in ClickHouse, so without this plugin the
+      # provisioned datasource cannot load and every panel reports
+      # "datasource not found".
+      GF_INSTALL_PLUGINS: "grafana-clickhouse-datasource"
+
     volumes:
       - grafana_data:/var/lib/grafana
+      # Provisioned as code: a fresh grafana_data volume comes up already
+      # holding the datasource and the dashboard, with nothing to click.
+      # Read-only -- Grafana reads these on start and must never write back.
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
 
 
 # ==============================================================

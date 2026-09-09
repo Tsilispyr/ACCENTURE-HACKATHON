@@ -1,0 +1,33 @@
+# Normalise line endings so a clean clone actually runs.
+#
+# This repo is developed on Windows (core.autocrlf=true is common there) but
+# every script runs inside WSL/Linux containers. Without the rules below, a
+# fresh clone checks scripts out with CRLF and they fail immediately with:
+#     bash: /usr/bin/env: 'bash\r': No such file or directory
+# which is a confusing way to discover a line-ending problem. Same class of
+# breakage for YAML consumed by Docker Compose and for .env files read by
+# containers.
+
+# Adopted from HACKATHON_1/.gitattributes (maria/containerization): pinning
+# eol=lf on the catch-all is more deterministic than bare `text=auto`, which
+# lets each platform decide. Everything here is consumed by Linux containers,
+# so LF is the right default and the exceptions below are the exceptions.
+* text=auto eol=lf
+
+# Must be LF regardless of platform -- these are executed by Linux.
+*.sh            text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.env           text eol=lf
+.env.example    text eol=lf
+Dockerfile      text eol=lf
+.dockerignore   text eol=lf
+*.py            text eol=lf
+
+# PowerShell is Windows-only here; CRLF is the native convention for it.
+*.ps1           text eol=crlf
+
+# Binary -- never touch.
+*.pdf           binary
+*.png           binary
+*.jpg           binary

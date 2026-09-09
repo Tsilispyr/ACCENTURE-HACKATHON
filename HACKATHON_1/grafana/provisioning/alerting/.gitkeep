@@ -1,0 +1,3 @@
+# Grafana scans every provisioning subdirectory on start and logs an
+# ERROR for each one that is missing. Nothing here needs provisioning, but
+# an empty directory is cheaper than an alarming log line that means nothing.

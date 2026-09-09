@@ -23,6 +23,8 @@ dependencies = [
     "requests>=2.34.2",
     # Report storage
     "minio>=7.2.20",
+    "langgraph-checkpoint-postgres>=3.1.2",
+    "psycopg[binary,pool]>=3.3.5",
 ]
 
 [project.scripts]
@@ -43,3 +45,10 @@ dev = [
 # Lets "async def test_..." functions run without a @pytest.mark.asyncio
 # decorator on every one -- this project's nodes/tests are genuinely async.
 asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "workflow: real compiled graph with mocked external dependencies",
+    "api_contract: agreed five-field incident request and API-to-workflow boundary",
+    "acceptance: real graph and real tools, scripted LLM only",
+    "live: requires the deployed stack; skipped unless it is reachable",
+]

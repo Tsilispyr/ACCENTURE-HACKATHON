@@ -1,0 +1,46 @@
+# Resource profile: FULL -- for a machine at or above MEM_THRESHOLD_GB total RAM.
+# Applied as an override layer by scripts/deploy.sh.
+#
+# Ceilings are roughly 2-3x measured usage: a runaway container is still
+# contained, but nothing is starved and no service competes for headroom.
+# Grafana IS started on this profile.
+#
+# start_period is relaxed here too, though less than on lean. Langfuse v4 does
+# ClickHouse compatibility resolution, dashboard upserts and model-price
+# seeding before binding a port, so the base file's 10s grace period reports a
+# normally-booting service as "unhealthy" even on fast hardware.
+
+services:
+  postgres:
+    mem_limit: 1g
+
+  clickhouse:
+    mem_limit: 3g
+    healthcheck:
+      start_period: 30s
+
+  redis:
+    mem_limit: 512m
+
+  minio:
+    mem_limit: 1g
+
+  langfuse-worker:
+    mem_limit: 1536m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=1024"
+    healthcheck:
+      start_period: 60s
+
+  langfuse-web:
+    mem_limit: 2g
+    environment:
+      # Set explicitly for the same reason as the lean profile: V8 derives its
+      # heap ceiling from the cgroup limit, so a container limit silently
+      # becomes a heap limit. See compose/infra.lean.yaml for the full story.
+      NODE_OPTIONS: "--max-old-space-size=1536"
+    healthcheck:
+      start_period: 60s
+
+  grafana:
+    mem_limit: 768m

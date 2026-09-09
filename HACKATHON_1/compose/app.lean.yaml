@@ -1,0 +1,4 @@
+# App-side ceiling, lean profile. Measured usage: 168Mi.
+services:
+  hackathon1-app:
+    mem_limit: 512m
