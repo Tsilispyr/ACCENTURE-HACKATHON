@@ -20,6 +20,9 @@ Dockerfile      text eol=lf
 .dockerignore   text eol=lf
 *.py            text eol=lf
 
+# PowerShell is Windows-only here; CRLF is the native convention for it.
+*.ps1           text eol=crlf
+
 # Binary -- never touch.
 *.pdf           binary
 *.png           binary

@@ -18,6 +18,17 @@
 # Usable two ways:
 #   bash scripts/preflight.sh          # standalone: prints the verdict
 #   source scripts/preflight.sh        # sets DEPLOY_PROFILE for deploy.sh
+
+# POSIX-only guard: must parse under sh/dash, since that is the case it catches.
+# No `exec` here -- deploy.sh *sources* this file, and exec would replace the
+# calling shell. A sourced run is already under bash, so this only ever fires
+# for a direct `sh scripts/preflight.sh`.
+if [ -z "${BASH_VERSION:-}" ]; then
+    echo "ERROR: run this with bash, not sh -- it uses pipefail, arrays and read -s." >&2
+    echo "       bash scripts/preflight.sh" >&2
+    exit 1
+fi
+
 set -euo pipefail
 
 PREFLIGHT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

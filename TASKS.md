@@ -11,6 +11,11 @@ compare and take from selectively, never merged into by us).
 
 Legend: `[ ]` todo · `[~]` in progress · `[x]` done & verified · `[!]` blocked
 
+> **Running it on Windows:** use `.\scripts\deploy.ps1` from PowerShell or cmd, or
+> `bash scripts/deploy.sh` from WSL. Do *not* run the bash script from PowerShell — Docker lives
+> in WSL and is not on the Windows PATH, and a `sh` invocation fails with a misleading `pipefail`
+> error.
+
 **Start here:** [`HACKATHON_1/architecture/infrastructure.md`](HACKATHON_1/architecture/infrastructure.md)
 — what every file does, how to use `scripts/` and `compose/`, and the traps.
 
@@ -18,7 +23,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done & verified · `[!]` blocke
 
 | Document | Where | Role |
 |---|---|---|
-| **`TASKS.md`** (this file) | in the repo | **Canonical.** Live status, shared with the team, versioned with the code. Update this one. |
+| **`TASKS.md`** (this file) | in the repo | **Canonical.** Live status, shared with the team, versioned with the code. Update this one. nn|
 | `architecture/infrastructure.md` | in the repo | Reference manual — what each file does, how to run things. |
 | `~/.claude/plans/this-project-folder-...md` | **local only, not in the repo** | The original approved design and its reasoning. A frozen snapshot; your coworker cannot see it. |
 

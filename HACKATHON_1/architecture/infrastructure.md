@@ -9,11 +9,26 @@ documented separately by roles 2-4.
 
 ## 1. Quick start
 
+**From WSL:**
+
 ```bash
-# from WSL -- docker is not on the Git-Bash PATH
 cd /mnt/c/projects/ACCENTURE-HACKATHON-main/HACKATHON_1
 bash scripts/deploy.sh
 ```
+
+**From PowerShell or cmd:**
+
+```powershell
+cd C:\projects\ACCENTURE-HACKATHON-main\HACKATHON_1
+.\scripts\deploy.ps1
+```
+
+Do **not** run `bash scripts/deploy.sh` from PowerShell or cmd. Docker for this project lives
+inside WSL and is not on the Windows PATH, so a Windows-side bash (Git Bash / MSYS) cannot reach
+it — and if the script gets picked up by `sh` rather than `bash` you get a misleading error about
+`pipefail`, which is a bash-only option. `deploy.ps1` is the supported entry point: it translates
+this folder to its WSL path and runs the same `deploy.sh` in there, so there is one implementation
+rather than two that drift.
 
 That single command does everything: creates `.env` if missing, prompts once for your Azure
 credentials, measures the machine, picks a resource profile, brings the infra stack up in
@@ -116,6 +131,7 @@ pip install -e .
 |---|---|
 | `scripts/deploy.sh` | The entry point. See section 4. |
 | `scripts/preflight.sh` | Credentials + machine capability. See section 4. |
+| `scripts/deploy.ps1` | PowerShell/cmd entry point. Delegates into WSL — see section 4. |
 | `logs/run-NNNN-<timestamp>.log` | One numbered log per deploy run, never overwritten. Gitignored. |
 
 ### Application (`src/hackathon1/`)
@@ -180,6 +196,28 @@ A couple of restarts during boot are normal (`langfuse-web` legitimately exits 0
 its init), which is why the loop threshold is a *rise of 3*, not any restart at all. The timeout
 is profile-aware — **420s on lean, 180s on full** — because Langfuse v4 needs roughly two minutes
 to boot on constrained hardware.
+
+### `scripts/deploy.ps1` — the PowerShell entry point
+
+A thin wrapper, deliberately: all the logic stays in `deploy.sh`. It checks WSL is present,
+translates this folder to its `/mnt/...` path, checks Docker is reachable *inside* WSL, and then
+runs `bash scripts/deploy.sh` there.
+
+```powershell
+.\scripts\deploy.ps1              # normal use
+.\scripts\deploy.ps1 -Full        # force the full profile (= MEM_THRESHOLD_GB 1)
+.\scripts\deploy.ps1 -DryRun      # validate and print the command, start nothing
+.\scripts\deploy.ps1 -MemThresholdGb 16
+```
+
+Two details that are easy to get wrong if you rewrite this:
+
+- It calls `wsl.exe -e bash -lc <command>` directly rather than wrapping it further, so **stdin
+  stays attached to your console**. `preflight.sh` tests `[ -t 0 ]` to decide whether it may prompt
+  for credentials; break that and a fresh checkout fails with "missing values" instead of asking.
+- It hands `wslpath` **forward slashes**. `wsl.exe` consumes backslashes in its arguments as
+  escapes, so passing a native Windows path turns `C:\projects\...` into `C:projects...` and
+  `wslpath` rejects it.
 
 ### `scripts/preflight.sh` — credentials and capability
 
@@ -405,4 +443,13 @@ running at all. If traces are missing, check the container's environment first:
 docker inspect hackathon1-app --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -E 'LANGFUSE|MINIO'
 ```
 
-**`docker` is not on the Git-Bash PATH.** Deploys run from WSL.
+**`docker` is not on the Git-Bash PATH.** Deploys run from WSL, or from PowerShell via
+`.\scripts\deploy.ps1`.
+
+**A `pipefail` error means the script was run by `sh`, not `bash`.** `set -o pipefail` is bash-only,
+so `sh scripts/deploy.sh` dies on the first executable line with an error naming pipefail and
+nothing about the real cause. Both scripts now carry a POSIX-only prologue that re-execs under bash
+(`deploy.sh`) or exits with a clear message (`preflight.sh`, which is *sourced* and so must never
+`exec`). Note the prologue has to parse under `dash`, which is why it uses no arrays or `[[ ]]`
+before the guard — and why `dash -n scripts/deploy.sh` still reports a syntax error: `-n` forces a
+full parse of the bash-only code further down, while a real run never reaches it.

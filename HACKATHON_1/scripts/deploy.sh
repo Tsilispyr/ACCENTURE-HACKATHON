@@ -5,7 +5,50 @@
 # live -- Compose's own depends_on/health-condition mechanism only works
 # within one compose invocation, not across two independently-managed files
 # (./docker-compose-langfuse.yaml and ./docker-compose.yml).
+
+# ---------------------------------------------------------------------------
+# POSIX-only prologue. Everything down to the `set` line must parse under
+# dash/sh as well as bash, because this block exists precisely for the case
+# where the script was NOT started by bash.
+#
+# `set -o pipefail` is a bash feature. Run this file with sh/dash -- which is
+# what happens with `sh scripts/deploy.sh`, and on some Windows shells -- and
+# the very first executable line dies with an "illegal option" error naming
+# pipefail. That error says nothing about the real problem, so re-exec under a
+# real bash instead of letting it happen.
+# ---------------------------------------------------------------------------
+if [ -z "${BASH_VERSION:-}" ]; then
+    if command -v bash >/dev/null 2>&1; then
+        exec bash "$0" "$@"
+    fi
+    echo "ERROR: this script needs bash (it uses pipefail and associative arrays)." >&2
+    echo "       No bash found on PATH." >&2
+    echo "       On Windows, run it from WSL, or use PowerShell:  .\scripts\deploy.ps1" >&2
+    exit 1
+fi
+
 set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Docker lives in WSL on this project, and is NOT on the PATH of Git Bash /
+# MSYS. Running here would fail later with a bare "docker: command not found"
+# somewhere in the middle of a deploy, so say the useful thing up front.
+# ---------------------------------------------------------------------------
+if ! command -v docker >/dev/null 2>&1; then
+    echo "ERROR: 'docker' is not on PATH in this shell." >&2
+    case "${OSTYPE:-}" in
+        msys*|cygwin*|win32*)
+            echo "       You appear to be in Git Bash / MSYS, where Docker Desktop's CLI is" >&2
+            echo "       usually not exposed. Use one of:" >&2
+            echo "         WSL         : cd /mnt/c/... && bash scripts/deploy.sh" >&2
+            echo "         PowerShell  : .\scripts\deploy.ps1   (runs it inside WSL for you)" >&2
+            ;;
+        *)
+            echo "       Start Docker, or install the Docker CLI, then retry." >&2
+            ;;
+    esac
+    exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
