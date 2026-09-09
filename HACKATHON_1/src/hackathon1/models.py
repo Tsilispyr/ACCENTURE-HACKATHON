@@ -167,10 +167,25 @@ class MetricReading(BaseModel):
 
 
 class ServiceMetrics(BaseModel):
+    """A metrics read, successful or not.
+
+    ``status`` exists so an unreachable collector is reportable rather than
+    only raisable. An empty ``readings`` list is otherwise ambiguous in the
+    worst possible direction -- "the service has no breaching metrics" and
+    "nobody could measure the service" would look identical, and a diagnosis
+    would read a dead collector as a healthy service. With ``status`` on the
+    payload the caller can tell the two apart and decide whether to read again.
+    """
+
     service: str
     window_minutes: int
     collected_at: str
     readings: list[MetricReading]
+    status: Literal["ok", "unavailable"] = "ok"
+    error: str | None = Field(
+        default=None,
+        description="Why the read failed; set only when status is 'unavailable'",
+    )
 
     def breached(self) -> list[MetricReading]:
         return [r for r in self.readings if r.breached]

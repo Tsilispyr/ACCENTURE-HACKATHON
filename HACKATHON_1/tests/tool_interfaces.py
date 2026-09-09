@@ -52,8 +52,11 @@ class ToolInterfaces:
         carries current value, baseline, deviation and a `breached` flag, so a
         metric that merely looks alarming can be told from a real anomaly.
 
-        Raises `ToolUnavailableError` when the metrics backend is down -- the
-        deliberate failure path for the replanning requirement.
+        When the metrics backend is down the call does not raise: it returns
+        the same mapping with `status: "unavailable"`, an `error` string and an
+        empty `readings` list. That is the deliberate failure path -- the
+        caller decides whether to read again, and an empty `readings` under
+        that status must never be read as "no breaches".
         """
         raise NotImplementedError("spec only -- mock this, do not call it")
 

@@ -11,7 +11,6 @@ returning plausible data matters much less than those three being impossible to
 argue with.
 """
 
-from contextlib import suppress
 
 import pytest
 
@@ -30,7 +29,7 @@ from hackathon1.tools import (
     search_knowledge_base,
     search_logs,
 )
-from hackathon1.world import ToolUnavailableError, reset_world
+from hackathon1.world import reset_world
 
 CRITICAL = "payment-service"      # absent from LOW_IMPACT_SERVICES
 LOW_IMPACT = "order-service"      # present in LOW_IMPACT_SERVICES
@@ -135,25 +134,32 @@ def test_search_logs_level_filter_narrows_results():
     assert len(everything) >= len(warn)
 
 
-def test_get_service_metrics_is_flaky_once_then_succeeds_on_retry():
+def test_get_service_metrics_reports_unavailable_then_succeeds_on_retry():
     """The metrics backend fails the FIRST call for this service, by design.
 
-    This is the workflow's built-in tool-failure path: something that fails
-    once and recovers, so a retry is the correct response rather than treating
-    the metrics as permanently unobtainable.
+    The tool reports that outage instead of raising and instead of retrying
+    itself: the caller is told the collector was unreachable and is left to
+    decide whether to read again. The second read succeeds, which is what makes
+    a retry the right decision rather than a guess.
     """
-    with pytest.raises(ToolUnavailableError):
-        get_service_metrics.invoke({"service": CRITICAL})
-    assert get_service_metrics.invoke({"service": CRITICAL})["service"] == CRITICAL
+    down = get_service_metrics.invoke({"service": CRITICAL})
+    assert down["status"] == "unavailable"
+    assert down["error"], "an unavailable read must say what went wrong"
+    assert down["readings"] == [], "nothing was measured, so nothing may be reported"
+
+    recovered = get_service_metrics.invoke({"service": CRITICAL})
+    assert recovered["status"] == "ok"
+    assert recovered["service"] == CRITICAL
+    assert recovered["error"] is None
+    assert recovered["readings"]
 
 
 def test_get_service_metrics_returns_a_mapping_with_baselines():
     """A mapping, not a list -- the shape the test-suite placeholder got wrong."""
-    # The first call for this service always raises (see the test above), and the
-    # autouse fixture resets that flake for every test, so it must be absorbed
-    # here rather than assumed spent.
-    with suppress(ToolUnavailableError):
-        get_service_metrics.invoke({"service": CRITICAL})
+    # The first call for this service always reports the collector as down (see
+    # the test above), and the autouse fixture resets that flake for every
+    # test, so it must be spent here rather than assumed spent.
+    get_service_metrics.invoke({"service": CRITICAL})
     metrics = get_service_metrics.invoke({"service": CRITICAL})
     assert isinstance(metrics, dict)
     assert metrics["service"] == CRITICAL

@@ -365,9 +365,16 @@ _active_world: ContextVar[World | None] = ContextVar("active_world", default=Non
 def active_world() -> World:
     """The World the current incident run is bound to.
 
-    Falls back to a lazily created process-wide world so a tool called
-    outside ``incident_world()`` -- from a notebook, a smoke test, or the
-    /chat agent -- still works.
+    Falls back to creating one so a tool called outside ``incident_world()``
+    -- from a notebook or a smoke test -- still works. That fallback is *not*
+    process-wide, and reading it as such is the trap: ``ContextVar.set`` writes
+    to the current context, an asyncio task runs on a copy of its parent's, so
+    a world created inside a task dies with it. Under a server, an unbound
+    world is therefore rebuilt for every request and every parallel branch --
+    which silently splits one run across several unrelated estates and makes
+    the deliberate first-call metrics failure repeat forever instead of
+    recovering on retry. Anything that runs a whole workflow binds a world
+    explicitly with ``incident_world()``.
     """
     world = _active_world.get()
     if world is None:

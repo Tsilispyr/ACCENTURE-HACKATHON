@@ -4,6 +4,7 @@ day21/src/day21/test_agent.py exercises the FastAPI layer itself, only the
 underlying tool function. the incident app is monkeypatched so no LLM call
 happens here either."""
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi.testclient import TestClient
@@ -11,6 +12,8 @@ from langchain_core.messages import AIMessage
 
 from hackathon1 import service
 from hackathon1.service import app
+from hackathon1.tools import get_service_metrics
+from hackathon1.world import active_world
 
 client = TestClient(app)
 
@@ -56,6 +59,56 @@ def test_create_incident_valid_payload():
     assert body["incident_id"] == "INC-9001"
     assert body["service"] == "payment-service"
     assert body["approval_status"] == "not_required"
+
+
+def test_create_incident_binds_one_world_that_reaches_parallel_branches():
+    """The endpoint binds the estate; child tasks must inherit that same one.
+
+    The world lives in a ContextVar, and an asyncio task runs on a *copy* of
+    its parent's context. So a world created lazily inside a task -- which is
+    what happens when nothing binds one -- is invisible to every sibling task
+    and gone when the request ends. Under the investigation fan-out that split
+    one run across several unrelated estates, and it made the deliberate
+    first-call metrics failure unrecoverable: each retry landed in a fresh
+    world whose call counter had reset, so it failed again, forever.
+
+    This asserts the fix at the endpoint, in the shape the bug had: several
+    concurrent branches see one World, and the flake fires once and then
+    recovers.
+    """
+    seen: dict[str, object] = {}
+
+    async def run_with_branches(*_args, **_kwargs):
+        async def branch():
+            return id(active_world()), get_service_metrics.invoke(
+                {"service": "payment-service"}
+            )["status"]
+
+        results = await asyncio.gather(*(asyncio.create_task(branch()) for _ in range(3)))
+        seen["worlds"] = {world for world, _ in results}
+        seen["statuses"] = [status for _, status in results]
+        return {"incident_id": "INC-9100", "investigation_results": []}
+
+    mock_graph = MagicMock(spec=["ainvoke"])
+    mock_graph.ainvoke = AsyncMock(side_effect=run_with_branches)
+    service.get_incident_app.cache_clear()
+    with patch("hackathon1.service.get_incident_app", return_value=mock_graph):
+        response = client.post(
+            "/incidents",
+            json={
+                "Incident ID": "INC-9100",
+                "Service": "payment-service",
+                "Severity": "HIGH",
+                "Description": "Checkout latency",
+                "Error": "Timeout waiting for a connection.",
+            },
+        )
+
+    assert response.status_code == 200
+    assert len(seen["worlds"]) == 1, "parallel branches must share the request's world"
+    # The scenario's collector rejects the first read and answers the next.
+    assert seen["statuses"].count("unavailable") == 1
+    assert seen["statuses"].count("ok") == 2
 
 
 # Retired as instructed: this checked one incomplete payload, and

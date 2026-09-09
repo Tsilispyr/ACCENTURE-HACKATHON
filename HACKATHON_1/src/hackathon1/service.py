@@ -43,6 +43,7 @@ from hackathon1.tools import (
     search_logs,
 )
 from hackathon1.tracing import get_callback_handlers
+from hackathon1.world import incident_world
 
 logger = logging.getLogger(__name__)
 
@@ -240,7 +241,13 @@ async def health():
 @app.get("/chat")
 async def chat(message: str):
     try:
-        response = await get_chat_agent().ainvoke({"messages": [("user", message)]})
+        # One world for the whole turn, so the agent's own retry of a tool that
+        # reported itself unavailable actually reaches the same backend it just
+        # failed against. Without this the lazy fallback in active_world() hands
+        # each request task a brand-new estate and a transient failure becomes
+        # a permanent one.
+        with incident_world():
+            response = await get_chat_agent().ainvoke({"messages": [("user", message)]})
         return {"response": response["messages"][-1].content, "status": "success"}
     except Exception as e:
         return {
@@ -273,7 +280,17 @@ async def create_incident(incident: IncidentRequest):
     config = _thread(incident.incident_id)
     config["callbacks"] = get_callback_handlers()
 
-    result = await get_incident_app().ainvoke(initial_state, config=config)
+    # Bind the estate here, in the request task, rather than leaving tools to
+    # the lazy fallback in active_world(). Two things depend on it. A
+    # ContextVar set inside a task dies with that task, so an unbound world is
+    # rebuilt per request and per parallel branch -- the investigation fan-out
+    # would run against several unrelated estates, and a tool that fails once
+    # by design would fail on every retry that crossed a task boundary. Setting
+    # it before the run means every child task inherits this same World, while
+    # each incident still starts from the scenario's own state and cannot see
+    # another request's remediations.
+    with incident_world():
+        result = await get_incident_app().ainvoke(initial_state, config=config)
     return _incident_response(incident.incident_id, result)
 
 
@@ -328,9 +345,15 @@ async def approve_incident(incident_id: str, decision: ApprovalDecision):
         )
 
     config["callbacks"] = get_callback_handlers()
-    result = await get_incident_app().ainvoke(
-        Command(resume={"approved": decision.approved, "note": decision.note}), config=config
-    )
+    # The resumed half of the run needs an estate bound for the same reason the
+    # first half did. It is a fresh one: the world is a simulation rebuilt from
+    # the scenario, while the run's actual state comes back from the
+    # checkpointer. Nothing before the approval gate mutates the estate -- only
+    # the remediation does, and that happens after this point.
+    with incident_world():
+        result = await get_incident_app().ainvoke(
+            Command(resume={"approved": decision.approved, "note": decision.note}), config=config
+        )
     return _incident_response(incident_id, result)
 
 

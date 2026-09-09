@@ -39,6 +39,7 @@ the model: what the tool does, when to reach for it, what comes back.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from langchain_core.tools import tool
@@ -53,6 +54,8 @@ from hackathon1.models import (
     ServiceMetrics,
 )
 from hackathon1.world import ToolUnavailableError, active_world, now_iso
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Tier 1 -- investigation
@@ -85,13 +88,37 @@ def get_service_metrics(service: str, window_minutes: int = 30) -> dict[str, Any
     looks alarming. Use it to confirm or rule out a hypothesis -- a normal CPU
     reading during a latency incident is evidence, not a dead end.
 
-    Raises an error if the metrics backend is unavailable; retry once before
-    treating the metrics as unobtainable.
+    The metrics collector is sometimes momentarily busy. When it is, this
+    returns `status: "unavailable"` with an `error` and an empty `readings`
+    list instead of failing the call -- an outage is a fact about the estate,
+    so it is reported to you rather than hidden. Call the tool a second time
+    when you see it: the collector usually answers the next read. Treat
+    metrics as unobtainable only after that retry, and never read empty
+    `readings` under `status: "unavailable"` as "no metric breaches" -- nothing
+    was measured.
     """
     world = active_world()
-    readings = world.metrics(service)  # may raise ToolUnavailableError (FR15)
+    try:
+        readings = world.metrics(service)
+    except ToolUnavailableError as exc:
+        # FR15. The tool does not retry on the agent's behalf: retrying is a
+        # decision about the incident (is a metrics read still worth the time
+        # at this point?), and hiding the outage inside the tool would take
+        # that decision away from the workflow and erase the failure from the
+        # trace. Reporting it keeps the choice, and the evidence, upstream.
+        logger.warning("metrics backend unavailable for %s: %s", service, exc)
+        return ServiceMetrics(
+            service=service,
+            window_minutes=window_minutes,
+            collected_at=now_iso(),
+            readings=[],
+            status="unavailable",
+            error=f"{type(exc).__name__}: {exc}",
+        ).model_dump()
+
     metrics = ServiceMetrics(
         service=service,
+        status="ok",
         window_minutes=window_minutes,
         collected_at=now_iso(),
         readings=readings,
