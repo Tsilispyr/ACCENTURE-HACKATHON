@@ -1,0 +1,15 @@
+# Loads every dashboard JSON from the mounted folder on start, and rescans
+# periodically so editing a file is enough -- no clicking through the UI.
+apiVersion: 1
+
+providers:
+  - name: hackathon1
+    orgId: 1
+    folder: "Incident Agent"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

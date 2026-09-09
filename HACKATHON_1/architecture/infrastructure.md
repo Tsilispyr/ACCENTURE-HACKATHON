@@ -442,6 +442,51 @@ and would have been OOM-killed on first boot.
 
 ---
 
+## 5a. Grafana dashboards
+
+Provisioned as code in `grafana/`, so a fresh volume comes up already configured:
+
+```
+grafana/
+├── provisioning/datasources/clickhouse.yaml   the datasource
+├── provisioning/dashboards/provider.yaml      loads the folder below
+└── dashboards/incident-agent.json             the dashboard itself
+```
+
+Open http://localhost:3001 (`gtgh` / `grafanapassQWqw!@12`) -> **Incident Agent -> Incident Agent -
+Observability**. Panels: incidents traced, spans, LLM calls, tool executions, errors, cost, span
+latency p50/p95 by type, incidents over time, token consumption split input/output, usage by model,
+workflow steps by time spent, and a table of errors and failed paths.
+
+**Two things about this that are easy to get wrong:**
+
+- **The datasource is ClickHouse, not Postgres.** On Langfuse v4 the traces live in ClickHouse. A
+  Postgres datasource connects happily and returns nothing, which is a slow way to find out. This
+  deployment also runs in `events_only` mode, so the legacy `traces` / `observations` tables stay
+  permanently empty -- every query targets `events_core`.
+- **The plugin downloads at container start.** `GF_INSTALL_PLUGINS=grafana-clickhouse-datasource`
+  needs internet on the *first* run on a machine. Without it Grafana starts, but the datasource
+  cannot load and every panel reports "datasource not found".
+
+**Grafana does not start on the `lean` profile.** It is a bonus service and the lean profile exists
+to free its ~256 MiB. On a machine that selects `full` it starts automatically. To see it on lean:
+
+```bash
+docker start grafana-app     # note: the next `deploy.sh` on lean stops it again, by design
+```
+
+Editing a panel: change `grafana/dashboards/incident-agent.json` and Grafana rescans every 30s --
+no restart, no clicking. Validate a query against ClickHouse first rather than through the UI:
+
+```bash
+docker exec langfuse-clickhouse clickhouse-client --user clickhouse   --password 'clickpassQWqw!@12' --query "<your SQL, with the Grafana macros substituted>"
+```
+
+`$__timeFilter(start_time)` becomes `start_time >= now() - INTERVAL 24 HOUR`, and
+`$__timeInterval(start_time)` becomes `toStartOfInterval(start_time, INTERVAL 1 MINUTE)`.
+
+---
+
 ## 6. Cookbook
 
 ```bash

@@ -1,0 +1,28 @@
+# Grafana datasource, provisioned as code so a fresh volume comes up configured.
+#
+# Points at CLICKHOUSE, not Postgres. On Langfuse v4 the trace data lives in
+# ClickHouse; a Postgres datasource connects happily and returns nothing, which
+# is a slow way to discover the problem. This deployment also runs in
+# "events_only" mode, so the legacy `traces` / `observations` tables stay empty
+# and everything is in `events_core` / `events_full` -- that is what the
+# dashboard queries.
+apiVersion: 1
+
+datasources:
+  - name: Langfuse ClickHouse
+    uid: langfuse-clickhouse
+    type: grafana-clickhouse-datasource
+    access: proxy
+    isDefault: true
+    editable: true
+    jsonData:
+      host: clickhouse
+      # Native protocol on 9000, reachable inside the langfuse-infra network.
+      # The host only publishes 8123/9000 on 127.0.0.1, so this is the path in.
+      port: 9000
+      protocol: native
+      secure: false
+      username: clickhouse
+      defaultDatabase: default
+    secureJsonData:
+      password: "clickpassQWqw!@12"

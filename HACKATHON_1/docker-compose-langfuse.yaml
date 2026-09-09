@@ -397,8 +397,19 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: "grafanapassQWqw!@12"
       GF_SERVER_HTTP_PORT: "3001"
 
+      # Downloaded at container start, so this needs internet on first run.
+      # Langfuse v4 keeps traces in ClickHouse, so without this plugin the
+      # provisioned datasource cannot load and every panel reports
+      # "datasource not found".
+      GF_INSTALL_PLUGINS: "grafana-clickhouse-datasource"
+
     volumes:
       - grafana_data:/var/lib/grafana
+      # Provisioned as code: a fresh grafana_data volume comes up already
+      # holding the datasource and the dashboard, with nothing to click.
+      # Read-only -- Grafana reads these on start and must never write back.
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
 
 
 # ==============================================================

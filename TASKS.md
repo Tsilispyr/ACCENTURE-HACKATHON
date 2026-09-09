@@ -111,7 +111,7 @@ workflow. Full detail: `architecture/infrastructure.md` section 5.
 | | Workstream | Done | Notes |
 |---|---|---|---|
 | **A** | Runtime & API | 0 / 7 | not started |
-| **B** | Infra & Delivery | 3.5 / 8 | B1, B2, B3 done; B8 docs part-written |
+| **B** | Infra & Delivery | 7 / 8 | B1-B8 done except B4/B5 image pinning |
 | | | | *plus: LF line endings, pip exports, infrastructure guide* |
 | **C** | Integration | 0 / 1 | waits on roles 2–4 |
 
@@ -158,9 +158,19 @@ workflow. Full detail: `architecture/infrastructure.md` section 5.
 - [ ] **B5 · Compose hardening** — pin `grafana-enterprise:latest` and the untagged MinIO image;
       repoint app healthcheck to `/health` once A3 lands; commented-out `frontend:` slot.
       (Memory limits already live in B3's profile overrides, not inline.)
-- [ ] **B6 · Grafana dashboard (§7 bonus)** — provisioning-as-code, datasource → **ClickHouse**.
-      ⚠ **Query `events_core` / `events_full`, not `traces`** (see Verified below).
-      Needs `GF_INSTALL_PLUGINS=grafana-clickhouse-datasource`. Do last; skipped on `lean`.
+- [x] **B6 · Grafana dashboard (§7 bonus)** — provisioned as code in `grafana/`: ClickHouse
+      datasource + a 12-panel dashboard (incidents, spans, LLM calls, tool executions, errors, cost,
+      latency p50/p95, tokens by input/output, usage by model, slowest workflow steps, error table).
+      Every query was validated against real ClickHouse **before** wiring it in — 12/12 pass — and
+      then verified end-to-end through Grafana's own API: datasource health OK, plugin v4.21.2,
+      dashboard loaded, live query returned 7 incidents / 180 spans / 32 LLM calls / 1 error.
+      ⚠ Does **not** start on `lean` (bonus service, frees ~256 MiB). Starts automatically on `full`,
+      or `docker start grafana-app` by hand.
+      ⚠ The plugin downloads at container start, so first run on a machine needs internet.
+- [x] **Frontend** — dependency-free static page at `/ui`: the five-field form, evidence, root
+      cause, remediation + risk, execution/verification, final report, and Approve/Reject buttons
+      wired to the HITL endpoint. No CDN (the container has no guaranteed internet); a test asserts
+      no external asset references. `/` still returns JSON for the healthcheck.
 - [ ] **B7 · `scripts/verify.sh`** — the demo script. Domain-agnostic: payload from
       `scripts/scenarios/*.json`, expected field names in a list at the top.
       ⚠ Cannot use `/api/public/traces` (404 in v4 events_only) — assert via ClickHouse.

@@ -1,0 +1,209 @@
+{
+  "uid": "incident-agent",
+  "title": "Incident Agent - Observability",
+  "tags": ["hackathon1", "langfuse"],
+  "timezone": "browser",
+  "editable": true,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    { "type": "row", "title": "Volume", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 } },
+    {
+      "type": "stat",
+      "title": "Incidents traced",
+      "description": "Distinct Langfuse traces. One incident run produces one trace.",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 1,
+          "rawSql": "SELECT uniqExact(trace_id) AS value FROM default.events_core WHERE $__timeFilter(start_time)"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Spans",
+      "description": "Every observed step: workflow nodes, LLM calls and tool executions.",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 1,
+          "rawSql": "SELECT count() AS value FROM default.events_core WHERE $__timeFilter(start_time)"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "LLM calls",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 1,
+          "rawSql": "SELECT countIf(type = 'GENERATION') AS value FROM default.events_core WHERE $__timeFilter(start_time)"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Tool executions",
+      "description": "Spans of type TOOL - the simulated estate being read or changed.",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 1,
+          "rawSql": "SELECT countIf(type = 'TOOL') AS value FROM default.events_core WHERE $__timeFilter(start_time)"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Errors",
+      "description": "Spans recorded at ERROR level - failed tool calls and failed paths.",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 1,
+          "rawSql": "SELECT countIf(level = 'ERROR') AS value FROM default.events_core WHERE $__timeFilter(start_time)"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Cost (USD)",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "fieldConfig": { "defaults": { "decimals": 5, "unit": "currencyUSD" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 1,
+          "rawSql": "SELECT toFloat64(sum(total_cost)) AS value FROM default.events_core WHERE $__timeFilter(start_time)"
+        }
+      ]
+    },
+
+    { "type": "row", "title": "Latency", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 } },
+    {
+      "type": "timeseries",
+      "title": "Span latency by type (p50 / p95)",
+      "description": "end_time is nullable while a span is open, so unfinished spans are excluded rather than counted as zero-duration.",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "custom": { "lineWidth": 2, "fillOpacity": 8 } },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 0,
+          "rawSql": "SELECT $__timeInterval(start_time) AS time, type, quantile(0.5)(dateDiff('millisecond', start_time, end_time)) AS p50, quantile(0.95)(dateDiff('millisecond', start_time, end_time)) AS p95 FROM default.events_core WHERE $__timeFilter(start_time) AND end_time IS NOT NULL GROUP BY time, type ORDER BY time"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Incidents started",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 60 } },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 0,
+          "rawSql": "SELECT $__timeInterval(start_time) AS time, uniqExact(trace_id) AS incidents FROM default.events_core WHERE $__timeFilter(start_time) GROUP BY time ORDER BY time"
+        }
+      ]
+    },
+
+    { "type": "row", "title": "Tokens and models", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 } },
+    {
+      "type": "timeseries",
+      "title": "Token consumption",
+      "description": "usage_details is a map; input and output are summed separately so a prompt-size problem is distinguishable from a verbose-answer one.",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 0,
+          "rawSql": "SELECT $__timeInterval(start_time) AS time, sum(usage_details['input']) AS input_tokens, sum(usage_details['output']) AS output_tokens FROM default.events_core WHERE $__timeFilter(start_time) AND type = 'GENERATION' GROUP BY time ORDER BY time"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Usage by model",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 1,
+          "rawSql": "SELECT provided_model_name AS model, count() AS calls, sum(usage_details['total']) AS tokens, round(toFloat64(sum(total_cost)), 5) AS cost_usd, round(avg(dateDiff('millisecond', start_time, end_time))) AS avg_ms FROM default.events_core WHERE $__timeFilter(start_time) AND type = 'GENERATION' AND provided_model_name != '' GROUP BY model ORDER BY calls DESC"
+        }
+      ]
+    },
+
+    { "type": "row", "title": "Workflow and failures", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 } },
+    {
+      "type": "table",
+      "title": "Workflow steps by time spent",
+      "description": "Which stage of the incident workflow is actually slow.",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 1,
+          "rawSql": "SELECT name AS step, type, count() AS calls, round(avg(dateDiff('millisecond', start_time, end_time))) AS avg_ms, round(max(dateDiff('millisecond', start_time, end_time))) AS max_ms FROM default.events_core WHERE $__timeFilter(start_time) AND end_time IS NOT NULL GROUP BY step, type ORDER BY avg_ms DESC LIMIT 25"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Errors and failed paths",
+      "description": "Empty is the expected state. A failed investigation tool shows up here without the workflow having crashed.",
+      "datasource": { "type": "grafana-clickhouse-datasource", "uid": "langfuse-clickhouse" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "refId": "A",
+          "format": 1,
+          "rawSql": "SELECT start_time AS time, name, type, status_message, trace_id FROM default.events_core WHERE $__timeFilter(start_time) AND level = 'ERROR' ORDER BY start_time DESC LIMIT 50"
+        }
+      ]
+    }
+  ]
+}
