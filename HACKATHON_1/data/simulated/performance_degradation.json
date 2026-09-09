@@ -1,0 +1,107 @@
+[
+  {
+    "Incident ID": "INC-3001",
+    "Service": "order-service",
+    "Severity": "Unknown",
+    "Description": "Response time increased from 300 ms to 4.8 seconds. CPU utilization is normal, but database query latency has increased substantially.",
+    "Error": "Slow database query detected."
+  },
+  {
+    "Incident ID": "INC-3002",
+    "Service": "order-service",
+    "Severity": "HIGH",
+    "Description": "Order lookups became slow after a release. Query traces show a sequential scan over the order table, while application CPU remains near its usual level.",
+    "Error": "Order lookup query exceeded the 4000 ms slow-query threshold."
+  },
+  {
+    "Incident ID": "INC-3003",
+    "Service": "order-service",
+    "Severity": "HIGH",
+    "Description": "Creating orders is slow, but reading existing orders remains fast. Database sessions show writes waiting behind a long-running transaction.",
+    "Error": "Lock wait timeout exceeded while inserting an order."
+  },
+  {
+    "Incident ID": "INC-3004",
+    "Service": "order-service",
+    "Severity": "HIGH",
+    "Description": "Order-history pages became slow immediately after a cache restart. Cache hit rate dropped sharply and database read traffic increased.",
+    "Error": "Cache lookup missed; fallback database query exceeded its latency threshold."
+  },
+  {
+    "Incident ID": "INC-3005",
+    "Service": "order-service",
+    "Severity": "CRITICAL",
+    "Description": "Order requests are timing out across all instances. CPU utilization is above 95%, while database query latency is close to its normal level.",
+    "Error": "Request timed out waiting for an available application worker."
+  },
+  {
+    "Incident ID": "INC-3006",
+    "Service": "order-service",
+    "Severity": "HIGH",
+    "Description": "The service becomes progressively slower during the day and several instances restart. Memory consumption rises until the container limit is reached.",
+    "Error": "Container terminated after exceeding its memory limit."
+  },
+  {
+    "Incident ID": "INC-3007",
+    "Service": "order-service",
+    "Severity": "MEDIUM",
+    "Description": "Orders are accepted promptly but confirmations arrive more than twenty minutes later. The background processing queue has a growing backlog.",
+    "Error": "Order confirmation job exceeded its queue-age threshold."
+  },
+  {
+    "Incident ID": "INC-3008",
+    "Service": "order-service",
+    "Severity": "HIGH",
+    "Description": "Checkout is slow only when an order requires a stock check. Database access is normal, but inventory-service responses often take several seconds.",
+    "Error": "Inventory availability request timed out after 5000 ms."
+  },
+  {
+    "Incident ID": "INC-3009",
+    "Service": "order-service",
+    "Severity": "MEDIUM",
+    "Description": "Only order-history requests covering more than a year are slow. Requests for the last month return within the normal response time.",
+    "Error": "Historical order query exceeded its execution time limit."
+  },
+  {
+    "Incident ID": "INC-3010",
+    "Service": "order-service",
+    "Severity": "HIGH",
+    "Description": "Order requests intermittently fail following a database restart. Some application connections recover while others continue to fail.",
+    "Error": "Database connection closed unexpectedly during query execution."
+  },
+  {
+    "Incident ID": "INC-3011",
+    "Service": "order-service",
+    "Severity": "MEDIUM",
+    "Description": "Response times rise while the scheduled reporting job runs. Database storage latency is elevated, but application CPU utilization remains normal.",
+    "Error": "Database read operation exceeded the storage latency threshold."
+  },
+  {
+    "Incident ID": "INC-3012",
+    "Service": "order-service",
+    "Severity": "HIGH",
+    "Description": "Order placement fails only from one region. Affected instances cannot resolve the internal database hostname, while the other region is healthy.",
+    "Error": "Temporary failure in name resolution for the order database."
+  },
+  {
+    "Incident ID": "INC-3013",
+    "Service": "order-service",
+    "Severity": "LOW",
+    "Description": "One customer reports a slow order page on a mobile connection. Server-side request latency remains normal and the issue has not been reproduced.",
+    "Error": "No server-side error recorded."
+  },
+  {
+    "Incident ID": "INC-3014",
+    "Service": "order-service",
+    "Severity": "Unknown",
+    "Description": "Support reports that the order dashboard feels slower than usual. No timestamps, affected operations, or measurements have been provided yet.",
+    "Error": "No error message reported."
+  },
+  {
+    "Incident ID": "INC-3015",
+    "Service": "order-service",
+    "Severity": "HIGH",
+    "Description": "Order updates return errors after a schema deployment. Read-only requests still work, and the new application instances expect a database column that is absent.",
+    "Error": "Database query failed: requested order column does not exist."
+  }
+]

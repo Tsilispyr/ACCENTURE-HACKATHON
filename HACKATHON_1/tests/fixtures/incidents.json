@@ -1,0 +1,21 @@
+{
+  "simple": {
+    "ticket_id": "TEST-SIMPLE",
+    "ticket_text": "I was charged twice for my monthly subscription.",
+    "classification": {"category": "billing", "complexity": "simple"},
+    "route": {"agent": "billing_agent"},
+    "handoff": {"needs_other_specialist": false},
+    "resolution": "Review the duplicate subscription charge with billing."
+  },
+  "complex": {
+    "ticket_id": "TEST-COMPLEX",
+    "ticket_text": "Payment failures increased to 18%, with database connection timeouts and database connections at 100%.",
+    "classification": {"category": "incident", "complexity": "complex"},
+    "evidence": {
+      "application logs": "Payment requests fail with database connection timeouts.",
+      "database metrics": "Database connections are at 100% utilization.",
+      "service impact": "Payment failures increased to 18%."
+    },
+    "resolution": "Connection pool exhaustion is suspected; review pool usage and verify payment recovery."
+  }
+}

@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 from langgraph.types import Send
 
@@ -7,11 +7,10 @@ from hackathon1.graph import Plan, dispatch_sections, investigate_section, orche
 
 
 # POSITIVE TEST: orchestrator writes plan_sections from the (mocked) LLM's plan
-async def test_orchestrator_writes_plan_sections():
+async def test_orchestrator_writes_plan_sections(mock_llm):
     fake_plan = Plan(sections=["billing history", "recent charges"])
-    with patch("hackathon1.graph.llm") as mock_llm:
-        mock_llm.with_structured_output.return_value.ainvoke = AsyncMock(return_value=fake_plan)
-        result = await orchestrator({"ticket_text": "double charge"})
+    mock_llm.with_structured_output.return_value.ainvoke = AsyncMock(return_value=fake_plan)
+    result = await orchestrator({"ticket_text": "double charge"})
     assert result == {"plan_sections": ["billing history", "recent charges"]}
 
 
@@ -26,9 +25,8 @@ def test_dispatch_sections_returns_one_send_per_section():
 
 
 # POSITIVE TEST: investigate_section produces one finding per worker
-async def test_investigate_section_returns_one_finding():
-    with patch("hackathon1.graph.llm") as mock_llm:
-        mock_llm.ainvoke = AsyncMock(return_value=SimpleNamespace(content="Looked normal."))
-        result = await investigate_section({"ticket_text": "double charge", "section": "billing history"})
+async def test_investigate_section_returns_one_finding(mock_llm):
+    mock_llm.ainvoke = AsyncMock(return_value=SimpleNamespace(content="Looked normal."))
+    result = await investigate_section({"ticket_text": "double charge", "section": "billing history"})
     assert len(result["findings"]) == 1
     assert "billing history" in result["findings"][0]
