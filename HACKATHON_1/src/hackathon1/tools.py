@@ -153,7 +153,7 @@ NEVER_DOWNGRADED: frozenset[str] = frozenset({"rollback_change"})
 #: scenario that this table has never seen. Getting a downgrade requires
 #: someone to have written the service down; the failure mode is an
 #: unnecessary approval, never an unattended restart of something important.
-LOW_IMPACT_SERVICES: frozenset[str] = frozenset({"order-service"})
+LOW_IMPACT_SERVICES: frozenset[str] = frozenset({"order-service", "reporting-service"})
 
 #: Comparison order for RiskLevel. Only used to take maxima, never exposed.
 _RISK_ORDER: dict[str, int] = {"none": 0, "low": 1, "medium": 2, "high": 3}
