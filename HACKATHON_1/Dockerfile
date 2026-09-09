@@ -1,6 +1,9 @@
 FROM python:3.12-slim
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# Pinned. `uv sync --frozen` exists to guarantee the image cannot drift from
+# the lockfile -- pulling the resolver itself from a moving :latest tag quietly
+# undermines exactly that guarantee.
+COPY --from=ghcr.io/astral-sh/uv:0.12.11 /uv /uvx /bin/
 
 WORKDIR /app
 
@@ -32,6 +35,18 @@ RUN uv sync --frozen --no-dev
 # uv sync installs into /app/.venv, so put it first on PATH -- this is what
 # makes the bare "uvicorn" below resolve.
 ENV PATH="/app/.venv/bin:$PATH"
+
+# ---------------------------------------------------------------------------
+# Drop root. Nothing here needs it at runtime: the venv and source were built
+# above as root and are only read afterwards, and the app binds 8000, not a
+# privileged port. Created with a fixed uid so file ownership is predictable
+# if a volume is ever mounted in.
+#
+# Done AFTER both uv sync layers so the dependency cache is unaffected --
+# switching user earlier would invalidate it on every rebuild.
+# ---------------------------------------------------------------------------
+RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
+USER appuser
 
 EXPOSE 8000
 

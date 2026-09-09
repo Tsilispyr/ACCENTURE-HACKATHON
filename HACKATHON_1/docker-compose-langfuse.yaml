@@ -104,7 +104,11 @@ services:
   # Local S3-compatible blob storage
   # ============================================================
   minio:
-    image: cgr.dev/chainguard/minio
+    # Pinned by digest, not tag: Chainguard's free tier publishes only :latest,
+    # so there is no version tag to pin to. A digest is the stronger pin anyway --
+    # it names exactly one image and cannot be moved underneath us.
+    # Currently RELEASE.2026-07-17T12-07-51Z.
+    image: cgr.dev/chainguard/minio@sha256:2a30e1a6d9e024631e9fed795773c40de5f819db80875f23dc00f7a4ca4f2246
     container_name: langfuse-minio
     restart: always
 
@@ -374,7 +378,9 @@ services:
   # 7. Grafana - OPTIONAL
   # ============================================================
   grafana:
-    image: grafana/grafana-enterprise:latest
+    # Pinned: :latest meant a teammate cloning next week could get a different
+    # Grafana than the dashboards were built and tested against.
+    image: grafana/grafana-enterprise:13.2.1
     container_name: grafana-app
     restart: always
 

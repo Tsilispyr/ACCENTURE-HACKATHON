@@ -119,7 +119,7 @@ def test_deployed_incident_runs_through_resolution_and_trace():
 
     names = _clickhouse(
         "SELECT DISTINCT name FROM default.events_core "
-        f"ORDER BY start_time DESC LIMIT 60 FORMAT TSV"
+        "ORDER BY start_time DESC LIMIT 60 FORMAT TSV"
     ).splitlines()
 
     # Workflow stages, and the LLM calls inside them, both observable.

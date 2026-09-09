@@ -248,16 +248,6 @@ class RemediationAction(BaseModel):
     )
 
 
-class RemediationPlan(BaseModel):
-    actions: list[RemediationAction]
-    overall_risk: RiskLevel
-    rollback_note: str | None = None
-
-
-# ---------------------------------------------------------------------------
-# FR10-FR13 -- approval, execution, verification
-# ---------------------------------------------------------------------------
-
 class ApprovalRecord(BaseModel):
     required: bool
     status: Literal["not_required", "pending", "approved", "rejected"] = "not_required"
@@ -292,28 +282,11 @@ class HealthReport(BaseModel):
     summary: str
 
 
-class VerificationResult(BaseModel):
-    resolved: bool
-    attempt: int = Field(description="1 for the first pass, incremented on every replan")
-    health: HealthReport | None = None
-    notes: str = ""
-
-
-# ---------------------------------------------------------------------------
-# FR14 -- the final structured report (handout section 2's bullet list)
-# ---------------------------------------------------------------------------
-
-class IncidentReport(BaseModel):
-    incident: Incident
-    status: IncidentStatus = "received"
-
-    evidence: Evidence = Field(default_factory=Evidence)
-    diagnosis: Diagnosis | None = None
-    plan: RemediationPlan | None = None
-    approval: ApprovalRecord = Field(default_factory=lambda: ApprovalRecord(required=False))
-    executions: list[ActionResult] = Field(default_factory=list)
-    verification: VerificationResult | None = None
-
-    attempts: int = 0
-    summary: str = ""
-    completed_at: datetime | None = None
+# NOTE: RemediationPlan, VerificationResult and IncidentReport used to be defined
+# here as well as in graph.py, with entirely different fields -- graph's
+# RemediationPlan carries revision/steps/rollback_steps, this one carried
+# actions/overall_risk/rollback_note. Nothing imported these, so they were a trap
+# rather than a bug: the first person to write
+# `from hackathon1.models import RemediationPlan` would have got a class the
+# workflow has never heard of, and found out somewhere far from the import.
+# The workflow's definitions in graph.py are the real ones.
