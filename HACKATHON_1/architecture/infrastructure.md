@@ -23,7 +23,19 @@ cd C:\projects\ACCENTURE-HACKATHON-main\HACKATHON_1
 .\scripts\deploy.ps1
 ```
 
-Do **not** run `bash scripts/deploy.sh` from PowerShell or cmd. Docker for this project lives
+Either entry point figures out the environment for itself:
+
+| Shell | Command | What happens |
+|---|---|---|
+| WSL / Linux | `bash scripts/deploy.sh` | runs directly — docker is on PATH |
+| Git Bash / MSYS | `bash scripts/deploy.sh` | detects no docker, **re-execs inside WSL** |
+| PowerShell / cmd | `.\scripts\deploy.ps1` | translates the path, runs it in WSL |
+| wrong shell | `sh scripts/deploy.sh` | re-execs under bash (pipefail is bash-only) |
+
+The only thing that cannot be automatic is PowerShell running a `.sh` file — Windows has no way to
+execute one, which is why `deploy.ps1` exists at all.
+
+Do **not** expect `bash scripts/deploy.sh` to work from *PowerShell*. Docker for this project lives
 inside WSL and is not on the Windows PATH, so a Windows-side bash (Git Bash / MSYS) cannot reach
 it — and if the script gets picked up by `sh` rather than `bash` you get a misleading error about
 `pipefail`, which is a bash-only option. `deploy.ps1` is the supported entry point: it translates

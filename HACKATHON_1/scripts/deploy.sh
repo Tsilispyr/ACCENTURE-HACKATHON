@@ -29,29 +29,59 @@ fi
 
 set -euo pipefail
 
-# ---------------------------------------------------------------------------
-# Docker lives in WSL on this project, and is NOT on the PATH of Git Bash /
-# MSYS. Running here would fail later with a bare "docker: command not found"
-# somewhere in the middle of a deploy, so say the useful thing up front.
-# ---------------------------------------------------------------------------
-if ! command -v docker >/dev/null 2>&1; then
-    echo "ERROR: 'docker' is not on PATH in this shell." >&2
-    case "${OSTYPE:-}" in
-        msys*|cygwin*|win32*)
-            echo "       You appear to be in Git Bash / MSYS, where Docker Desktop's CLI is" >&2
-            echo "       usually not exposed. Use one of:" >&2
-            echo "         WSL         : cd /mnt/c/... && bash scripts/deploy.sh" >&2
-            echo "         PowerShell  : .\scripts\deploy.ps1   (runs it inside WSL for you)" >&2
-            ;;
-        *)
-            echo "       Start Docker, or install the Docker CLI, then retry." >&2
-            ;;
-    esac
-    exit 1
-fi
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# ---------------------------------------------------------------------------
+# Docker for this project lives inside WSL. It is NOT on the PATH of Git Bash /
+# MSYS, so running here would otherwise die halfway through a deploy with a
+# bare "docker: command not found".
+#
+# Rather than just explaining that, hand the job to WSL and get on with it --
+# so `bash scripts/deploy.sh` does the right thing from any shell, and the only
+# thing that differs between environments is who ends up executing it:
+#
+#   WSL / Linux    run directly (docker is on PATH, nothing to do)
+#   Git Bash/MSYS  re-exec inside WSL, below
+#   PowerShell/cmd scripts/deploy.ps1, which does the same translation
+# ---------------------------------------------------------------------------
+if ! command -v docker >/dev/null 2>&1; then
+    case "${OSTYPE:-}" in
+        msys*|cygwin*|win32*)
+            if command -v wsl.exe >/dev/null 2>&1; then
+                echo "[deploy] docker is not reachable from this Windows shell -- re-running inside WSL."
+                # cygpath -m gives C:/path/with/forward/slashes. Forward slashes
+                # matter: wsl.exe consumes backslashes in its arguments as
+                # escapes, so a native path arrives mangled and wslpath rejects
+                # it. tr strips the CR that wsl.exe appends to its output.
+                _win_dir="$(cygpath -m "$APP_DIR" 2>/dev/null || printf '%s' "$APP_DIR")"
+                _wsl_dir="$(wsl.exe wslpath -a "$_win_dir" 2>/dev/null | tr -d '\r')"
+                if [ -z "$_wsl_dir" ]; then
+                    echo "ERROR: could not translate '$APP_DIR' to a WSL path." >&2
+                    echo "       Is the WSL default distribution available?  wsl -l -v" >&2
+                    exit 1
+                fi
+                # Forward the profile override if the caller set one.
+                _fwd=""
+                if [ -n "${MEM_THRESHOLD_GB:-}" ]; then
+                    _fwd="MEM_THRESHOLD_GB=${MEM_THRESHOLD_GB} "
+                fi
+                # exec, not a subshell: WSL inherits this terminal, so
+                # preflight.sh's `[ -t 0 ]` test still sees a TTY and can prompt
+                # for credentials on a fresh checkout.
+                exec wsl.exe -e bash -lc "cd '$_wsl_dir' && ${_fwd}bash scripts/deploy.sh"
+            fi
+            echo "ERROR: 'docker' is not on PATH and wsl.exe was not found." >&2
+            echo "       Docker for this project runs inside WSL. Install it with:  wsl --install" >&2
+            exit 1
+            ;;
+        *)
+            echo "ERROR: 'docker' is not on PATH in this shell." >&2
+            echo "       Start Docker, or install the Docker CLI, then retry." >&2
+            exit 1
+            ;;
+    esac
+fi
 
 INFRA_COMPOSE="$APP_DIR/docker-compose-langfuse.yaml"
 APP_COMPOSE="$APP_DIR/docker-compose.yml"
