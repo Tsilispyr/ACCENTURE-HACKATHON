@@ -56,6 +56,25 @@ it is one binary choice, which is what makes it predictable.
 
 Change the cut-off with `MEM_THRESHOLD_GB=16 bash scripts/deploy.sh`.
 
+**Nobody needs to set `MEM_THRESHOLD_GB`.** It defaults to 8 and the profile is chosen
+automatically — a coworker just runs `bash scripts/deploy.sh`. The variable exists only to
+*override* the cut-off, e.g. to force-test the `full` path on a small machine.
+
+**On Windows, the script sees the WSL slice, not the physical machine.** WSL2 defaults to about
+half the host's RAM (measured here: 7.4 GB host -> 3.58 GB in WSL, 49%). So in practice:
+
+| Windows laptop | WSL sees | Profile |
+|---|---|---|
+| 8 GB | ~4 GB | `lean` |
+| 12 GB | ~6 GB | `lean` |
+| **16 GB** | ~8 GB | **`full`** |
+
+That is correct rather than a bug — the ceilings govern what Docker can actually use, which *is*
+the WSL slice — but it means `full` effectively needs a ~16 GB Windows machine. On native Linux
+there is no halving, so 8 GB of real RAM gets `full`. A coworker who wants `full` on a smaller
+Windows box should raise the WSL allocation in `.wslconfig` (preflight prints the exact snippet)
+rather than lower the threshold.
+
 It gates on **total**, not free, RAM on purpose: free memory swings with whatever else is open, so
 a capable machine that happens to be busy would otherwise get crippled. On WSL it also warns when
 a large Windows host has been given a small slice, pointing at `.wslconfig` rather than silently
