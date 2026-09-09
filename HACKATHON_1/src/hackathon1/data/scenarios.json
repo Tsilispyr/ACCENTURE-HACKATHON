@@ -3,10 +3,23 @@
     "Ground truth for the simulated enterprise systems. This is the world the",
     "tools observe -- it is NOT the workflow's answer key. The graph never reads",
     "this file: it has to reach the root cause through search_logs /",
-    "get_service_metrics / get_recent_changes / search_knowledge_base like a real",
-    "engineer would. Handout ground rule 16 bans hard-coding the visible answers",
-    "into the workflow; giving the mock systems a consistent internal state is",
-    "what makes the simulation honest rather than what makes it cheat.",
+    "get_service_metrics / search_knowledge_base / get_incident_history like a",
+    "real engineer would. Handout ground rule 16 bans hard-coding the visible",
+    "answers into the workflow; giving the mock systems a consistent internal",
+    "state is what makes the simulation honest rather than what makes it cheat.",
+    "",
+    "Four services, four deliberately different resolution paths:",
+    "  payment-service   two steps, low-risk then high-risk -- both sides of the",
+    "                    approval fork inside one incident, plus a flaky metrics",
+    "                    backend on the first call (FR15).",
+    "  identity-service  one high-risk action that must be aimed at the right",
+    "                    change_id; the wrong id executes and changes nothing.",
+    "  order-service     one action that auto-executes with no approver, because",
+    "                    the service is low impact. Symptoms deliberately",
+    "                    resemble payment-service; the correct action differs.",
+    "  reporting-service nothing available fixes it. Exists so the replan loop",
+    "                    has to give up and escalate (FR13/FR14) rather than",
+    "                    always finding a happy ending.",
     "",
     "To add the hidden scenario: append one entry under 'services'. No code change."
   ],
@@ -14,17 +27,18 @@
   "knowledge_base": [
     {
       "id": "KB-101",
-      "title": "Database connection pool exhaustion",
+      "title": "Database connection pool exhaustion under load",
       "symptoms": [
         "database connection timeout",
         "connection pool at 100%",
         "connection is not available",
         "request timed out waiting for connection",
+        "threads awaiting connection",
         "error rate spike with normal CPU"
       ],
-      "probable_cause": "All pooled connections are checked out and callers queue until they time out. Usually follows a traffic increase or a code path that holds connections longer than before.",
+      "probable_cause": "All pooled connections are checked out and callers queue until they time out. The ceiling is too low for current traffic; connections are being returned normally, there are just not enough of them.",
       "recommended_actions": ["scale_connection_pool", "restart_service"],
-      "content": "Raise the pool ceiling first, then restart so the new ceiling is picked up. A restart on its own frees the pool for roughly a minute before it saturates again."
+      "content": "Raise the pool ceiling first, then restart so the running process picks it up. A restart on its own frees the pool for about a minute before it saturates again. Distinguish from a leak: under saturation, connection hold times stay short and traffic is elevated."
     },
     {
       "id": "KB-102",
@@ -37,37 +51,38 @@
       ],
       "probable_cause": "A key rotation retired a signing key that is still present in tokens issued before the rotation, so the validator can no longer resolve the kid.",
       "recommended_actions": ["rollback_change"],
-      "content": "Roll the JWKS configuration back so the retired key is served again until every in-flight token has expired. Restarting the service does not restore a key that was removed from the key set."
+      "content": "Roll the JWKS configuration back so the retired key is served again until every in-flight token has expired. Restarting the service does not restore a key that was removed from the key set. Find the change id in the service's own configuration log lines before rolling anything back."
     },
     {
       "id": "KB-103",
-      "title": "Cache eviction storm driving database load",
+      "title": "Connection leak introduced by a deployment",
       "symptoms": [
-        "cache hit rate collapse",
-        "eviction storm",
+        "connections checked out for long periods",
+        "connection leak detected",
+        "free pool capacity falling steadily",
         "slow query",
         "database query latency increased",
-        "response time increased with normal cpu"
+        "response time increased with normal cpu and normal traffic"
       ],
-      "probable_cause": "Mass eviction pushes read traffic that the cache normally absorbs onto the database, so query latency and response time climb while application CPU stays flat.",
-      "recommended_actions": ["clear_cache"],
-      "content": "Flush and rebuild the cache so the keyspace repopulates cleanly. Look at deployment history first -- if a change shortened the TTL, a flush only helps until the next expiry wave."
+      "probable_cause": "A code path acquires connections and never returns them, so free capacity drains over time even though request volume is unchanged. The pool ceiling is not the problem.",
+      "recommended_actions": ["restart_service"],
+      "content": "A restart reclaims every leaked connection immediately and is the fastest route back to service. Raising the ceiling only buys time -- the leak drains the larger pool too. Rolling back the offending deploy stops new leaking but does not reclaim connections already held by running processes."
     },
     {
       "id": "KB-104",
       "title": "Service restart runbook",
-      "symptoms": ["service unresponsive", "restart required", "process wedged"],
+      "symptoms": ["service unresponsive", "restart required", "process wedged", "in-process state must be cleared"],
       "probable_cause": "Process-level state that cannot be cleared while the service is running.",
       "recommended_actions": ["restart_service"],
-      "content": "A rolling restart drops in-flight requests. Treated as a high-risk action: it needs an approver before execution."
+      "content": "A rolling restart drops in-flight requests. On a business-critical service it is treated as high risk and needs an approver; on a low-impact service it is routine and executes without one."
     },
     {
       "id": "KB-105",
       "title": "Rolling back a configuration or deployment change",
-      "symptoms": ["incident started shortly after a change", "regression after deploy", "config push"],
+      "symptoms": ["incident started shortly after a change", "regression after deploy", "config push", "change applied"],
       "probable_cause": "A recent change introduced the fault.",
       "recommended_actions": ["rollback_change"],
-      "content": "Correlate the incident start with the change feed before rolling back. Rollback is high risk: it reverts everything else in the same change."
+      "content": "Correlate the incident start time with the change before rolling back, and pass the change id that actually caused it -- reverting an unrelated change executes successfully and fixes nothing. Rollback is always high risk: it reverts everything else that shipped in the same change."
     },
     {
       "id": "KB-106",
@@ -75,7 +90,21 @@
       "symptoms": ["cpu utilisation sustained above 90%", "memory pressure", "node under-provisioned"],
       "probable_cause": "The host or container is out of headroom.",
       "recommended_actions": ["restart_service"],
-      "content": "Confirm CPU and memory are genuinely saturated before scaling. Normal CPU during a latency incident points somewhere else."
+      "content": "Confirm CPU and memory are genuinely saturated before acting. Normal CPU during a latency incident rules this out and points somewhere else."
+    },
+    {
+      "id": "KB-107",
+      "title": "Upstream dependency degradation",
+      "symptoms": [
+        "upstream latency elevated while local resources are normal",
+        "queue depth growing",
+        "third party provider degraded",
+        "warehouse query timeout",
+        "no local remediation available"
+      ],
+      "probable_cause": "The fault is in a system this platform does not operate. Local metrics other than queue depth and latency stay at baseline.",
+      "recommended_actions": [],
+      "content": "There is no local action that resolves this. Restarting or resizing the dependent service does not change an upstream fault and costs availability for nothing. Record the evidence, stop attempting remediation, and escalate to the owning team."
     }
   ],
 
@@ -85,7 +114,7 @@
       "service": "payment-service",
       "occurred_at": "2026-06-14T09:12:00Z",
       "summary": "Payment error rate rose to 12% with database connection timeouts.",
-      "root_cause": "Connection pool exhausted after a traffic increase.",
+      "root_cause": "Connection pool exhausted after a traffic increase; ceiling was sized for 2024 volumes.",
       "resolution_action": "Pool size raised from 20 to 50, followed by a restart to apply it.",
       "time_to_resolve_minutes": 42
     },
@@ -108,19 +137,37 @@
       "time_to_resolve_minutes": 55
     },
     {
+      "incident_id": "INC-0731",
+      "service": "order-service",
+      "occurred_at": "2026-04-08T10:15:00Z",
+      "summary": "Order lookups slowed to several seconds two hours after a release.",
+      "root_cause": "A connection leak on the order-history path; connections were acquired and never returned.",
+      "resolution_action": "Rolling restart reclaimed the leaked connections; the leak was patched in the next release.",
+      "time_to_resolve_minutes": 21
+    },
+    {
       "incident_id": "INC-0654",
       "service": "order-service",
       "occurred_at": "2026-02-19T14:22:00Z",
-      "summary": "Order lookups slowed from 280ms to 3.9s.",
-      "root_cause": "Redis eviction storm left the cache cold; reads fell through to the database.",
-      "resolution_action": "Cache flushed and rebuilt.",
-      "time_to_resolve_minutes": 18
+      "summary": "Checkout errors during a regional network partition.",
+      "root_cause": "Packet loss between the application and database subnets.",
+      "resolution_action": "Network team rerouted; no application change.",
+      "time_to_resolve_minutes": 64
+    },
+    {
+      "incident_id": "INC-0602",
+      "service": "reporting-service",
+      "occurred_at": "2026-01-30T06:48:00Z",
+      "summary": "Scheduled reports failed to generate for four hours.",
+      "root_cause": "The upstream analytics warehouse was in a degraded state during a vendor migration.",
+      "resolution_action": "Escalated to the data platform team; no local remediation was possible or attempted.",
+      "time_to_resolve_minutes": 240
     }
   ],
 
   "services": {
     "payment-service": {
-      "_scenario": "Handout scenario A -- payment failure, database connection pool exhaustion.",
+      "_scenario": "Handout scenario A -- payment failure, connection pool exhaustion under load. Two-step fix: scale (low risk, auto) then restart (high risk, approval).",
       "flaky_metrics": true,
       "metrics": {
         "error_rate": {"baseline": 0.4, "incident": 18.0, "unit": "%", "breach_pct": 100},
@@ -128,13 +175,14 @@
         "response_time_p95_ms": {"baseline": 240.0, "incident": 3200.0, "unit": "ms", "breach_pct": 50},
         "db_query_latency_p95_ms": {"baseline": 45.0, "incident": 61.0, "unit": "ms", "breach_pct": 50},
         "cpu_pct": {"baseline": 38.0, "incident": 41.0, "unit": "%", "breach_pct": 50},
-        "requests_per_min": {"baseline": 1450.0, "incident": 1512.0, "unit": "rpm", "breach_pct": 60}
+        "requests_per_min": {"baseline": 1450.0, "incident": 2180.0, "unit": "rpm", "breach_pct": 40}
       },
       "logs": [
         {"minutes_ago": 14, "level": "ERROR", "message": "Database connection timeout after 5000ms", "count": 412},
         {"minutes_ago": 14, "level": "ERROR", "message": "HikariPool-1 - Connection is not available, request timed out after 5000ms", "count": 388},
         {"minutes_ago": 13, "level": "ERROR", "message": "Payment authorization failed: could not acquire database connection", "count": 205},
-        {"minutes_ago": 15, "level": "WARN", "message": "HikariPool-1 - Pool utilisation 100% (20/20 active, 63 threads awaiting)", "count": 96},
+        {"minutes_ago": 15, "level": "WARN", "message": "HikariPool-1 - Pool utilisation 100% (20/20 active, 63 threads awaiting, mean hold time 38ms)", "count": 96},
+        {"minutes_ago": 16, "level": "WARN", "message": "Inbound request rate 2180/min exceeds provisioned capacity of 1600/min", "count": 12},
         {"minutes_ago": 22, "level": "INFO", "message": "Health probe succeeded", "count": 4}
       ],
       "recent_changes": [
@@ -163,10 +211,6 @@
             "metrics": {"error_rate": 17.2, "db_connections_used_pct": 100.0, "response_time_p95_ms": 3050.0}
           }
         },
-        "clear_cache": {
-          "effect": "none",
-          "message": "Cache flushed (2,104 keys)."
-        },
         "rollback_change": {
           "effect": "none",
           "message": "Change {change_id} rolled back."
@@ -175,7 +219,7 @@
     },
 
     "identity-service": {
-      "_scenario": "Handout scenario B -- authentication failure caused by a signing key rotation.",
+      "_scenario": "Handout scenario B -- authentication failure from a signing key rotation. One high-risk action, and it must name the right change_id.",
       "flaky_metrics": false,
       "metrics": {
         "login_failure_rate": {"baseline": 1.2, "incident": 34.0, "unit": "%", "breach_pct": 100},
@@ -187,8 +231,9 @@
       "logs": [
         {"minutes_ago": 40, "level": "ERROR", "message": "JWT signature validation failed: kid 'sig-2025-11' not found in JWKS", "count": 1240},
         {"minutes_ago": 40, "level": "ERROR", "message": "Token rejected: unable to verify signature", "count": 1188},
-        {"minutes_ago": 44, "level": "INFO", "message": "JWKS cache refreshed from identity provider (2 keys)", "count": 1},
-        {"minutes_ago": 39, "level": "WARN", "message": "Login attempt failed for tenant acme-corp: invalid token", "count": 640}
+        {"minutes_ago": 39, "level": "WARN", "message": "Login attempt failed for tenant acme-corp: invalid token", "count": 640},
+        {"minutes_ago": 45, "level": "WARN", "message": "Configuration change CHG-8842 applied by platform-security: signing key rotation, promoted kid 'sig-2026-09', retired kid 'sig-2025-11'", "count": 1},
+        {"minutes_ago": 44, "level": "INFO", "message": "JWKS cache refreshed from identity provider (1 key)", "count": 1}
       ],
       "recent_changes": [
         {
@@ -222,10 +267,6 @@
           "effect": "none",
           "message": "Rolling restart completed across 4 replicas; service is accepting traffic."
         },
-        "clear_cache": {
-          "effect": "none",
-          "message": "JWKS cache flushed and refetched from the identity provider."
-        },
         "scale_connection_pool": {
           "effect": "none",
           "message": "Connection pool ceiling updated to {new_size} in the service configuration."
@@ -234,31 +275,73 @@
     },
 
     "order-service": {
-      "_scenario": "Handout scenario C -- performance degradation from a cache eviction storm.",
+      "_scenario": "Handout scenario C -- performance degradation from a connection leak. Symptoms resemble payment-service, but the pool ceiling is fine and a restart alone fixes it. Low-impact service, so that restart auto-executes with no approver.",
       "flaky_metrics": false,
       "metrics": {
         "response_time_p95_ms": {"baseline": 300.0, "incident": 4800.0, "unit": "ms", "breach_pct": 50},
         "db_query_latency_p95_ms": {"baseline": 35.0, "incident": 2100.0, "unit": "ms", "breach_pct": 50},
-        "cache_hit_rate_pct": {"baseline": 94.0, "incident": 11.0, "unit": "%", "direction": "lower_bad", "breach_pct": 30},
+        "connection_pool_free_pct": {"baseline": 62.0, "incident": 3.0, "unit": "%", "direction": "lower_bad", "breach_pct": 30},
         "cpu_pct": {"baseline": 41.0, "incident": 44.0, "unit": "%", "breach_pct": 50},
-        "error_rate": {"baseline": 0.2, "incident": 0.9, "unit": "%", "breach_pct": 100},
-        "db_connections_used_pct": {"baseline": 38.0, "incident": 52.0, "unit": "%", "breach_pct": 60}
+        "error_rate": {"baseline": 0.2, "incident": 0.3, "unit": "%", "breach_pct": 100},
+        "requests_per_min": {"baseline": 1580.0, "incident": 1602.0, "unit": "rpm", "breach_pct": 40}
       },
       "logs": [
-        {"minutes_ago": 26, "level": "WARN", "message": "Redis eviction storm: 41,208 keys evicted in 60s (maxmemory-policy allkeys-lru)", "count": 3},
-        {"minutes_ago": 25, "level": "WARN", "message": "Cache miss for order lookup; falling through to primary datastore", "count": 18740},
+        {"minutes_ago": 24, "level": "WARN", "message": "Connection leak detected: 48 connections checked out for longer than 600s by OrderHistoryRepository", "count": 31},
+        {"minutes_ago": 25, "level": "WARN", "message": "Free pool capacity 3% and falling; request volume unchanged at 1602/min", "count": 44},
         {"minutes_ago": 24, "level": "WARN", "message": "Slow query: SELECT o.*, i.* FROM orders o JOIN order_items i ON ... (2104ms)", "count": 902},
+        {"minutes_ago": 26, "level": "WARN", "message": "order-service v4.2.0 rollout completed to 6 replicas", "count": 1},
         {"minutes_ago": 24, "level": "INFO", "message": "Order lookup completed", "count": 21055}
+      ],
+      "recent_changes": [
+        {
+          "change_id": "CHG-8863",
+          "type": "deployment",
+          "description": "order-service v4.2.0 -- order history pagination rewrite",
+          "hours_ago": 0.5,
+          "author": "build-pipeline",
+          "rollback_available": true
+        }
+      ],
+      "remediation": {
+        "restart_service": {
+          "effect": "full",
+          "message": "Rolling restart completed across 6 replicas; service is accepting traffic."
+        },
+        "scale_connection_pool": {
+          "effect": "partial",
+          "message": "Connection pool ceiling updated from 40 to {new_size} in the service configuration. The running process still holds the previous ceiling.",
+          "metrics": {"response_time_p95_ms": 4210.0, "connection_pool_free_pct": 6.0, "db_query_latency_p95_ms": 1870.0}
+        },
+        "rollback_change": {
+          "effect": "none",
+          "message": "Change {change_id} rolled back; new deployments will not acquire the leaked connections. Processes started before the rollback still hold theirs."
+        }
+      }
+    },
+
+    "reporting-service": {
+      "_scenario": "No local remediation resolves this -- the fault is in an upstream warehouse. Exists so the replan loop has to exhaust and escalate (FR13) and the final report has to record a failure honestly (FR14).",
+      "flaky_metrics": false,
+      "metrics": {
+        "report_generation_p95_s": {"baseline": 12.0, "incident": 240.0, "unit": "s", "breach_pct": 50},
+        "upstream_warehouse_latency_p95_ms": {"baseline": 300.0, "incident": 18400.0, "unit": "ms", "breach_pct": 50},
+        "queue_depth": {"baseline": 4.0, "incident": 1870.0, "unit": "jobs", "breach_pct": 100},
+        "error_rate": {"baseline": 0.3, "incident": 46.0, "unit": "%", "breach_pct": 100},
+        "cpu_pct": {"baseline": 22.0, "incident": 24.0, "unit": "%", "breach_pct": 50},
+        "memory_used_pct": {"baseline": 51.0, "incident": 54.0, "unit": "%", "breach_pct": 50}
+      },
+      "logs": [
+        {"minutes_ago": 35, "level": "ERROR", "message": "Warehouse query timed out after 30000ms: analytics-warehouse.internal", "count": 878},
+        {"minutes_ago": 35, "level": "ERROR", "message": "Report generation failed: upstream data source unavailable", "count": 604},
+        {"minutes_ago": 36, "level": "WARN", "message": "Upstream analytics-warehouse p95 latency 18400ms (baseline 300ms); local CPU and memory nominal", "count": 58},
+        {"minutes_ago": 34, "level": "WARN", "message": "Job queue depth 1870 and growing; workers idle awaiting upstream responses", "count": 47},
+        {"minutes_ago": 50, "level": "INFO", "message": "Vendor status page: analytics warehouse degraded, no ETA published", "count": 1}
       ],
       "recent_changes": [],
       "remediation": {
-        "clear_cache": {
-          "effect": "full",
-          "message": "Cache flushed and rebuilt; 18,402 keys repopulated from the primary datastore."
-        },
         "restart_service": {
           "effect": "none",
-          "message": "Rolling restart completed across 6 replicas; service is accepting traffic."
+          "message": "Rolling restart completed across 2 replicas; service is accepting traffic."
         },
         "scale_connection_pool": {
           "effect": "none",
