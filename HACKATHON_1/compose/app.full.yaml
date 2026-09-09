@@ -1,0 +1,4 @@
+# App-side ceiling, full profile.
+services:
+  hackathon1-app:
+    mem_limit: 1g

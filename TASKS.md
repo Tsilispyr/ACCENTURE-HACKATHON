@@ -18,7 +18,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done & verified · `[!]` blocke
 | | Workstream | Done | Notes |
 |---|---|---|---|
 | **A** | Runtime & API | 0 / 7 | not started |
-| **B** | Infra & Delivery | 1 / 8 | B2 landed and verified |
+| **B** | Infra & Delivery | 3 / 8 | B1, B2, B3 landed and verified |
 | **C** | Integration | 0 / 1 | waits on roles 2–4 |
 
 ---
@@ -34,18 +34,36 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done & verified · `[!]` blocke
     to match `.env`, so a **fresh database seeds the same keys** and every machine behaves
     identically. Rendered-config diff showed exactly those 2 lines and nothing else.
   - Dropped unused `GOOGLE_API_KEY` (nothing in the codebase reads it).
-- [ ] **B1 · Git** — root `.gitignore` first, then clone `dev-pipis`, copy tree, review
-      `git status` **before** `git add`, commit, push. Verify `git ls-files "*.env"` is empty.
-      Also delete the stray empty `HACKATHON_1/HACKATHON_1/readme.md`.
-- [ ] **B3 · Machine-capability preflight + resource profiles** — `scripts/preflight.sh` reads
-      `/proc/meminfo`, gates on **`MemTotal` not `MemAvailable`** (proposed X = 8 GB), selects
-      `lean` / `full`, applied as a compose override layer. `lean` drops Grafana via a
-      `profiles:` tag and staggers ClickHouse startup. Also: interactive credential prompt
-      (the "window") that fills blanks in `.env` once.
+- [x] **B1 · Git**
+  - Repo was already initialised on `dev-pipis` tracking origin. Added the missing **root**
+    `.gitignore` (`.env`, `*.env`, `.env.*`, `!.env.example`, `logs/`, ...) so a stray env file
+    outside `HACKATHON_1/` cannot leak a key. Verified `git ls-files "*.env"` is empty.
+  - Note: your global git email is blocked by GitHub's email-privacy setting, so this repo has a
+    **local** `user.email` matching the identity already in its history
+    (`Tsilispyr <spyrostsl456@gmail.com>`). Local only — your global config is untouched.
+  - The handout PDF is deliberately left **untracked** — say if you want it committed.
+- [x] **B3 · Machine-capability preflight + resource profiles**
+  - `scripts/preflight.sh` — two jobs. (1) **Credentials**: creates `.env` from `.env.example`,
+    prompts once for any blank required key (hidden input for the API key), writes it back;
+    non-interactive runs fail loudly naming the missing keys. (2) **Capability**: gates on
+    **`MemTotal`, not `MemAvailable`** (threshold `MEM_THRESHOLD_GB`, default 8) and picks
+    `lean` / `full`. Detects WSL and tells you to raise `.wslconfig` rather than silently
+    degrading a big host with a small slice.
+  - `compose/{infra,app}.{lean,full}.yaml` — memory ceilings + relaxed health `start_period`,
+    applied as **override layers**; the base compose file is not modified.
+  - `scripts/deploy.sh` — sources preflight, layers the profile, stops a stale Grafana on lean,
+    and now **converges every run** (an earlier version skipped `up` when the stack was already
+    healthy, which printed the profile and applied nothing).
+  - **Fail-fast health gate** replaces the old fixed wait: polls real state and aborts the moment
+    a service is OOM-killed, exits, or restart-loops, instead of sitting out the whole timeout.
+    Timeout is profile-aware (lean 420s / full 180s) because Langfuse v4 needs ~2 min to boot here.
+  - Verified: full deploy run, 7/7 healthy, 0 restarts, 0 OOM; forced `full` profile renders and
+    validates; all three credential paths tested (missing `.env`, blank keys, complete).
 - [ ] **B4 · Dockerfile hardening** — pin `uv:latest` to a version, add a non-root user.
       Keep the two-layer cache split exactly as it is.
 - [ ] **B5 · Compose hardening** — pin `grafana-enterprise:latest` and the untagged MinIO image;
       repoint app healthcheck to `/health` once A3 lands; commented-out `frontend:` slot.
+      (Memory limits already live in B3's profile overrides, not inline.)
 - [ ] **B6 · Grafana dashboard (§7 bonus)** — provisioning-as-code, datasource → **ClickHouse**.
       ⚠ **Query `events_core` / `events_full`, not `traces`** (see Verified below).
       Needs `GF_INSTALL_PLUGINS=grafana-clickhouse-datasource`. Do last; skipped on `lean`.
@@ -95,6 +113,21 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done & verified · `[!]` blocke
   project `hackathon1` / org `GTGH`. `.env` and the compose INIT vars now agree.
 - MinIO needs no setup: keys are `minio` / `miniopassQWqw!@12` (already in the infra compose),
   and `storage.py` auto-creates the bucket on first upload.
+- **Putting a Node service under `mem_limit` silently caps its V8 heap.** Adding
+  `mem_limit: 896m` to `langfuse-web` put it in a restart loop: V8 derives its heap ceiling from
+  the *cgroup*, capped old-space at ~450MB, and died with
+  `FATAL ERROR: Reached heap limit` — while reporting **`OOMKilled=false`, `ExitCode=0`**, so it
+  looked nothing like a memory problem. Fixed by setting `NODE_OPTIONS=--max-old-space-size`
+  explicitly so the heap is decoupled from the container limit. This is why the deploy health
+  gate checks `RestartCount` and not just `OOMKilled`.
+- **Measured usage beats the README's estimates.** `docker stats` on a live stack:
+  clickhouse 834Mi · langfuse-web 633Mi · langfuse-worker 438Mi · grafana 256Mi · minio 118Mi ·
+  postgres 61Mi · redis 14Mi · app 168Mi. The README's proposed `langfuse-web 512m` and
+  `grafana 256m` are **below** those readings and would be OOM-killed. Every limit in
+  `compose/` sits above measured usage.
+- **Do not set Redis `--maxmemory`.** The base file uses `--maxmemory-policy noeviction`, so a cap
+  would make Langfuse's queue writes *fail* rather than evict. Redis uses ~15Mi; the container
+  ceiling is enough.
 
 ## Do not touch
 
@@ -125,6 +158,13 @@ docker exec langfuse-minio ls /data/hackathon1-reports
 
 # before ANY compose edit, capture and diff the rendered config
 docker compose -f docker-compose-langfuse.yaml config > /tmp/before.yaml
+
+# force the other resource profile (this machine only ever picks lean)
+MEM_THRESHOLD_GB=1 bash scripts/preflight.sh      # -> full
+docker compose -f docker-compose-langfuse.yaml -f compose/infra.full.yaml config
+
+# restart Grafana after a lean deploy stopped it
+docker start grafana-app
 ```
 
 | Service | URL |

@@ -1,0 +1,95 @@
+# Resource profile: LEAN -- for a machine below MEM_THRESHOLD_GB total RAM.
+# Applied as an override layer by scripts/deploy.sh; the base compose file is
+# never modified.
+#
+# Two things are tuned here: memory ceilings, and health start_period.
+#
+# MEMORY. Every limit sits ABOVE measured usage, never on an estimate.
+# Measured 2026-09-09 with `docker stats` on this stack:
+#   clickhouse 834Mi | langfuse-web 633Mi | langfuse-worker 389Mi
+#   grafana 256Mi | minio 118Mi | postgres 61Mi | redis 14Mi
+# The README's original proposal of "langfuse-web 512m" and "grafana 256m" is
+# BELOW those readings and would have been OOM-killed on first boot.
+# A limit is a ceiling, not a reservation: it stops one runaway container from
+# taking the whole host, it does not lower baseline usage. On lean the real
+# saving is not starting Grafana at all (-256Mi), which deploy.sh does by
+# naming the services to start rather than by editing the base file.
+#
+# HEALTH. The base file gives langfuse-web/worker start_period: 10s. On this
+# hardware they need ~2 minutes -- ClickHouse compatibility resolution,
+# dashboard upserts and model-price seeding all happen before they bind a port.
+# Inside a 10s grace period every probe in that window counts as a FAILURE, so
+# a normally-booting stack reports "unhealthy" and deploy.sh's health gate then
+# gives up on a perfectly good cold start.
+# Only start_period is set; test/interval/timeout/retries merge in from the
+# base file unchanged.
+
+services:
+  postgres:
+    mem_limit: 256m
+
+  clickhouse:
+    # ClickHouse reads its cgroup limit and sizes internal caches accordingly,
+    # so this both caps and calms it. Below ~1g it starts refusing queries.
+    mem_limit: 1280m
+    healthcheck:
+      # stack-guide section 7 step 7: ClickHouse booting slower than its
+      # healthcheck window under memory pressure is what killed the v3 stack.
+      start_period: 60s
+
+  redis:
+    # No --maxmemory here on purpose. The base file sets
+    # --maxmemory-policy noeviction, so a maxmemory cap would make Langfuse's
+    # queue writes FAIL rather than evict once it filled. Redis uses ~14Mi;
+    # the container ceiling is all the protection needed.
+    mem_limit: 128m
+
+  minio:
+    mem_limit: 256m
+
+  langfuse-worker:
+    # 768m not 640m: measured 389Mi at rest, 438Mi under ingestion load, and
+    # worker memory spikes during batch flushes.
+    mem_limit: 768m
+    environment:
+      # See the NODE_OPTIONS note on langfuse-web below -- same trap.
+      NODE_OPTIONS: "--max-old-space-size=512"
+    healthcheck:
+      start_period: 180s
+
+  langfuse-web:
+    # 1g, and NOT the 896m first tried here -- at 896m with no NODE_OPTIONS
+    # this container entered a restart loop within minutes.
+    mem_limit: 1g
+    environment:
+      # THE trap when putting a Node service under a memory limit.
+      #
+      # V8 derives its default heap ceiling from the memory it can see. Under
+      # a cgroup that means the *limit*, not the host: with mem_limit 896m,
+      # Node capped its own old-space at roughly half that and then died
+      # during Langfuse's init with
+      #     FATAL ERROR: Reached heap limit - JavaScript heap out of memory
+      # after a Mark-Compact at ~440MB, exiting 0 so `restart: always` looped
+      # it. The container was NOT OOM-killed -- docker reported
+      # OOMKilled=false and ExitCode=0, which is why this looks nothing like a
+      # memory problem, and why deploy.sh's health gate watches RestartCount
+      # and not just OOMKilled.
+      #
+      # Unlimited, Node saw the whole 3.5GB host and picked a large heap --
+      # exactly why this ran fine for an hour before any limit existed, and
+      # broke the moment one was added.
+      #
+      # 640MB is chosen deliberately: comfortably above the ~440MB where it
+      # actually died, and well below the 896MB first tried. V8 grows the heap
+      # toward whatever ceiling it is given and GCs less often when it has
+      # room -- at 896 this service settled at 880Mi RSS, MORE than the 633Mi
+      # it used with no limit at all. A lower ceiling trades a little GC CPU
+      # for real RAM, which is the whole point of the lean profile.
+      NODE_OPTIONS: "--max-old-space-size=640"
+    healthcheck:
+      start_period: 180s
+
+  grafana:
+    # Not started on lean (see deploy.sh); the ceiling is kept for the case
+    # where someone starts it by hand.
+    mem_limit: 384m
