@@ -1,26 +1,35 @@
-"""FastAPI service wrapping the CodeHub ticket triage-and-resolution graph.
+"""FastAPI service for the AI-Powered IT Incident Resolution Agent.
 
-Mirrors docerz/day21's proven shape (GET /, GET /chat, POST /incidents) so
-the adapted apiclient.py smoke-test script needs no payload changes -- only
-POST /incidents now actually runs the graph instead of echoing input.
+Endpoints follow the handout's recommended list:
 
-GET /health and GET /incidents/{id} added on top of that shape to match the
-hackathon handout's recommended endpoint list exactly. Incident results are
-kept in a simple in-memory dict -- fine for a hackathon demo (single process,
-no restart expected mid-run); swap for a real store (e.g. the app-db-init
-Postgres database) if that ever changes.
+    GET  /                        liveness; also the container healthcheck target
+    GET  /health                  liveness plus subsystem status
+    POST /incidents               submit an incident, run the workflow
+    GET  /incidents/{id}          retrieve an incident's current state
+    POST /incidents/{id}/approve  approve or reject a high-risk remediation
+    GET  /chat                    read-only investigation assistant
+
+The workflow is the incident graph in `graph.py`, driven by
+`adapters.LiveIncidentAdapter`. State lives in the graph's checkpointer, keyed
+by thread id, and **the thread id is the incident id** -- that one convention is
+what makes retrieval and approval-resume work without a second store.
 """
 
 from __future__ import annotations
 
+import logging
 from functools import lru_cache
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from langchain.agents import create_agent
+from langgraph.types import Command
 from pydantic import BaseModel, ConfigDict, Field
 from uvicorn import run
 
-from hackathon1.graph import app_graph
+from hackathon1.adapters import LiveIncidentAdapter
+from hackathon1.graph import create_incident_app
 from hackathon1.llm import llm  # loads .env as a side effect, see llm.py
 from hackathon1.tools import (
     get_incident_history,
@@ -29,6 +38,8 @@ from hackathon1.tools import (
     search_logs,
 )
 from hackathon1.tracing import get_callback_handlers
+
+logger = logging.getLogger(__name__)
 
 
 class IncidentRequest(BaseModel):
@@ -54,27 +65,29 @@ class IncidentRequest(BaseModel):
     error: str = Field(alias="Error")
 
 
-# In-memory store for GET /incidents/{id} -- keyed by ticket_id, populated by
-# POST /incidents. Reset on every app restart; that's fine for a hackathon demo.
-_incidents_store: dict[str, dict] = {}
+class ApprovalDecision(BaseModel):
+    """Decision on a paused high-risk remediation."""
+
+    approved: bool
+    note: str | None = None
 
 
-# Lightweight conversational agent for GET /chat, repointed onto the incident
-# domain after tools.py was rewritten (the old lookup_sla_hours /
-# check_known_issue no longer exist).
-#
-# Built lazily and cached, not at import time. Constructing an agent is a real
-# side effect of importing this module otherwise -- it binds tools and an LLM
-# client before anyone has asked for one, which slows startup and makes the
-# module awkward to import in a test that never touches /chat.
-#
-# Read-only investigation tools ONLY. The Tier 2 remediation tools --
+@lru_cache(maxsize=1)
+def get_incident_app():
+    """The compiled incident workflow, built once and reused.
+
+    Lazy so that importing this module does not construct an LLM-backed adapter
+    as a side effect -- which matters for any test that never runs the workflow.
+    """
+    return create_incident_app(LiveIncidentAdapter())
+
+
+# Read-only investigation tools ONLY for /chat. The Tier 2 remediation tools --
 # scale_connection_pool, restart_service, rollback_change -- are deliberately
-# withheld here. They mutate the simulated estate and carry a risk level that
-# is supposed to pass the approval gate in the graph; a chat endpoint has no
-# approval step, so binding them to it would be a way to run a high-risk action
-# without one. That is precisely the control tools.py exists to enforce, and it
-# should not have a side door.
+# withheld: they mutate the estate and carry a risk level meant to pass the
+# approval gate in the graph. A chat endpoint has no approval step, so binding
+# them here would be a way to run a high-risk action without one. That is
+# exactly the control tools.py exists to enforce; it should not have a side door.
 @lru_cache(maxsize=1)
 def get_chat_agent():
     """The /chat agent, created on first use and reused thereafter."""
@@ -90,7 +103,64 @@ def get_chat_agent():
     )
 
 
-app = FastAPI(title="Hackathon 1 -- CodeHub Ticket Triage")
+app = FastAPI(title="AI-Powered IT Incident Resolution Agent")
+
+# Permissive by default: everything here binds to localhost and holds no real
+# data, and a browser frontend is expected. Tighten via configuration before
+# this is ever exposed beyond a demo host.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+def _thread(incident_id: str) -> dict:
+    """Config addressing one incident's checkpoint. thread_id IS the incident id."""
+    return {"configurable": {"thread_id": incident_id}}
+
+
+def _pending_approval(result: dict[str, Any]) -> dict | None:
+    """The approval payload if the graph paused, else None.
+
+    LangGraph reports a paused run through `__interrupt__`; its shape has
+    varied across versions, so this reads defensively rather than assuming.
+    """
+    interrupts = result.get("__interrupt__")
+    if not interrupts:
+        return None
+    first = interrupts[0]
+    value = getattr(first, "value", first)
+    return value if isinstance(value, dict) else {"message": str(value)}
+
+
+def _serialise(state: dict[str, Any]) -> dict[str, Any]:
+    """Flatten graph state into a JSON response carrying the mandated fields."""
+
+    def dump(key):
+        value = state.get(key)
+        return value.model_dump(mode="json") if hasattr(value, "model_dump") else value
+
+    return {
+        "incident_id": state.get("incident_id"),
+        "service": state.get("service"),
+        "severity": state.get("severity"),
+        "triage": dump("triage"),
+        "evidence": [
+            item.model_dump(mode="json") if hasattr(item, "model_dump") else item
+            for item in state.get("investigation_results", [])
+        ],
+        "diagnosis": dump("diagnosis"),
+        "remediation_plan": dump("remediation_plan"),
+        "risk_assessment": dump("risk_assessment"),
+        "approval_status": state.get("approval_status", "not_required"),
+        "execution_attempts": state.get("execution_attempts", 0),
+        "execution_result": dump("execution_result"),
+        "verification_result": dump("verification_result"),
+        "final_report": dump("final_report"),
+    }
 
 
 @app.get("/")
@@ -100,9 +170,19 @@ async def root():
 
 @app.get("/health")
 async def health():
-    """Same check as GET / -- kept as its own literal path since the hackathon
-    handout's recommended endpoint list names /health specifically."""
-    return {"status": "ok"}
+    """Liveness plus which optional subsystems are actually live.
+
+    Tracing and report storage degrade silently by design when unconfigured,
+    which once hid the fact that neither was running at all. Reporting them
+    here makes that visible instead of invisible.
+    """
+    from hackathon1 import storage
+
+    return {
+        "status": "ok",
+        "tracing_enabled": bool(get_callback_handlers()),
+        "storage_enabled": storage._get_client() is not None,
+    }
 
 
 @app.get("/chat")
@@ -122,54 +202,84 @@ async def chat(message: str):
 
 @app.post("/incidents")
 async def create_incident(incident: IncidentRequest):
-    """Runs the full ticket triage-and-resolution graph -- upgrades the
-    stub that echoed input in docerz/day21's version of this endpoint into
-    the actual business logic. Stores the result so GET /incidents/{id}
-    can retrieve it afterwards."""
-    # The caller's incident id is preserved, never replaced with a generated
-    # one -- an operator who posts INC-1042 has to be able to find INC-1042
-    # afterwards, and the id is how this correlates to their own systems.
-    ticket_id = incident.incident_id
+    """Run the incident workflow.
+
+    Returns the completed incident, or -- when the remediation is high risk --
+    pauses at the approval gate and returns `awaiting_approval` with the plan
+    and its risk assessment for a human to decide on.
+    """
     initial_state = {
-        "ticket_id": ticket_id,
-        # Both the description and the error text reach the workflow. The error
-        # line is usually the most diagnostic part of the report, and dropping
-        # it silently would leave the graph investigating a vaguer incident
-        # than the one that was actually filed.
-        "ticket_text": f"{incident.description}\nError: {incident.error}",
-        "category": None,
-        "complexity": None,
-        "messages": [],
-        "findings": [],
-        "plan_sections": [],
-        "handoff_count": 0,
-        "resolution": None,
-        "report_key": None,
-    }
-    result = await app_graph.ainvoke(
-        initial_state, config={"callbacks": get_callback_handlers()}
-    )
-    response_body = {
-        "incident_id": ticket_id,
+        "incident_id": incident.incident_id,
         "service": incident.service,
         "severity": incident.severity,
-        "category": result.get("category"),
-        "complexity": result.get("complexity"),
-        "resolution": result.get("resolution"),
-        "findings": result.get("findings"),
-        "report_key": result.get("report_key"),
+        # Both the description and the error text reach the workflow. The error
+        # line is usually the most diagnostic part of the report, and dropping
+        # it would leave the graph investigating a vaguer incident than the one
+        # that was actually filed.
+        "description": f"{incident.description}\nError: {incident.error}",
     }
-    _incidents_store[ticket_id] = response_body
-    return response_body
+    config = _thread(incident.incident_id)
+    config["callbacks"] = get_callback_handlers()
+
+    result = await get_incident_app().ainvoke(initial_state, config=config)
+    return _incident_response(incident.incident_id, result)
 
 
-@app.get("/incidents/{ticket_id}")
-async def get_incident(ticket_id: str):
-    """Retrieve a previously created incident's result by its ticket_id."""
-    incident = _incidents_store.get(ticket_id)
-    if incident is None:
-        raise HTTPException(status_code=404, detail=f"No incident found with id {ticket_id!r}")
-    return incident
+def _incident_response(incident_id: str, result: dict[str, Any]) -> dict[str, Any]:
+    pending = _pending_approval(result)
+    body = _serialise(result)
+    if pending is not None:
+        body["status"] = "awaiting_approval"
+        body["approval_request"] = pending
+    else:
+        report = result.get("final_report")
+        body["status"] = getattr(report, "status", "completed")
+    body["incident_id"] = body.get("incident_id") or incident_id
+    return body
+
+
+@app.get("/incidents/{incident_id}")
+async def get_incident(incident_id: str):
+    """Retrieve an incident's current state from the checkpointer."""
+    snapshot = await get_incident_app().aget_state(_thread(incident_id))
+    if not snapshot or not snapshot.values:
+        raise HTTPException(status_code=404, detail=f"No incident found with id {incident_id!r}")
+
+    body = _serialise(snapshot.values)
+    # A run paused at the approval gate still has tasks left to do; a finished
+    # one does not. That is how a waiting incident is told from a completed one
+    # without keeping separate bookkeeping.
+    if snapshot.next:
+        body["status"] = "awaiting_approval"
+    else:
+        report = snapshot.values.get("final_report")
+        body["status"] = getattr(report, "status", "completed")
+    return body
+
+
+@app.post("/incidents/{incident_id}/approve")
+async def approve_incident(incident_id: str, decision: ApprovalDecision):
+    """Approve or reject a paused high-risk remediation, and resume the run.
+
+    The graph re-checks the approval against the *plan revision* it applies to,
+    so approving one plan does not authorise a different one produced by a later
+    replan. This endpoint only carries the decision; it does not grant anything.
+    """
+    config = _thread(incident_id)
+    snapshot = await get_incident_app().aget_state(config)
+    if not snapshot or not snapshot.values:
+        raise HTTPException(status_code=404, detail=f"No incident found with id {incident_id!r}")
+    if not snapshot.next:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Incident {incident_id!r} is not waiting for approval.",
+        )
+
+    config["callbacks"] = get_callback_handlers()
+    result = await get_incident_app().ainvoke(
+        Command(resume={"approved": decision.approved, "note": decision.note}), config=config
+    )
+    return _incident_response(incident_id, result)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 """FastAPI TestClient tests -- closes the gap flagged in
 notes/07-HACKATHON1-REQUIREMENTS.md: neither docerz/test_agent.py nor
 day21/src/day21/test_agent.py exercises the FastAPI layer itself, only the
-underlying tool function. app_graph.ainvoke is monkeypatched so no LLM call
+underlying tool function. the incident app is monkeypatched so no LLM call
 happens here either."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -30,14 +30,17 @@ def test_health_check():
 # swallowing it, so the coverage does not overlap.
 def test_create_incident_valid_payload():
     fake_result = {
-        "category": "billing",
-        "complexity": "simple",
-        "resolution": "Refund issued.",
-        "findings": [],
-        "report_key": None,
+        "incident_id": "INC-9001",
+        "service": "payment-service",
+        "severity": "HIGH",
+        "investigation_results": [],
+        "approval_status": "not_required",
+        "execution_attempts": 1,
     }
-    with patch("hackathon1.service.app_graph") as mock_graph:
-        mock_graph.ainvoke = AsyncMock(return_value=fake_result)
+    mock_graph = MagicMock(spec=["ainvoke"])
+    mock_graph.ainvoke = AsyncMock(return_value=fake_result)
+    service.get_incident_app.cache_clear()
+    with patch("hackathon1.service.get_incident_app", return_value=mock_graph):
         response = client.post(
             "/incidents",
             json={
@@ -50,8 +53,9 @@ def test_create_incident_valid_payload():
         )
     assert response.status_code == 200
     body = response.json()
-    assert body["resolution"] == "Refund issued."
+    assert body["incident_id"] == "INC-9001"
     assert body["service"] == "payment-service"
+    assert body["approval_status"] == "not_required"
 
 
 # Retired as instructed: this checked one incomplete payload, and
