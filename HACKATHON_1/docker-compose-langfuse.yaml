@@ -18,7 +18,7 @@ services:
       PGTZ: UTC
 
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5433:5432"
 
     volumes:
       - langfuse_postgres_data:/var/lib/postgresql/data
@@ -178,7 +178,7 @@ services:
       # --------------------------------------------------------
       # PostgreSQL
       # --------------------------------------------------------
-      DATABASE_URL: "postgresql://gtgh:postgrepassQWqw!@12@postgres:5432/langfuse"
+      DATABASE_URL: "postgresql://gtgh:postgrepassQWqw!%4012@postgres:5432/langfuse"
 
       # --------------------------------------------------------
       # Langfuse
@@ -281,7 +281,7 @@ services:
       # --------------------------------------------------------
       # PostgreSQL
       # --------------------------------------------------------
-      DATABASE_URL: "postgresql://gtgh:postgrepassQWqw!@12@postgres:5432/langfuse"
+      DATABASE_URL: "postgresql://gtgh:postgrepassQWqw!%4012@postgres:5432/langfuse"
 
       # --------------------------------------------------------
       # Authentication / Langfuse

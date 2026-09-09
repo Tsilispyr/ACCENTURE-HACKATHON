@@ -269,7 +269,7 @@ else
 fi
 echo "  MinIO    : http://localhost:9091 (minio / miniopassQWqw!@12)"
 echo "  App      : http://localhost:8010"
-echo "  App DB   : localhost:5432 db: hackathon1 (gtgh / postgrepassQWqw!@12)"
+echo "  App DB   : localhost:5433 db: hackathon1 (gtgh / postgrepassQWqw!@12)"
 echo "  Log      : $LOG_FILE"
 echo ""
 echo "Smoke test: uv run python -m hackathon1.apiclient   (from $APP_DIR)"

@@ -202,6 +202,43 @@ workflow. Full detail: `architecture/infrastructure.md` section 5.
 
 ---
 
+## Integration status (branches merged into dev-pipis)
+
+| Branch | Brought in | State |
+|---|---|---|
+| `tools-features` | `tools.py` (8 tools, 3 risk tiers), `world.py`, `models.py`, `data/scenarios.json` | merged, tested |
+| `feature/langgraph-workflow` | incident graph with `interrupt()` HITL, `IncidentAdapter` Protocol, workflow tests | merged, tested |
+| `maria/containerization` | `GET /health`, `GET /incidents/{id}`, postgres host port 5433, `DATABASE_URL` fix | merged, conflict resolved |
+
+**Written here to close the gap between them:** `adapters.py` — `LiveIncidentAdapter`, the binding
+neither branch could write alone. `graph.py` talks to a Protocol and imports no tools; `tools.py`
+knows nothing about the graph. Tools produce facts, the LLM supplies judgement, and policy
+(`tools.effective_risk`) owns safety — the model may raise the risk level, never lower it.
+
+### Still open
+
+- [ ] **`POST /incidents` still runs the OLD CodeHub graph.** `service.py` calls `app_graph`; the
+      incident workflow and `LiveIncidentAdapter` exist but nothing wires them to the API yet.
+- [ ] **`POST /incidents/{id}/approve` does not exist.** The graph implements `interrupt()`, so HITL
+      is ready on the graph side and has no endpoint.
+- [ ] **Two in-memory stores, neither durable.** `service.py`'s `_incidents_store` dict and the
+      graph's `InMemorySaver`. Both are fine for a single-process demo and both lose everything on
+      restart — which also means an approval cannot survive one.
+- [ ] **Duplicate model definitions.** `RemediationPlan`, `VerificationResult` and `IncidentReport`
+      are defined in **both** `graph.py` and `models.py`, one per branch. They are not the same
+      shape. Worth collapsing before anyone imports the wrong one.
+
+### From `maria/containerization`, worth knowing
+
+- **Postgres host port is now 5433**, not 5432 — avoids clashing with a locally installed Postgres.
+  Inside the docker network it is still `postgres:5432`.
+- **`DATABASE_URL` now URL-encodes the `@`** in the password (`!%4012`). This was flagged as a
+  latent bug in the plan: the password contains `!@` and the URL had two `@`, so it worked only
+  because the parser took the *last* one as the host separator. Prisma did not.
+- `HACKATHON_1/.gitattributes` was folded into the root one. Two `.gitattributes` files meant the
+  nested one silently won for everything under `HACKATHON_1/`, which had already overridden the
+  `*.ps1 → CRLF` rule. Their stricter `* text=auto eol=lf` default was kept.
+
 ## Verified facts (re-check if the stack changes)
 
 - 8 containers healthy; app on `:8010`; deploys run **from WSL** (`docker` is not on the

@@ -8,7 +8,11 @@
 # breakage for YAML consumed by Docker Compose and for .env files read by
 # containers.
 
-* text=auto
+# Adopted from HACKATHON_1/.gitattributes (maria/containerization): pinning
+# eol=lf on the catch-all is more deterministic than bare `text=auto`, which
+# lets each platform decide. Everything here is consumed by Linux containers,
+# so LF is the right default and the exceptions below are the exceptions.
+* text=auto eol=lf
 
 # Must be LF regardless of platform -- these are executed by Linux.
 *.sh            text eol=lf

@@ -52,9 +52,73 @@ dependency order, waits for real health, then builds and starts the app.
 | Langfuse (traces) | http://localhost:3000 | `user@example.com` / `12345678` |
 | Grafana | http://localhost:3001 | `gtgh` / `grafanapassQWqw!@12` — *not started on the lean profile* |
 | MinIO console | http://localhost:9091 | `minio` / `miniopassQWqw!@12` |
-| Postgres | `localhost:5432` | `gtgh` / `postgrepassQWqw!@12` |
+| Postgres | `localhost:5433` (host-side; 5432 inside the network) | `gtgh` / `postgrepassQWqw!@12` |
 
 ---
+
+## 1a. Running it from each terminal
+
+Every entry point works out which environment it is in. Pick the row for the terminal you are
+actually sitting in.
+
+### WSL / Linux / macOS
+
+```bash
+cd /mnt/c/projects/ACCENTURE-HACKATHON-main/HACKATHON_1
+bash scripts/deploy.sh
+```
+
+Runs directly — docker is on PATH here. This is the native path; everything else routes to it.
+
+### PowerShell
+
+```powershell
+cd C:\projects\ACCENTURE-HACKATHON-main\HACKATHON_1
+.\scripts\deploy.ps1
+```
+
+If execution policy blocks it:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\deploy.ps1
+```
+
+Useful switches: `-DryRun` (validate and print the command, start nothing), `-Full` (force the
+full resource profile), `-MemThresholdGb 16`.
+
+### cmd
+
+```bat
+cd C:\projects\ACCENTURE-HACKATHON-main\HACKATHON_1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\deploy.ps1
+```
+
+cmd has no way to run either a `.sh` or a `.ps1` directly, so it goes through `powershell -File`.
+Verified working.
+
+### Git Bash / MSYS
+
+```bash
+cd /c/projects/ACCENTURE-HACKATHON-main/HACKATHON_1
+bash scripts/deploy.sh
+```
+
+Docker is not on the PATH of Git Bash, so the script detects that, translates its own directory
+with `cygpath`/`wslpath`, and **re-execs itself inside WSL**. You will see:
+
+```
+[deploy] docker is not reachable from this Windows shell -- re-running inside WSL.
+```
+
+That line is the delegation working, not a warning.
+
+### What does not work, and why
+
+| Attempt | Result |
+|---|---|
+| `bash scripts/deploy.sh` **from PowerShell** | PowerShell cannot execute a `.sh`. Use `.\scripts\deploy.ps1`. |
+| `sh scripts/deploy.sh` | Re-execs itself under bash. `set -o pipefail` is bash-only, and the raw error names `pipefail` while explaining nothing. |
+| Docker Desktop not running | Every path fails at the docker check with a message saying so. Start it first. |
 
 ## 2. How the stack fits together
 
