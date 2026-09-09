@@ -84,3 +84,30 @@ def test_chat_agent_is_created_on_first_chat_and_reused(mock_llm):
             assert agent.ainvoke.await_count == 2
     finally:
         service.get_chat_agent.cache_clear()
+
+
+def test_ui_is_served_and_is_self_contained():
+    """The operator page loads, and pulls nothing from the network.
+
+    A CDN reference would render a blank page in a container with no internet
+    access, which is the environment this actually runs in.
+    """
+    response = client.get("/ui")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+    body = response.text
+    # The five mandated request fields are all present as inputs.
+    for field in ("Incident ID", "Service", "Severity", "Description", "Error"):
+        assert f'name="{field}"' in body, f"missing input for {field!r}"
+
+    # No external asset references.
+    for marker in ("cdn.", "http://unpkg", "https://unpkg", "googleapis", "jsdelivr"):
+        assert marker not in body, f"UI must not depend on {marker!r}"
+
+
+def test_root_still_returns_json_for_the_container_healthcheck():
+    """Adding the UI must not turn / into a web page: the compose healthcheck
+    parses it, and a redirect or HTML body would fail the container."""
+    response = client.get("/")
+    assert response.json() == {"status": "ok"}

@@ -8,6 +8,7 @@ Endpoints follow the handout's recommended list:
     GET  /incidents/{id}          retrieve an incident's current state
     POST /incidents/{id}/approve  approve or reject a high-risk remediation
     GET  /chat                    read-only investigation assistant
+    GET  /ui                      operator web page (static, dependency-free)
 
 The workflow is the incident graph in `graph.py`, driven by
 `adapters.LiveIncidentAdapter`. State lives in the graph's checkpointer, keyed
@@ -19,10 +20,12 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from functools import lru_cache
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from langchain.agents import create_agent
 from langgraph.types import Command
@@ -188,6 +191,24 @@ def _serialise(state: dict[str, Any]) -> dict[str, Any]:
         "verification_result": dump("verification_result"),
         "final_report": dump("final_report"),
     }
+
+
+#: Served at /ui, not /, because GET / is the container healthcheck target and
+#: has to keep returning JSON. Read once at startup rather than per request --
+#: it is a static file, and re-reading it on every page load would be pointless
+#: I/O; a rebuild is what ships a change anyway.
+_UI_PATH = Path(__file__).parent / "static" / "index.html"
+
+
+@app.get("/ui", response_class=HTMLResponse)
+async def ui():
+    """The operator-facing page: the five-field form and the workflow's output."""
+    try:
+        return HTMLResponse(_UI_PATH.read_text(encoding="utf-8"))
+    except OSError as exc:
+        # The API is the product; a missing static file must not take it down.
+        logger.warning("UI unavailable: %s", exc)
+        raise HTTPException(status_code=404, detail="UI is not available in this build")
 
 
 @app.get("/")

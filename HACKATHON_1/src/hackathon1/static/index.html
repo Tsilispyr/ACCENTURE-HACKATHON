@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IT Incident Resolution Agent</title>
+<!--
+  Deliberately dependency-free: no CDN, no build step, no framework.
+  The container has no guaranteed internet access at runtime, and a frontend
+  that renders blank because a CDN is unreachable is worse than a plain one
+  that always works. Everything below is inline for the same reason.
+-->
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --line: #262b36; --text: #e6e8ee;
+    --muted: #9aa3b2; --accent: #4c8dff; --ok: #35c48f; --warn: #e8b339;
+    --bad: #e2574c; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f6f7f9; --panel:#fff; --line:#e2e5ea; --text:#1b1f27; --muted:#5c6674; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  header { padding:16px 24px; border-bottom:1px solid var(--line);
+           display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0; font-weight:650; }
+  header a { color:var(--muted); text-decoration:none; font-size:13px; }
+  header a:hover { color:var(--accent); }
+  #status-pill { margin-left:auto; font-size:12px; color:var(--muted); }
+  main { display:grid; grid-template-columns:minmax(320px,380px) 1fr; gap:20px;
+         padding:20px 24px; align-items:start; }
+  @media (max-width:900px) { main { grid-template-columns:1fr; } }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+          padding:16px; margin-bottom:16px; }
+  .card h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em;
+             color:var(--muted); margin:0 0 12px; font-weight:600; }
+  label { display:block; font-size:12px; color:var(--muted); margin:10px 0 4px; }
+  input, textarea, select { width:100%; padding:8px 10px; background:var(--bg);
+    border:1px solid var(--line); border-radius:6px; color:var(--text);
+    font:inherit; }
+  textarea { resize:vertical; min-height:76px; }
+  button { padding:9px 14px; border-radius:6px; border:1px solid transparent;
+           font:inherit; font-weight:600; cursor:pointer; }
+  button[disabled] { opacity:.5; cursor:not-allowed; }
+  .primary { background:var(--accent); color:#fff; width:100%; margin-top:14px; }
+  .approve { background:var(--ok); color:#04231a; }
+  .reject { background:var(--bad); color:#fff; }
+  .row { display:flex; gap:10px; margin-top:12px; }
+  .examples button { background:none; border:1px solid var(--line); color:var(--muted);
+    font-size:12px; font-weight:500; text-align:left; width:100%; margin-top:6px; }
+  .examples button:hover { border-color:var(--accent); color:var(--text); }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:13px; }
+  .kv dt { color:var(--muted); }
+  .kv dd { margin:0; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px;
+         font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+  .t-ok { background:rgba(53,196,143,.15); color:var(--ok); }
+  .t-warn { background:rgba(232,179,57,.15); color:var(--warn); }
+  .t-bad { background:rgba(226,87,76,.15); color:var(--bad); }
+  .t-mut { background:rgba(154,163,178,.15); color:var(--muted); }
+  details { border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+            margin-top:8px; }
+  summary { cursor:pointer; font-weight:600; font-size:13px; }
+  pre { font-family:var(--mono); font-size:12px; white-space:pre-wrap;
+        word-break:break-word; color:var(--muted); margin:8px 0 0; }
+  ul { margin:8px 0 0; padding-left:20px; }
+  li { margin:3px 0; }
+  .empty { color:var(--muted); font-size:13px; }
+  .err { color:var(--bad); }
+  .spin { display:inline-block; width:13px; height:13px; border:2px solid var(--line);
+          border-top-color:var(--accent); border-radius:50%; animation:s .7s linear infinite;
+          vertical-align:-2px; margin-right:6px; }
+  @keyframes s { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>IT Incident Resolution Agent</h1>
+  <a href="/docs" target="_blank">API docs</a>
+  <a href="http://localhost:3000" target="_blank">Langfuse traces</a>
+  <a href="http://localhost:3001" target="_blank">Grafana</a>
+  <span id="status-pill">checking…</span>
+</header>
+
+<main>
+  <!-- ---------------- left: the five-field incident form ---------------- -->
+  <section>
+    <div class="card">
+      <h2>Report an incident</h2>
+      <form id="incident-form" autocomplete="off">
+        <label for="f-id">Incident ID</label>
+        <input id="f-id" name="Incident ID" required placeholder="INC-1042">
+
+        <label for="f-service">Service</label>
+        <input id="f-service" name="Service" required placeholder="payment-service">
+
+        <label for="f-severity">Severity</label>
+        <input id="f-severity" name="Severity" required placeholder="Unknown" value="Unknown">
+
+        <label for="f-description">Description</label>
+        <textarea id="f-description" name="Description" required
+          placeholder="Customers report payment failures for approximately 15 minutes."></textarea>
+
+        <label for="f-error">Error</label>
+        <input id="f-error" name="Error" required placeholder="Database connection timeout.">
+
+        <button type="submit" class="primary" id="submit-btn">Resolve incident</button>
+      </form>
+    </div>
+
+    <div class="card examples">
+      <h2>Example scenarios</h2>
+      <div id="examples"></div>
+    </div>
+  </section>
+
+  <!-- ---------------- right: the workflow's output ---------------- -->
+  <section id="results">
+    <div class="card"><p class="empty">Submit an incident to run the workflow.</p></div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+// The three scenarios from the requirements, so a demo needs no typing.
+const EXAMPLES = [
+  { label: "A — Payment failure",
+    payload: { "Incident ID":"INC-1042", "Service":"payment-service", "Severity":"Unknown",
+      "Description":"Customers report payment failures for approximately 15 minutes. Failures increased to 18% and database connections are at 100% utilization.",
+      "Error":"Database connection timeout." } },
+  { label: "B — Authentication failure",
+    payload: { "Incident ID":"INC-2087", "Service":"identity-service", "Severity":"Unknown",
+      "Description":"Login failures increased sharply. Token validation errors reported. Identity provider latency is normal.",
+      "Error":"Token signature validation failed." } },
+  { label: "C — Performance degradation",
+    payload: { "Incident ID":"INC-3054", "Service":"order-service", "Severity":"Unknown",
+      "Description":"Response time increased from 300 ms to 4.8 sec. CPU utilization is normal. Database query latency increased substantially.",
+      "Error":"Query execution exceeded threshold." } },
+];
+
+const $ = (sel) => document.querySelector(sel);
+const results = $("#results");
+let currentIncidentId = null;
+
+const esc = (v) =>
+  String(v ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+
+function tagClass(value) {
+  const v = String(value || "").toLowerCase();
+  if (["resolved","passed","succeeded","ok","healthy","low"].includes(v)) return "t-ok";
+  if (["awaiting_approval","pending","medium","partial"].includes(v)) return "t-warn";
+  if (["unresolved","failed","approval_rejected","rejected","high","critical"].includes(v)) return "t-bad";
+  return "t-mut";
+}
+const tag = (v) => v == null ? "" : `<span class="tag ${tagClass(v)}">${esc(v)}</span>`;
+
+// ---- example buttons -------------------------------------------------------
+$("#examples").innerHTML = EXAMPLES
+  .map((e, i) => `<button type="button" data-i="${i}">${esc(e.label)}</button>`).join("");
+$("#examples").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-i]");
+  if (!button) return;
+  const payload = EXAMPLES[button.dataset.i].payload;
+  // Suffix the id so re-running an example does not collide with the previous
+  // run's thread -- the incident id IS the checkpoint key.
+  $("#f-id").value = payload["Incident ID"] + "-" + Date.now().toString().slice(-5);
+  $("#f-service").value = payload["Service"];
+  $("#f-severity").value = payload["Severity"];
+  $("#f-description").value = payload["Description"];
+  $("#f-error").value = payload["Error"];
+});
+
+// ---- health pill -----------------------------------------------------------
+async function refreshHealth() {
+  try {
+    const h = await (await fetch("/health")).json();
+    $("#status-pill").innerHTML =
+      `tracing ${tag(h.tracing_enabled ? "ok" : "off")} ` +
+      `storage ${tag(h.storage_enabled ? "ok" : "off")} ` +
+      `state ${tag(h.checkpoint_backend)}`;
+  } catch {
+    $("#status-pill").innerHTML = `<span class="err">API unreachable</span>`;
+  }
+}
+refreshHealth();
+
+// ---- rendering -------------------------------------------------------------
+function renderEvidence(evidence) {
+  if (!evidence || !evidence.length) return "";
+  return `<div class="card"><h2>Evidence collected</h2>` + evidence.map((item) => `
+    <details>
+      <summary>${esc(item.area)} ${tag(item.status)}</summary>
+      <p>${esc(item.summary)}</p>
+      ${item.error ? `<p class="err">${esc(item.error)}</p>` : ""}
+      ${(item.evidence || []).length
+        ? `<pre>${item.evidence.map(esc).join("\n")}</pre>` : ""}
+    </details>`).join("") + `</div>`;
+}
+
+function renderApproval(body) {
+  const request = body.approval_request || {};
+  const plan = request.plan || body.remediation_plan || {};
+  const risk = request.risk || body.risk_assessment || {};
+  return `
+    <div class="card">
+      <h2>Human approval required</h2>
+      <p>${esc(request.message || "Approve this simulated high-risk remediation?")}</p>
+      <dl class="kv">
+        <dt>Action</dt><dd>${esc(plan.summary || "-")}</dd>
+        <dt>Risk</dt><dd>${tag(risk.risk_level)}</dd>
+        <dt>Revision</dt><dd>${esc(plan.revision ?? "-")}</dd>
+      </dl>
+      ${(risk.reasons || []).length
+        ? `<ul>${risk.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
+      <div class="row">
+        <button class="approve" data-decision="true">Approve</button>
+        <button class="reject" data-decision="false">Reject</button>
+      </div>
+    </div>`;
+}
+
+function render(body) {
+  currentIncidentId = body.incident_id;
+  const triage = body.triage || {};
+  const diagnosis = body.diagnosis || {};
+  const plan = body.remediation_plan || {};
+  const risk = body.risk_assessment || {};
+  const execution = body.execution_result || {};
+  const verification = body.verification_result || {};
+  const report = body.final_report || {};
+
+  const parts = [`
+    <div class="card">
+      <h2>Incident ${esc(body.incident_id)}</h2>
+      <dl class="kv">
+        <dt>Status</dt><dd>${tag(body.status)}</dd>
+        <dt>Service</dt><dd>${esc(body.service)}</dd>
+        <dt>Severity</dt><dd>${tag(triage.severity || body.severity)}</dd>
+        <dt>Approval</dt><dd>${tag(body.approval_status)}</dd>
+        <dt>Attempts</dt><dd>${esc(body.execution_attempts)}</dd>
+      </dl>
+      ${triage.summary ? `<p>${esc(triage.summary)}</p>` : ""}
+    </div>`];
+
+  if (body.status === "awaiting_approval") parts.push(renderApproval(body));
+  parts.push(renderEvidence(body.evidence));
+
+  if (diagnosis.root_cause) {
+    parts.push(`
+      <div class="card">
+        <h2>Probable root cause</h2>
+        <p>${esc(diagnosis.root_cause)}</p>
+        <dl class="kv"><dt>Confidence</dt><dd>${esc(diagnosis.confidence)}</dd></dl>
+        ${(diagnosis.contributing_factors || []).length
+          ? `<ul>${diagnosis.contributing_factors.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>` : ""}
+      </div>`);
+  }
+
+  if (plan.summary) {
+    parts.push(`
+      <div class="card">
+        <h2>Remediation &amp; risk</h2>
+        <p>${esc(plan.summary)} ${tag(risk.risk_level)}</p>
+        ${(plan.steps || []).length
+          ? `<ul>${plan.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
+        ${(risk.reasons || []).length
+          ? `<pre>${risk.reasons.map(esc).join("\n")}</pre>` : ""}
+      </div>`);
+  }
+
+  if (execution.summary || verification.summary) {
+    parts.push(`
+      <div class="card">
+        <h2>Execution &amp; verification</h2>
+        <dl class="kv">
+          <dt>Executed</dt><dd>${tag(execution.status)} ${esc(execution.summary || "-")}</dd>
+          <dt>Verified</dt><dd>${tag(verification.status)} ${esc(verification.summary || "-")}</dd>
+        </dl>
+      </div>`);
+  }
+
+  if (report.summary) {
+    parts.push(`
+      <div class="card">
+        <h2>Final report</h2>
+        <dl class="kv">
+          <dt>Outcome</dt><dd>${tag(report.status)}</dd>
+          <dt>Attempts</dt><dd>${esc(report.execution_attempts)}</dd>
+          <dt>Archived as</dt><dd>${esc(report.report_key || "not stored")}</dd>
+        </dl>
+        <p>${esc(report.summary)}</p>
+      </div>`);
+  }
+
+  results.innerHTML = parts.join("");
+}
+
+function busy(text) {
+  results.innerHTML = `<div class="card"><p class="empty"><span class="spin"></span>${esc(text)}</p></div>`;
+}
+
+async function send(url, options, busyText) {
+  busy(busyText);
+  $("#submit-btn").disabled = true;
+  try {
+    const response = await fetch(url, options);
+    const body = await response.json();
+    if (!response.ok) {
+      const detail = Array.isArray(body.detail)
+        ? body.detail.map((d) => `${(d.loc || []).slice(1).join(".")}: ${d.msg}`).join("<br>")
+        : esc(body.detail || response.statusText);
+      results.innerHTML =
+        `<div class="card"><h2>Request rejected (${response.status})</h2>
+         <p class="err">${detail}</p></div>`;
+      return;
+    }
+    render(body);
+  } catch (error) {
+    results.innerHTML =
+      `<div class="card"><h2>Request failed</h2><p class="err">${esc(error)}</p></div>`;
+  } finally {
+    $("#submit-btn").disabled = false;
+    refreshHealth();
+  }
+}
+
+$("#incident-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const payload = Object.fromEntries(
+    [...new FormData(event.target).entries()].map(([k, v]) => [k, String(v).trim()]));
+  send("/incidents", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }, "Running the workflow — triage, investigation, diagnosis, remediation…");
+});
+
+// Approve/Reject are rendered after the fact, so the handler is delegated.
+results.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-decision]");
+  if (!button || !currentIncidentId) return;
+  const approved = button.dataset.decision === "true";
+  send(`/incidents/${encodeURIComponent(currentIncidentId)}/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ approved, note: "submitted from the web UI" }),
+  }, approved ? "Approved — executing and verifying…" : "Rejecting the plan…");
+});
+</script>
+</body>
+</html>
