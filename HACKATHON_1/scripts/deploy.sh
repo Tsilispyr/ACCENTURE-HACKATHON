@@ -227,9 +227,7 @@ wait_for_infra() {
 # a profile switch take effect. Memory limits are set at container creation, so
 # skipping `up` entirely (as an earlier version of this script did when the
 # stack was already healthy) would print the profile and apply nothing.
-was_healthy=false
 if infra_healthy; then
-    was_healthy=true
     echo "[deploy] infra stack already up and healthy"
 fi
 
@@ -247,14 +245,19 @@ else
     docker compose -f "$INFRA_COMPOSE" -f "$INFRA_LIMITS" up -d
 fi
 
-if [ "$was_healthy" = false ]; then
-    echo "[deploy] waiting for infra health (up to ${TIMEOUT_SECONDS}s, profile $DEPLOY_PROFILE)..."
-    wait_for_infra || {
-        echo "[deploy] check with: docker compose -f \"$INFRA_COMPOSE\" ps" >&2
-        exit 1
-    }
-    echo "[deploy] infra stack healthy."
-fi
+# Wait unconditionally, even when the stack was healthy a moment ago. The
+# converge step above recreates any container whose config changed, so "healthy
+# before" says nothing about "healthy now" -- and starting the app against a
+# still-booting langfuse-web loses its first spans to
+# "Failed to export span batch ... Read timed out", which reads like a tracing
+# bug rather than the startup race it is. When everything really is healthy this
+# returns on the first poll and costs nothing.
+echo "[deploy] waiting for infra health (up to ${TIMEOUT_SECONDS}s, profile $DEPLOY_PROFILE)..."
+wait_for_infra || {
+    echo "[deploy] check with: docker compose -f \"$INFRA_COMPOSE\" ps" >&2
+    exit 1
+}
+echo "[deploy] infra stack healthy."
 
 echo "[deploy] bringing up hackathon1 app ($APP_COMPOSE)..."
 docker compose -f "$APP_COMPOSE" -f "$APP_LIMITS" --project-directory "$APP_DIR" up -d --build

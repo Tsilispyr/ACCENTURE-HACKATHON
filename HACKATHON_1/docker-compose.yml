@@ -30,6 +30,15 @@ services:
       - LANGFUSE_HOST=http://langfuse-web:3000
       - LANGFUSE_BASE_URL=http://langfuse-web:3000
       - MINIO_ENDPOINT=minio:9000
+      # Durable checkpointing. Targets the `hackathon1` database that the
+      # app-db-init service below creates inside the infra Postgres -- no second
+      # database server. Without these the app still runs, on an in-memory
+      # checkpointer, and GET /health reports checkpoint_backend "memory".
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=gtgh
+      - POSTGRES_PASSWORD=postgrepassQWqw!@12
+      - CHECKPOINT_DATABASE=hackathon1
     networks:
       - langfuse-infra
     healthcheck:

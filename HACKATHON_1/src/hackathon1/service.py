@@ -18,6 +18,7 @@ what makes retrieval and approval-resume work without a second store.
 from __future__ import annotations
 
 import logging
+from contextlib import asynccontextmanager
 from functools import lru_cache
 from typing import Any
 
@@ -31,6 +32,7 @@ from uvicorn import run
 from hackathon1.adapters import LiveIncidentAdapter
 from hackathon1.graph import create_incident_app
 from hackathon1.llm import llm  # loads .env as a side effect, see llm.py
+from hackathon1.persistence import open_checkpointer
 from hackathon1.tools import (
     get_incident_history,
     get_service_metrics,
@@ -72,6 +74,31 @@ class ApprovalDecision(BaseModel):
     note: str | None = None
 
 
+#: Set by the lifespan below. None until startup completes, and None forever if
+#: Postgres is unreachable -- in which case create_incident_app falls back to its
+#: own in-memory saver.
+_checkpointer = None
+_close_checkpointer = None
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Open the checkpoint store once for the process, and close it cleanly.
+
+    The pool belongs to the application lifetime, not to a request: opening one
+    per incident would be both slow and a good way to exhaust Postgres
+    connections under any real load.
+    """
+    global _checkpointer, _close_checkpointer
+    _checkpointer, _close_checkpointer = await open_checkpointer()
+    get_incident_app.cache_clear()  # rebuild with the real checkpointer
+    try:
+        yield
+    finally:
+        if _close_checkpointer is not None:
+            await _close_checkpointer()
+
+
 @lru_cache(maxsize=1)
 def get_incident_app():
     """The compiled incident workflow, built once and reused.
@@ -79,7 +106,7 @@ def get_incident_app():
     Lazy so that importing this module does not construct an LLM-backed adapter
     as a side effect -- which matters for any test that never runs the workflow.
     """
-    return create_incident_app(LiveIncidentAdapter())
+    return create_incident_app(LiveIncidentAdapter(), checkpointer=_checkpointer)
 
 
 # Read-only investigation tools ONLY for /chat. The Tier 2 remediation tools --
@@ -103,7 +130,7 @@ def get_chat_agent():
     )
 
 
-app = FastAPI(title="AI-Powered IT Incident Resolution Agent")
+app = FastAPI(title="AI-Powered IT Incident Resolution Agent", lifespan=lifespan)
 
 # Permissive by default: everything here binds to localhost and holds no real
 # data, and a browser frontend is expected. Tighten via configuration before
@@ -178,10 +205,14 @@ async def health():
     """
     from hackathon1 import storage
 
+    from hackathon1 import persistence
+
     return {
         "status": "ok",
         "tracing_enabled": bool(get_callback_handlers()),
         "storage_enabled": storage._get_client() is not None,
+        # "memory" means an incident awaiting approval will not survive a restart.
+        "checkpoint_backend": persistence.BACKEND,
     }
 
 
