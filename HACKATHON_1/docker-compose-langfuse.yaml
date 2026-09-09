@@ -303,8 +303,8 @@ services:
       LANGFUSE_INIT_USER_EMAIL: "user@example.com"
       LANGFUSE_INIT_USER_NAME: "pipis"
       LANGFUSE_INIT_USER_PASSWORD: "12345678"
-      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: "pk-lf-112ba62c-d4ae-40e2-a58d-bd47c4a13ab4"
-      LANGFUSE_INIT_PROJECT_SECRET_KEY: "sk-lf-fb354a93-e3e5-4de9-8177-87b0bddab178"
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: "pk-lf-35e3bc70-ee1d-4ca7-a974-784defdf3366"
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: "sk-lf-2c2ca70a-090b-4e02-ac9d-0ce151a6376c"
 
       # --------------------------------------------------------
       # ClickHouse

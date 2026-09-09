@@ -1,0 +1,32 @@
+# Root-level safety net. HACKATHON_1/.gitignore covers that subtree; this file
+# covers the repo root and any future sibling (HACKATHON_2, a frontend, ...) so
+# a stray .env one directory up is never the thing that leaks a key.
+#
+# Note: gitignore does NOT untrack an already-tracked file. After changing this,
+# check with:  git ls-files "*.env"
+
+# Secrets -- never commit real values (hackathon handout section 16)
+.env
+*.env
+.env.*
+!.env.example
+
+# Per-run deploy logs -- numbered and kept locally, not in git
+logs/
+
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.venv/
+.pytest_cache/
+.python-version
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
