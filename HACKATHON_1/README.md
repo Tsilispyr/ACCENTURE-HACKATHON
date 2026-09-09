@@ -30,13 +30,13 @@ bash scripts/deploy.sh
 .\scripts\deploy.ps1
 ```
 
-The only thing you supply is your four `AZURE_OPENAI_*` values — preflight asks once and writes
+The only thing you supply is your four `AZURE_OPENAI_*` values - preflight asks once and writes
 them to `.env`. Everything else ships pre-filled. Then open **http://localhost:8010/ui**.
 
 | Service | URL | Credentials |
 |---|---|---|
-| Web UI | http://localhost:8010/ui | — |
-| API docs | http://localhost:8010/docs | — |
+| Web UI | http://localhost:8010/ui | - |
+| API docs | http://localhost:8010/docs | - |
 | Langfuse traces | http://localhost:3000 | `user@example.com` / `12345678` |
 | Grafana dashboards | http://localhost:3001 | `gtgh` / `grafanapassQWqw!@12` |
 | MinIO console | http://localhost:9091 | `minio` / `miniopassQWqw!@12` |
@@ -85,13 +85,13 @@ about the graph. `adapters.LiveIncidentAdapter` binds them, and
 
 1. **The approval gate cannot be talked past.** Risk comes from a static policy floor derived from
    the action and its context. A model assessment can raise it and is ignored if it tries to lower
-   it — because incident text is attacker-controllable in any real deployment, and a control the
+   it - because incident text is attacker-controllable in any real deployment, and a control the
    model can argue with is decorative. If the risk call fails outright, the policy floor stands.
 2. **Remediation never reports success.** Execution returns an operator-style receipt of what it
    did; whether the incident is *fixed* is decided separately by observing service health. That is
    what gives the replan loop something real to react to, instead of a model declaring victory.
 
-Approval is also **per plan revision** — approving one plan does not authorise a different one
+Approval is also **per plan revision** - approving one plan does not authorise a different one
 produced by a later replan.
 
 ## Tools
@@ -109,10 +109,10 @@ The estate is not uniform, which is what makes the workflow's behaviour meaningf
 
 | Service | Correct remediation |
 |---|---|
-| `payment-service` | scale the pool, **then** restart — scaling alone is partial |
+| `payment-service` | scale the pool, **then** restart - scaling alone is partial |
 | `identity-service` | roll back the change |
 | `order-service` | restart |
-| `reporting-service` | nothing works — exercises the bounded-retry path |
+| `reporting-service` | nothing works - exercises the bounded-retry path |
 
 `get_service_metrics` also fails its **first** call for a service, by design, so the tool-failure
 path is exercised on a normal run rather than only under contrivance.
@@ -143,10 +143,10 @@ Langfuse, Grafana) and this app. `scripts/deploy.sh` orders them, since Compose'
 cannot span two files.
 
 Deployment sizes itself to the machine: `scripts/preflight.sh` reads total RAM and picks a `lean` or
-`full` resource profile. Grafana does not start on `lean` — it is a bonus service and lean exists to
+`full` resource profile. Grafana does not start on `lean` - it is a bonus service and lean exists to
 free its ~256 MiB.
 
-**Full reference — what every file does, how to drive `scripts/` and `compose/`, a cookbook and the
+**Full reference - what every file does, how to drive `scripts/` and `compose/`, a cookbook and the
 traps:** [`architecture/infrastructure.md`](architecture/infrastructure.md).
 
 ## Known limitations
@@ -157,4 +157,4 @@ traps:** [`architecture/infrastructure.md`](architecture/infrastructure.md).
   internet or the dashboards have no datasource.
 - `stack-guide.md` describes the older Langfuse v2 stack and is kept only as history; sections 6 and
   9 are still accurate, the rest is not.
-- `apiclient.py` is deliberately unhardened — no timeouts, no retries. It is a smoke test.
+- `apiclient.py` is deliberately unhardened - no timeouts, no retries. It is a smoke test.

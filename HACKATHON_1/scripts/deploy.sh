@@ -49,7 +49,7 @@ if ! command -v docker >/dev/null 2>&1; then
     case "${OSTYPE:-}" in
         msys*|cygwin*|win32*)
             if command -v wsl.exe >/dev/null 2>&1; then
-                echo "[deploy] docker is not reachable from this Windows shell -- re-running inside WSL."
+                echo "[deploy] docker is not reachable from this Windows shell, re-running inside WSL."
                 # cygpath -m gives C:/path/with/forward/slashes. Forward slashes
                 # matter: wsl.exe consumes backslashes in its arguments as
                 # escapes, so a native path arrives mangled and wslpath rejects
@@ -264,14 +264,16 @@ docker compose -f "$APP_COMPOSE" -f "$APP_LIMITS" --project-directory "$APP_DIR"
 
 echo ""
 echo "== Deployed (run #${run_number_padded}) =="
+echo "  WEB UI   : http://localhost:8010/ui          <-- open this"
+echo "  API docs : http://localhost:8010/docs"
 echo "  Langfuse : http://localhost:3000 (user@example.com / 12345678)"
 if [ "$DEPLOY_PROFILE" = "lean" ]; then
-    echo "  Grafana  : not started (lean profile -- optional/bonus service)"
+    echo "  Grafana  : not started (lean profile, optional bonus service)"
 else
     echo "  Grafana  : http://localhost:3001 (gtgh / grafanapassQWqw!@12)"
 fi
 echo "  MinIO    : http://localhost:9091 (minio / miniopassQWqw!@12)"
-echo "  App      : http://localhost:8010"
+echo "  API      : http://localhost:8010  (GET / is the healthcheck, returns JSON)"
 echo "  App DB   : localhost:5433 db: hackathon1 (gtgh / postgrepassQWqw!@12)"
 echo "  Log      : $LOG_FILE"
 echo ""

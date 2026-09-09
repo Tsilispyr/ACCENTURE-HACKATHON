@@ -39,8 +39,8 @@ docker.errors.DockerException: Error while fetching server API version: Not supp
 **Fix - run the space form:**
 
 ```bash
-docker compose up          # v2 plugin -- correct
-docker-compose up          # v1 script -- broken, do not use
+docker compose up          # v2 plugin - correct
+docker-compose up          # v1 script - broken, do not use
 ```
 
 Verify v2 is present:
@@ -245,7 +245,7 @@ First boot runs both Postgres and ClickHouse migrations, so give it a couple of 
 docker compose down
 git checkout docker-compose.yaml    # back to the v2 file
 docker compose up -d                # old postgres_data volume is still intact
-uv add "langfuse<3"                 # and revert the import (but see section 5 -- the callback won't work)
+uv add "langfuse<3"                 # and revert the import (but see section 5 - the callback won't work)
 ```
 
 ### Grafana dashboards break on v3 - expected
