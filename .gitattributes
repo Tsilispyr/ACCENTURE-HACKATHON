@@ -1,0 +1,26 @@
+# Normalise line endings so a clean clone actually runs.
+#
+# This repo is developed on Windows (core.autocrlf=true is common there) but
+# every script runs inside WSL/Linux containers. Without the rules below, a
+# fresh clone checks scripts out with CRLF and they fail immediately with:
+#     bash: /usr/bin/env: 'bash\r': No such file or directory
+# which is a confusing way to discover a line-ending problem. Same class of
+# breakage for YAML consumed by Docker Compose and for .env files read by
+# containers.
+
+* text=auto
+
+# Must be LF regardless of platform -- these are executed by Linux.
+*.sh            text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.env           text eol=lf
+.env.example    text eol=lf
+Dockerfile      text eol=lf
+.dockerignore   text eol=lf
+*.py            text eol=lf
+
+# Binary -- never touch.
+*.pdf           binary
+*.png           binary
+*.jpg           binary
