@@ -14,6 +14,57 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done & verified · `[!]` blocke
 **Start here:** [`HACKATHON_1/architecture/infrastructure.md`](HACKATHON_1/architecture/infrastructure.md)
 — what every file does, how to use `scripts/` and `compose/`, and the traps.
 
+### Which document is which
+
+| Document | Where | Role |
+|---|---|---|
+| **`TASKS.md`** (this file) | in the repo | **Canonical.** Live status, shared with the team, versioned with the code. Update this one. |
+| `architecture/infrastructure.md` | in the repo | Reference manual — what each file does, how to run things. |
+| `~/.claude/plans/this-project-folder-...md` | **local only, not in the repo** | The original approved design and its reasoning. A frozen snapshot; your coworker cannot see it. |
+
+If the two ever disagree, this file wins — it is the one that gets committed.
+
+---
+
+## Do I need to fill in `.env`?
+
+**On this machine: no.** `HACKATHON_1/.env` already exists with everything filled.
+
+**For your coworker, or any fresh clone: yes, but only four values.** `.env` is gitignored, so it
+is *not* in the repo — a clone has only `.env.example`. `scripts/preflight.sh` copies the example
+to `.env` automatically and prompts once for the four `AZURE_*` values (API-key input is hidden),
+then never asks again. Everything else — Langfuse keys, MinIO keys, endpoints — ships pre-filled
+in `.env.example` and needs no input.
+
+Note the file lives at **`HACKATHON_1/.env`**, not the repo root. There is a root `.gitignore`
+covering stray `.env` files elsewhere, but nothing reads one from the root.
+
+Verified by cloning the repo fresh: no `.env` and no Azure key present, preflight created `.env`
+and named exactly the four missing keys.
+
+---
+
+## How the resource profile behaves on another machine
+
+`scripts/preflight.sh` reads `MemTotal` and picks one profile. Nothing is per-container-adaptive;
+it is one binary choice, which is what makes it predictable.
+
+| Machine total RAM | Profile | What happens |
+|---|---|---|
+| **< 8 GB** (this one, 3.6 GB in WSL) | `lean` | Tight ceilings, bounded Node heaps, **Grafana not started** |
+| **>= 8 GB** | `full` | Generous ceilings, everything starts including Grafana |
+
+Change the cut-off with `MEM_THRESHOLD_GB=16 bash scripts/deploy.sh`.
+
+It gates on **total**, not free, RAM on purpose: free memory swings with whatever else is open, so
+a capable machine that happens to be busy would otherwise get crippled. On WSL it also warns when
+a large Windows host has been given a small slice, pointing at `.wslconfig` rather than silently
+degrading it.
+
+> **Caveat, and it is a real one:** the `full` profile has only ever been *rendered and validated*,
+> never actually run — this machine can only ever select `lean`. Before relying on it, force it on
+> a bigger box: `MEM_THRESHOLD_GB=1 bash scripts/deploy.sh`.
+
 ---
 
 ## Status at a glance
@@ -22,6 +73,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done & verified · `[!]` blocke
 |---|---|---|---|
 | **A** | Runtime & API | 0 / 7 | not started |
 | **B** | Infra & Delivery | 3.5 / 8 | B1, B2, B3 done; B8 docs part-written |
+| | | | *plus: LF line endings, pip exports, infrastructure guide* |
 | **C** | Integration | 0 / 1 | waits on roles 2–4 |
 
 ---

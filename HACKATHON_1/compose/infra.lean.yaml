@@ -58,9 +58,15 @@ services:
       start_period: 180s
 
   langfuse-web:
-    # 1g, and NOT the 896m first tried here -- at 896m with no NODE_OPTIONS
+    # 1280m, and NOT the 896m first tried here -- at 896m with no NODE_OPTIONS
     # this container entered a restart loop within minutes.
-    mem_limit: 1g
+    #
+    # Sized against the heap ceiling below, not against idle usage: measured
+    # RSS settles near 760Mi (640Mi heap + ~120Mi native/runtime), so a 1g
+    # ceiling ran at 74% with little room for a GC spike. 1280m keeps roughly
+    # 500Mi of headroom above the heap ceiling, which is the number that
+    # matters -- V8 will happily use its whole 640Mi before collecting.
+    mem_limit: 1280m
     environment:
       # THE trap when putting a Node service under a memory limit.
       #
