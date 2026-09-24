@@ -197,6 +197,100 @@ def check_claims(answer, required_domains: list[str]) -> list[dict[str, Any]]:
     return problems
 
 
+def human_reviewed(state: AgentState) -> bool:
+    """Did a person actually answer the approval gate in THIS run?
+
+    Read from the gate's own trail, not from `decided_by`: s8 records a human
+    only when they attached conditions, so a plain human approval still leaves
+    `decided_by == "model"` and would look like no review happened.
+    """
+    if state.get("approval_conditions"):
+        return True
+    return any(
+        e.get("stage") == "s5_gate" and e.get("event") in ("approved", "approved_with_conditions")
+        for e in state.get("audit", [])
+    )
+
+
+def enforce_authority(answer, reviewed: bool) -> list[dict[str, Any]]:
+    """A HIGH risk vendor is not approved by the model alone.
+
+    The handout (section 9) says "prevent automated final approval of High-risk
+    vendor decisions", and the vendor policies say who may approve: an
+    unconditional approval of a High risk vendor is not available at all, and a
+    conditional one needs an authorised human. s5_gate only pauses when a PLAN
+    STEP is high risk, so a run whose plan never names a high risk tool reached
+    a final approval with nobody asked.
+
+    Two tiers, because they are different failures:
+
+      BLOCKED   `approve` with a high risk finding. Never a valid outcome, with
+                or without a human. Recorded as `pending`; the model's own
+                recommendation stays visible beside it.
+      AWAITING  `approve_with_conditions` with a high risk finding and no human
+                answer at the gate. The decision stands - conditional approval is
+                a legitimate recommendation - but it is labelled as not final.
+                Not forced to `pending`: the evaluation scores `pending` on an
+                assessment case as no decision reached, which would punish the
+                correct answer.
+
+    Mutates `answer.decision` for BLOCKED only. Returns audit-ready records.
+    """
+    if not any(f.level == "high" for f in answer.findings):
+        return []
+
+    if answer.decision == "approve":
+        answer.decision = "pending"
+        return [{"kind": "high_risk_approval_blocked", "recommendation": answer.recommendation}]
+
+    if answer.decision == "approve_with_conditions" and not reviewed:
+        return [{"kind": "high_risk_awaiting_human", "recommendation": answer.recommendation}]
+
+    return []
+
+
+AUTHORITY_NOTES = {
+    "high_risk_approval_blocked": (
+        "[Decision withheld: overall risk is HIGH, and a High risk vendor cannot receive an "
+        "unconditional approval. Recorded as pending. The recommendation above is the model's "
+        "view, not a decision.]"
+    ),
+    "high_risk_awaiting_human": (
+        "[High risk: this is a recommendation, not a final approval. An authorised human "
+        "approver must review it before it takes effect.]"
+    ),
+}
+
+
+def role_denial_message(event: dict[str, Any]) -> str:
+    needs = ", ".join(
+        f"{tool} ({risk} risk)" for tool, risk in zip(event.get("tools") or [], event.get("risks") or [])
+    )
+    return (
+        f"Not authorised. Your role ('{event.get('role')}') may use tools up to "
+        f"{event.get('ceiling')} risk, but this plan needs {needs}. Nothing was executed and no "
+        f"approval was requested. Ask for the analysis without that step, or ask someone with "
+        f"a role that has the access."
+    )
+
+
+def role_skip_note(events: list[dict[str, Any]]) -> str:
+    """Say what was left out for the caller's role, so a partial result is not
+    mistaken for a complete one. Empty when nothing was skipped."""
+    parts = []
+    role = ""
+    for event in events:
+        role = event.get("role") or role
+        for tool, risk in zip(event.get("tools") or [], event.get("risks") or []):
+            parts.append(f"{tool} ({risk} risk)")
+    if not parts:
+        return ""
+    return (
+        f"[Skipped for your role ('{role}'): {', '.join(parts)}. This part was not "
+        f"executed; the analysis above covers only the remaining steps.]"
+    )
+
+
 def run(state: AgentState) -> dict[str, Any]:
     domain = load_domain()
     audit: list[dict[str, Any]] = []
@@ -206,6 +300,22 @@ def run(state: AgentState) -> dict[str, Any]:
             "answer": Answer(summary=state["refusal"], refused=True,
                              refusal_reason="input guardrail"),
             "audit": [audit_event("s9_guard_out", "refusal_returned")],
+        }
+
+    # The gate refused because of WHO asked, not because a person said no. s8
+    # words a rejection as "the plan was not approved", which would be false
+    # here - nobody was asked - so the reader gets the real reason instead.
+    denial = next(
+        (e for e in state.get("audit", [])
+         if e.get("stage") == "s5_gate" and e.get("event") == "role_denied"),
+        None,
+    )
+    if denial:
+        return {
+            "answer": Answer(summary=role_denial_message(denial), refused=True,
+                             refusal_reason="role not authorised"),
+            "audit": [audit_event("s9_guard_out", "role_denial_returned",
+                                  role=denial.get("role"), tools=denial.get("tools"))],
         }
 
     answer = state.get("answer") or Answer(summary="No answer was produced.", partial=True)
@@ -265,5 +375,22 @@ def run(state: AgentState) -> dict[str, Any]:
             "Treat it as provisional and check the citations.]"
         )
         audit.append(audit_event("s9_guard_out", "ungrounded_downgraded", score=round(score, 2)))
+
+    # Authority last, so its note cannot lower the groundedness score above. It
+    # changes the decision of record rather than the answer's quality, so it is
+    # reported separately from the claim problems.
+    for record in enforce_authority(answer, human_reviewed(state)):
+        audit.append(
+            audit_event("s9_guard_out", record["kind"],
+                        **{k: v for k, v in record.items() if k != "kind"})
+        )
+        answer.summary = f"{answer.summary}\n\n{AUTHORITY_NOTES[record['kind']]}"
+
+    skip_note = role_skip_note([
+        e for e in state.get("audit", [])
+        if e.get("stage") == "s5_gate" and e.get("event") == "role_skipped"
+    ])
+    if skip_note:
+        answer.summary = f"{answer.summary}\n\n{skip_note}"
 
     return {"answer": answer, "audit": audit}

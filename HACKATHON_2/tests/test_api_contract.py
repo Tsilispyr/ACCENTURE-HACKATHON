@@ -34,6 +34,18 @@ def token(client):
     return reply.json()["token"]
 
 
+@pytest.fixture
+def admin_token(client):
+    """Only an admin may start a run that records or restarts something.
+
+    alice and bob are labelled engineer, an unlisted role with the lowest ceiling: a
+    plan with a high risk step is refused at the gate instead of paused for approval.
+    """
+    reply = client.post("/login", json={"email": "admin@example.com", "password": "demo1234"})
+    assert reply.status_code == 200
+    return reply.json()["token"]
+
+
 def auth(token):
     return {"Authorization": f"Bearer {token}"}
 
@@ -102,36 +114,50 @@ def test_a_low_risk_request_completes_in_one_call(client, token, llm):
     assert body["audit"], "the audit trail is the evidence that gating happened"
 
 
-def test_a_high_risk_request_pauses_for_approval(client, token, llm):
+def test_a_high_risk_request_pauses_for_approval(client, admin_token, llm):
     script(llm, steps=[DraftStep(description="Restart it", tool_hint="restart_service")])
     body = client.post("/requests", json={"text": "the payment service is down"},
-                       headers=auth(token)).json()
+                       headers=auth(admin_token)).json()
 
     assert body["status"] == "awaiting_approval"
     assert body["approval_required"]["revision"] == 1
     assert "approve" in body["approval_required"]["allowed_decisions"]
 
 
-def test_approving_resumes_the_run(client, token, llm):
+def test_approving_resumes_the_run(client, admin_token, llm):
     script(llm, steps=[DraftStep(description="Restart it", tool_hint="restart_service")])
     submitted = client.post("/requests", json={"text": "restart the payment service"},
-                            headers=auth(token)).json()
+                            headers=auth(admin_token)).json()
     request_id = submitted["request_id"]
 
     resumed = client.post(f"/requests/{request_id}/approve",
-                          json={"decision": "approve"}, headers=auth(token)).json()
+                          json={"decision": "approve"}, headers=auth(admin_token)).json()
     assert resumed["status"] == "complete"
     assert any(e["event"] == "approved" for e in resumed["audit"])
 
 
-def test_rejecting_stops_the_run(client, token, llm):
+def test_rejecting_stops_the_run(client, admin_token, llm):
     script(llm, steps=[DraftStep(description="Restart it", tool_hint="restart_service")])
     submitted = client.post("/requests", json={"text": "restart the payment service"},
-                            headers=auth(token)).json()
+                            headers=auth(admin_token)).json()
 
     resumed = client.post(f"/requests/{submitted['request_id']}/approve",
-                          json={"decision": "reject"}, headers=auth(token)).json()
+                          json={"decision": "reject"}, headers=auth(admin_token)).json()
     assert resumed["answer"]["refused"] is True
+
+
+def test_an_engineer_is_refused_before_any_approval_is_requested(client, token, llm):
+    """alice is labelled engineer, which is not a listed role, so she has the lowest ceiling.
+    A plan with a high risk step is beyond it, so the API answers with the refusal instead
+    of pausing for an approval nobody could grant."""
+    script(llm, steps=[DraftStep(description="Restart it", tool_hint="restart_service")])
+    body = client.post("/requests", json={"text": "restart the payment service"},
+                       headers=auth(token)).json()
+
+    assert body["status"] != "awaiting_approval"
+    assert body["answer"]["refused"] is True
+    assert body["answer"]["summary"].startswith("Not authorised.")
+    assert any(e["event"] == "role_denied" for e in body["audit"])
 
 
 def test_approving_something_not_paused_is_a_conflict(client, token, llm):

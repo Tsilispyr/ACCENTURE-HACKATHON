@@ -229,3 +229,17 @@ def domain(monkeypatch):
 @pytest.fixture
 def actor() -> Actor:
     return Actor(id="tester", email="tester@example.com", role="engineer", scope="public")
+
+
+@pytest.fixture(autouse=True)
+def _tests_run_as_admin_unless_they_say_otherwise():
+    """Tools are gated by the bound actor's ROLE (tools/registry.py).
+
+    Most tests predate that and exercise write tools like restart_service, so
+    they run as admin. Tests about the role gate itself bind their own actor
+    with `world.bound(...)`, which nests inside this one and wins.
+    """
+    from agentcore.world import bound
+
+    with bound(Actor(id="test-default", role="admin", scope="public")):
+        yield

@@ -51,6 +51,8 @@ def view(monkeypatch):
     stub.on_chat_start = stub.on_message = lambda f=None, **k: (
         (lambda g: g) if f is None else f
     )
+    stub.set_chat_profiles = stub.on_chat_start
+    stub.ChatProfile = lambda **k: types.SimpleNamespace(**k)
     stub.user_session = types.SimpleNamespace(set=lambda *a: None, get=lambda *a: None)
     monkeypatch.setitem(sys.modules, "chainlit", stub)
     sys.modules.pop("agentcore.api.chainlit_app", None)
