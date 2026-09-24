@@ -3,19 +3,24 @@
 **For:** the Deep Agent Lead, the Guardrails Engineer and the Evaluation Engineer.
 **From:** the RAG & MCP Engineer. **Branch:** `mcp-rag`. **Date:** 2026-09-24.
 
-**Status:** committed and pushed as **`69d9d9c`** on `mcp-rag` ("mcp security issues fixed, rag
-and mcp working, default is hybrid rag, and ran locally…"). **378 tests pass offline.** It still
-needs a run with the live LLM and embedding model after the merge, and the PR is the next step.
+**Status:** MERGED. Written against branch `69d9d9c`; the numbers and the corpus path below were
+updated on merge, where they are marked. **445 tests pass offline**, and the pipeline has since
+been run against the live LLM and embedding model.
 
 ---
 
 ## TL;DR
 
-- The **real knowledge pack is indexed**: `knowledge-base/knowledge/`, 11 PDFs → **81 chunks**,
+- The **real knowledge pack is indexed**: `src/domains/vendor_risk/docs/`, 11 PDFs → **81 chunks**,
   one per policy clause. Each chunk cites **its own file, section and page**.
-- Retrieval on the real pack: **recall@3 100%, recall@1 81%, MRR 0.896** (vector) and **0.906**
-  (hybrid). The distance ceiling was recalibrated to **0.65**, and off-topic questions now return
-  **nothing**.
+  *(Merged to `docs/` rather than a root folder: the root copy was removed when the pack was
+  deduplicated, because two copies of a corpus drift and only one gets indexed. One copy, beside
+  the domain that reads it.)*
+- Retrieval on the real pack, **re-measured after merge on 14 labelled cases**: vector
+  **79% / 100% / 100%** at recall@1/3/5, MRR **0.881**; hybrid **86% / 93% / 100%**, MRR **0.911**.
+  Hybrid is ON, and this branch was right about that. The ceiling is **0.64**. `k` is 5, so
+  recall@5 is what the pipeline receives and it is 100% either way; the arms differ only in order.
+  Off-topic questions return **nothing**.
 - The MCP mock enterprise data **no longer contradicts the pack**. The invented Asteria incident
   and prior approval are gone, and the approval threshold is **€100k** as the procurement policy
   (PR-001 §2.3) says.
@@ -34,11 +39,11 @@ needs a run with the live LLM and embedding model after the merge, and the PR is
 |---|---|---|
 | `src/agentcore/rag/chunking.py` | Chunking runs **per file** (each chunk's `source` is its file name). Heading paths lose markdown bold. Boilerplate (footers) is stripped **corpus-wide**, then per file. | Citations now read `information-security-policy.pdf \| Information Security Policy > 4. Logging and incident response \| page 1`. GDPR and sample_ops chunks are **byte-identical** to before. |
 | `src/agentcore/rag/index.py` | The ledger's `pages`/`sections` counts are keyed per `(source, …)`. | Eval: the chunking row now says 11 pages, not 1. |
-| `src/domains/vendor_risk/corpus.py` | `DOCS` → `<repo>/knowledge-base/knowledge/` (recursive; skips dotfiles). `max_distance` 0.70 → **0.65**. `hybrid=True`, `k=5` kept (measured). | The corpus is the real pack. `src/domains/vendor_risk/docs/` (old stand-in) is no longer read. |
+| `src/domains/vendor_risk/corpus.py` | `DOCS` stays `src/domains/vendor_risk/docs/` (recursive; skips dotfiles) and now holds the real pack. `max_distance` **0.64** on merge. `hybrid=True`, `k=5` (both measured). | One copy of the corpus, beside the domain that reads it. |
 | `src/domains/vendor_risk/systems.py` | **Data only** (function names, signatures, output format unchanged). Asteria: first engagement, ISO 27001 / SOC 2 "claimed, report not supplied", no invented incidents or prior approval. Added Vendor Alpha/Beta/Gamma prior assessments mirroring the historical PDFs. `ai-platform` threshold €250k → **€100k**. `get_prior_assessments` prints a record's `reason`. | Agent outputs about Asteria's history change: they now match the documents. `FAIL_NEXT_HISTORY` (the MCP failure test hook) is untouched. |
 | `src/mcp_servers/knowledge_server.py` | **New.** Read-only FastMCP server: `search_policy`, `retrieve_document`, `corpus://documents` resources. Stdio only, loopback host. | No domain declares it in `mcp_servers()`, so **the agent doesn't load it**. |
 | `src/mcp_servers/__main__.py` | Registers `--server knowledge`. Refuses a network transport for it before building anything. | The **systems server is unchanged**, including its `streamable-http` container mode. |
-| `CORPUS.md` | 11 PDFs (not 12), the real example output, and step 1 names `knowledge-base/knowledge/`. | Checklist now matches reality. |
+| `CORPUS.md` | 11 PDFs (not 12), the real example output, and step 1 names `src/domains/vendor_risk/docs/`. | Checklist now matches reality. |
 | `evaluation-results/results.{csv,json}` | One chunking row from the official `index --reset` (81 chunks, 11 pages). | Eval: a genuine real-pack measurement. My trial retrieval numbers were **not** written here. |
 | `tests/test_chunking.py` | +2 tests: bold headings give clean paths; a footer on one-page files is stripped. | – |
 | `tests/test_knowledge_server.py` | **New**, 13 tests. Cover: tools and resources, untrusted banner on tools and resources, deleted-file handling, hybrid retriever used, network transport refused (API and CLI), systems server unaffected. | – |
@@ -60,7 +65,7 @@ needs a run with the live LLM and embedding model after the merge, and the PR is
 ### 3.1 Indexing (run once per corpus change)
 
 ```
-knowledge-base/knowledge/**.pdf
+src/domains/vendor_risk/docs/**.pdf
   -> pymupdf4llm: PDF to markdown, cached in .cache/ by file hash
   -> strip_boilerplate: corpus-wide pass (footers repeated across files), then per file
   -> sections by markdown heading, with clean paths ("Policy > 6. Data retention")
@@ -80,7 +85,7 @@ question -> vector arm (cosine, top-k) --+
          -> BM25 arm (same metadata filter) --+--> RRF (k=60) -> distance gate -> Evidence(trusted=False)
 ```
 
-- **Distance gate** (`vendor_risk/corpus.py`): absolute ceiling **0.65** plus a relative margin
+- **Distance gate** (`vendor_risk/corpus.py`): absolute ceiling **0.64** plus a relative margin
   of **0.15** from the best hit. It was calibrated on the real pack: the worst real question
   scores 0.500 and the best nonsense 0.803.
 - **Nothing passes the gate:** the caller gets "No sufficiently relevant passage found. Say so
@@ -123,7 +128,7 @@ VECTOR_BACKEND=chroma uv run python -m mcp_servers --server knowledge --domain v
 #   VECTOR_BACKEND must match the index command, or search_policy looks in the wrong store
 ```
 
-**Hidden vendor case:** put the new vendor's PDFs in `knowledge-base/knowledge/`, run the index
+**Hidden vendor case:** put the new vendor's PDFs in `src/domains/vendor_risk/docs/`, run the index
 command with `--reset`, then `evaluation.sections` and `evaluation.calibrate`. No code change.
 
 ---
@@ -201,7 +206,8 @@ write. Say the word and I'll implement the server side against the contract you 
   before. Re-run once on pgvector during rehearsal.
 - **The Chroma index is local and gitignored.** Everyone rebuilds it with the index command above
   (a few seconds; 81 chunks to embed, sent in one batch).
-- **The old stand-in `src/domains/vendor_risk/docs/` is unused.** It's left in place; delete it
+- ~~The old stand-in `src/domains/vendor_risk/docs/` is unused.~~ **Reversed on merge:** `docs/`
+  holds the real pack and is the only copy. The stand-in markdown files were deleted; delete nothing
   if nobody objects.
 
 
