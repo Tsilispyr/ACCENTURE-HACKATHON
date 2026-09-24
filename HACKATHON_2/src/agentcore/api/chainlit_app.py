@@ -272,56 +272,67 @@ async def _ask_approval(payload: dict) -> dict:
 
 
 def _format_stage_summary(stage: str, delta: dict[str, Any]) -> str:
-    lines: list[str] = []
-    if stage == "s1_intake":
-        req = delta.get("request")
-        if req:
-            lines.append(f"**Intent**: `{req.intent}` | **Scope**: `{req.scope}`")
-            if getattr(req, "domains", None):
-                lines.append(f"**Domains**: {', '.join(req.domains)}")
-    elif stage == "s2_guard_in":
-        lines.append("Input query scanned by regex patterns and LLM safety classifier. **Clean.**")
-    elif stage == "s3_ground":
-        evidence = delta.get("evidence") or []
-        lines.append(f"Retrieved **{len(evidence)}** evidence passage(s) across policies and proposals.")
-        sources = sorted({e.source for e in evidence if getattr(e, 'source', None)})
-        if sources:
-            lines.append("**Sources**: " + ", ".join(f"`{s}`" for s in sources[:4]))
-    elif stage == "s4_plan":
-        plan = delta.get("plan")
-        if plan:
-            lines.append(f"Generated **{len(plan.steps)}** assessment step(s) (Revision {plan.revision}):")
-            for s in plan.steps:
-                owner_str = f" [{s.owner}]" if s.owner else ""
-                lines.append(f"- **{s.id}** ({s.risk} risk){owner_str}: {s.description}")
-    elif stage == "s5_gate":
-        audit = delta.get("audit") or []
-        level = "none"
-        for a in audit:
-            if a.get("event") == "risk_assessed":
-                level = a.get("level", "none")
-        lines.append(f"Plan risk evaluated at **{level.upper()}**.")
-        for a in audit:
-            if a.get("event") == "role_skipped":
-                lines.append(f"*Least privilege notice*: Skipped write step(s) {a.get('steps')} for non-admin role.")
-    elif stage == "s6_act":
-        past = delta.get("past_steps") or []
-        for p in past:
-            tool_str = f" via `{', '.join(p.tool_calls)}`" if getattr(p, 'tool_calls', None) else ""
-            owner_str = f" by **{p.owner}**" if getattr(p, 'owner', None) else ""
-            lines.append(f"- Step **{p.step_id}** completed{owner_str}{tool_str}")
-            if getattr(p, "output", None):
-                lines.append(f"  _{str(p.output)[:160]}..._")
-    elif stage == "s7_replan":
-        lines.append("Review completed. Evidence sufficient across requested domains.")
-    elif stage == "s8_compose":
-        ans = delta.get("answer")
-        if ans:
-            lines.append(f"Synthesized assessment. Recommendation: **{getattr(ans, 'recommendation', 'N/A').upper()}**")
-    elif stage == "s9_guard_out":
-        lines.append("Output citations and claims verified against ground truth evidence.")
+    """Format concise, informative output for a pipeline step with zero risk of attribute exceptions."""
+    try:
+        lines: list[str] = []
+        if stage == "s1_intake":
+            req = delta.get("request") if isinstance(delta, dict) else None
+            if req:
+                actor = getattr(req, "actor", None)
+                scope = getattr(actor, "scope", "public")
+                req_id = getattr(req, "id", "N/A")
+                lines.append(f"**Request ID**: `{req_id}` | **Scope**: `{scope}`")
+                raw_text = getattr(req, "raw_text", "")
+                if raw_text:
+                    lines.append(f"**Query**: {raw_text[:120]}")
+        elif stage == "s2_guard_in":
+            lines.append("Input query scanned by regex patterns and LLM safety classifier. **Clean.**")
+        elif stage == "s3_ground":
+            evidence = delta.get("evidence", []) if isinstance(delta, dict) else []
+            lines.append(f"Retrieved **{len(evidence)}** evidence passage(s) across policies and proposals.")
+            sources = sorted({getattr(e, "source", "") for e in evidence if getattr(e, "source", None)})
+            if sources:
+                lines.append("**Sources**: " + ", ".join(f"`{s}`" for s in sources[:4]))
+        elif stage == "s4_plan":
+            plan = delta.get("plan") if isinstance(delta, dict) else None
+            if plan and getattr(plan, "steps", None):
+                lines.append(f"Generated **{len(plan.steps)}** assessment step(s) (Revision {getattr(plan, 'revision', 1)}):")
+                for s in plan.steps:
+                    owner_str = f" [{s.owner}]" if getattr(s, "owner", None) else ""
+                    lines.append(f"- **{getattr(s, 'id', '')}** ({getattr(s, 'risk', 'low')} risk){owner_str}: {getattr(s, 'description', '')}")
+        elif stage == "s5_gate":
+            audit = delta.get("audit", []) if isinstance(delta, dict) else []
+            level = "none"
+            for a in audit:
+                if isinstance(a, dict) and a.get("event") == "risk_assessed":
+                    level = a.get("level", "none")
+            lines.append(f"Plan risk evaluated at **{str(level).upper()}**.")
+            for a in audit:
+                if isinstance(a, dict) and a.get("event") == "role_skipped":
+                    lines.append(f"*Least privilege notice*: Skipped write step(s) {a.get('steps')} for non-admin role.")
+        elif stage == "s6_act":
+            past = delta.get("past_steps", []) if isinstance(delta, dict) else []
+            for p in past:
+                tool_calls = getattr(p, "tool_calls", []) or []
+                tool_str = f" via `{', '.join(tool_calls)}`" if tool_calls else ""
+                owner_str = f" by **{p.owner}**" if getattr(p, "owner", None) else ""
+                lines.append(f"- Step **{getattr(p, 'step_id', '')}** completed{owner_str}{tool_str}")
+                output_str = getattr(p, "output", "")
+                if output_str:
+                    lines.append(f"  _{str(output_str)[:160]}..._")
+        elif stage == "s7_replan":
+            lines.append("Review completed. Evidence evaluated across requested domains.")
+        elif stage == "s8_compose":
+            ans = delta.get("answer") if isinstance(delta, dict) else None
+            if ans:
+                rec = getattr(ans, "recommendation", None) or getattr(ans, "decision", "N/A")
+                lines.append(f"Synthesized assessment. Recommendation: **{str(rec).upper()}**")
+        elif stage == "s9_guard_out":
+            lines.append("Output citations and claims verified against ground truth evidence.")
 
-    return "\n".join(lines) if lines else "Stage completed successfully."
+        return "\n".join(lines) if lines else "Stage completed successfully."
+    except Exception:
+        return "Stage completed successfully."
 
 
 @cl.on_message
