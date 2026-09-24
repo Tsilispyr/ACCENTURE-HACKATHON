@@ -181,6 +181,74 @@ def trace_request(question: str, *, auto_approve: bool = True) -> tuple[list, di
     return audit, timings
 
 
+
+def save_agent_log(
+    question: str,
+    audit: list[dict[str, Any]],
+    timings: dict[str, float] | None = None,
+    answer: Any = None,
+    log_dir: str = "logs/agent_runs",
+) -> str:
+    """Save an agent execution trace in a clean, human-readable markdown format for reference."""
+    import datetime
+    from pathlib import Path
+
+    target_dir = Path(log_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    req_id = "unknown"
+    for e in audit:
+        if "request_id" in e:
+            req_id = str(e["request_id"])
+            break
+
+    filename = f"{timestamp}_{req_id}.md"
+    filepath = target_dir / filename
+
+    lines = [
+        f"# Agent Run Log - {timestamp}",
+        f"- **Request ID**: `{req_id}`",
+        f"- **Question**: {question}",
+        f"- **Status**: {status()}",
+        f"- **Total Duration**: {sum((timings or {}).values()):.2f}s",
+    ]
+
+    if answer is not None:
+        lines.extend([
+            f"- **Decision**: `{getattr(answer, 'decision', 'N/A')}`",
+            f"- **Recommendation**: `{getattr(answer, 'recommendation', 'N/A')}`",
+            f"- **Refused**: `{getattr(answer, 'refused', False)}`",
+            f"- **Partial**: `{getattr(answer, 'partial', False)}`",
+            f"- **Citations**: {getattr(answer, 'citations', [])}",
+        ])
+        summary_text = getattr(answer, "summary", "")
+        if summary_text:
+            lines.extend([
+                "",
+                "## Summary / Verdict",
+                summary_text.strip(),
+            ])
+
+    lines.extend([
+        "",
+        "## Execution Trace & Stage Audit",
+        "```text",
+        render(audit, timings=timings),
+        "```",
+        f"\n**Total Events**: {len(audit)} across {len(timings or {})} stage(s)",
+    ])
+
+    filepath.write_text("\n".join(lines), encoding="utf-8")
+
+    # Append to running summary index
+    summary_file = target_dir / "index.log"
+    with summary_file.open("a", encoding="utf-8") as f:
+        decision_str = getattr(answer, 'decision', 'N/A') if answer else 'N/A'
+        f.write(f"[{timestamp}] [{req_id}] [{decision_str}] {question[:80]} -> {filepath.name}\n")
+
+    return str(filepath)
+
 def main(argv: list[str] | None = None) -> int:
     import argparse
 
@@ -188,6 +256,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("question", nargs="*", help="the request to trace")
     parser.add_argument("--no-approve", action="store_true",
                         help="stop at the approval gate instead of approving")
+    parser.add_argument("--save-log", action="store_true",
+                        help="save trace to a markdown log file in logs/agent_runs")
+    parser.add_argument("--log-dir", default="logs/agent_runs",
+                        help="directory to save trace logs")
     args = parser.parse_args(argv)
 
     configure()
@@ -201,6 +273,9 @@ def main(argv: list[str] | None = None) -> int:
     print(render(audit, timings=timings))
     print(f"\n  {len(audit)} event(s) across {len(timings)} stage(s), "
           f"{sum(timings.values()):.1f}s")
+    if args.save_log:
+        saved_path = save_agent_log(question, audit, timings=timings, log_dir=args.log_dir)
+        print(f"  log saved to: {saved_path}")
     return 0
 
 

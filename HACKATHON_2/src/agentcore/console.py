@@ -539,6 +539,14 @@ def repl(domain_name: str | None = None) -> int:
                 show_plan(state)
             elif command == "metrics":
                 show_metrics(state, domain)
+            elif command in {"log", "save"}:
+                if not state.get("audit"):
+                    print(dim("  No run to log yet. Ask something first."))
+                else:
+                    from agentcore.tracing import save_agent_log
+                    last_q = session.turns[-1][0] if session.turns else "console request"
+                    log_path = save_agent_log(last_q, state.get("audit", []), answer=state.get("answer"))
+                    print(green(f"  Trace and summary saved to: {log_path}"))
             elif command == "history":
                 if not session.turns:
                     print(dim("  Nothing yet. Ask something first."))
