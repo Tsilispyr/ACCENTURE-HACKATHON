@@ -124,6 +124,13 @@ def retrieval_arms(domain: str = "sample_policy") -> Path | None:
     if not data:
         return None
 
+    # TWO NAMES FOR ONE ARM. retrieval_eval writes "hybrid" when forced with
+    # --force-hybrid and "hybrid (v+bm25)" on the normal path, so which row
+    # exists depends on how it was last invoked. Reading only one name made
+    # the chart plot whichever stale row happened to match, or drop the bar
+    # entirely. Prefer the normal-path row, fall back to the forced one.
+    if "hybrid" not in data and "hybrid (v+bm25)" in data:
+        data["hybrid"] = data["hybrid (v+bm25)"]
     order = [a for a in ("vector", "hybrid", "unfiltered") if a in data]
     metrics = ["recall@1", "recall@3", "recall@5"]
     colours = {"vector": BLUE, "hybrid": ORANGE, "unfiltered": AQUA}
