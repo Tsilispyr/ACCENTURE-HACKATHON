@@ -313,6 +313,11 @@ def build_chunks(
                         # Document order. Retrieval returns rows by distance, so
                         # this is the only way to restore reading order.
                         "index": start_index + len(chunks),
+                        # The corpus is shared reference material. vector.scoped_filter
+                        # gives a scoped actor rows whose scope is theirs OR "public";
+                        # a chunk with NO scope key matches neither, so without this
+                        # every logged-in user but admin retrieved nothing at all.
+                        "scope": "public",
                     },
                 )
             )
