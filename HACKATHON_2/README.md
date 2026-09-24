@@ -88,7 +88,7 @@ request -> s1_intake -> s2_guard_in -> s3_ground -> s4_plan -> s5_gate --+-> s6_
 
 ## The corpus decides everything
 
-11 PDFs in `src/domains/vendor_risk/docs/`, indexed to 84 chunks. The pack is built around conflicts
+11 PDFs in `src/domains/vendor_risk/docs/`, indexed to 81 chunks. The pack is built around conflicts
 between what policy REQUIRES and what the vendor OFFERS, so the interesting questions need two
 documents rather than one:
 
