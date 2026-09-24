@@ -105,21 +105,26 @@ downstream of the corpus is derived from it, and every one of those things fails
 
 ## Measured, not asserted
 
-Against the real pack, `DOMAIN=vendor_risk`:
+Against the real pack, `DOMAIN=vendor_risk`, 14 labelled cases:
 
-| | recall@1 | recall@3 | MRR |
-|---|---|---|---|
-| vector | **92%** | 100% | **0.944** |
-| vector + BM25 fused | 83% | 100% | 0.917 |
+| | recall@1 | recall@3 | recall@5 | MRR |
+|---|---|---|---|---|
+| vector | 79% | **100%** | **100%** | 0.881 |
+| vector + BM25 fused | **86%** | 93% | **100%** | **0.911** |
 
-Hybrid lexical search is measurably **worse** here, and the prediction that said otherwise was
-wrong. BM25 pulls in sections that share a token without answering the question: the policy and the
-vendor's answer both say "retention" and "24 hours", so lexical overlap peaks exactly where the
-corpus was designed to have two sides.
+**Read recall@5, not recall@1.** `k` is 5, so recall@5 is what the pipeline actually receives, and
+every labelled section is in it. recall@1 and MRR measure the ORDER the model reads them in, which
+is where hybrid earns its place.
 
-The distance ceiling is calibrated, never inherited - worst real question 0.429, best nonsense
-0.799, so 0.61. A ceiling copied from another corpus once rejected everything while the eval still
-reported 91% recall, because the eval measured ranking and never saw the gate.
+Hybrid is on, and that reverses an earlier call. Measured before the chunking was fixed, BM25 lost
+(83% against 92%) because it was scoring on the organisation line, the footer and the page marker
+that appear on all eleven files - present everywhere, discriminating between nothing. With those
+stripped corpus-wide the lexical arm matches on content and wins. The prediction that a vendor pack
+full of `SOC 2` and `EUR 100,000` would suit BM25 turned out right, for a reason nobody predicted.
+
+The distance ceiling is calibrated, never inherited: worst real question 0.473, best nonsense 0.803,
+so 0.64. A ceiling copied from another corpus once rejected everything while the eval still reported
+91% recall, because the eval measured ranking and never saw the gate.
 
 Every number comes from `evaluation-results/results.json` and is plotted in
 `evaluation-results/charts/`. Re-run the evals and re-render, and the deck is current.

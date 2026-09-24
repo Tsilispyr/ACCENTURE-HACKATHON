@@ -40,26 +40,36 @@ CORPUS = Corpus(
 
 POLICY = RetrievalPolicy(
     k=5,
-    # OFF, and the prediction that said otherwise was WRONG. This was True on
-    # the reasoning that a vendor pack is full of exact tokens an embedding
-    # flattens - SOC 2, ISO 27001, EUR 100,000 - which is the shape BM25 exists
-    # for. Measured against the real pack on 2026-09-24:
+    # ON, and this reverses a call made two measurements ago. The honest
+    # sequence, because the flip-flop is the interesting part:
     #
-    #     vector only        recall@1 92%   MRR 0.944
-    #     hybrid (v+bm25)    recall@1 83%   MRR 0.917
+    #   prediction   ON  - "a vendor pack is full of exact tokens an embedding
+    #                      flattens: SOC 2, ISO 27001, EUR 100,000"
+    #   measured     OFF - vector 92%/0.944 against hybrid 83%/0.917. BM25 was
+    #                      pulling in sections that SHARED those tokens without
+    #                      answering, so the prediction was recorded as wrong.
+    #   re-measured  ON  - vector 79%/0.881 against hybrid 86%/0.911
     #
-    # BM25 pulls in sections that SHARE those tokens without answering the
-    # question: the policy and the vendor's answer both say "retention" and
-    # "24 hours", so lexical overlap is highest exactly where the corpus was
-    # designed to have two sides. The same finding as the GDPR corpus, reached
-    # for a different reason. Measured, not assumed - DECISIONS D21.
-    hybrid=False,
+    # What changed between the last two is the CHUNKING, not the corpus. The
+    # mcp-rag merge strips repeated boilerplate corpus-wide: the organisation
+    # line, the footer and the page marker that appear on all eleven files.
+    # Those are exactly the tokens BM25 was scoring on, present in every
+    # document and discriminating between none of them. With them gone the
+    # lexical arm matches on content and earns its place.
+    #
+    # recall@3 is the one place hybrid is worse, 93% against 100%. It does not
+    # change what the pipeline receives: k is 5 and recall@5 is 100% either
+    # way. What improves is the order the model reads them in.
+    hybrid=True,
     # CALIBRATED against the REAL pack on 2026-09-24 by `evaluation.calibrate`,
     # never guessed and never inherited:
     #
-    #     worst real question   0.429   ("is there precedent for accepting...")
-    #     best nonsense         0.799   ("asdfgh qwerty zxcvbn")
-    #     gap                   0.370   -> midpoint 0.61
+    #     worst real question   0.473
+    #     best nonsense         0.803   ("asdfgh qwerty zxcvbn")
+    #     gap                   0.330   -> midpoint 0.64
+    #
+    # Re-measured after the mcp-rag merge, because boilerplate stripping and
+    # heading cleanup changed what is indexed: 84 chunks became 81.
     #
     # A 0.370 gap is a healthy corpus. The previous value was 0.70, inherited
     # from sample_policy, and against the stand-in corpus it rejected
@@ -74,7 +84,7 @@ POLICY = RetrievalPolicy(
     # This number belongs to a corpus, an embedding model AND a distance
     # metric, and is portable across none of them. Re-run `evaluation.calibrate`
     # after any change to docs/.
-    max_distance=0.61,
+    max_distance=0.64,
     relative_margin=0.15,
     # No filter yet: the shape of the real pack is unknown. If it separates
     # binding policy from guidance, filter to the binding half and re measure.

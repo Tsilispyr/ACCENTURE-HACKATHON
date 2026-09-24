@@ -66,6 +66,7 @@ INTERNAL_DOCS=(
 # prefix match, because these are trees rather than single files.
 INTERNAL_DIRS=(
     course-material/   # the provider's course content: reference, not ours to ship
+    team-docs/         # role reports and the contribution record: source for the deck
 )
 
 is_internal() {

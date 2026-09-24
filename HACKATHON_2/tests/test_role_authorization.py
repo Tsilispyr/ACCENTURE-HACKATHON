@@ -62,8 +62,19 @@ def names_that_actually_run(role: str) -> list[str]:
     return list(CALLS)
 
 
-def test_a_user_can_only_read():
-    assert names_that_actually_run("user") == ["lookup"]
+def test_a_user_can_use_everything_except_the_tools_that_write():
+    """CHANGED CONTRACT. This asserted a user could only read.
+
+    The handout says one thing about this (section 9): "restrict SENSITIVE MCP
+    tools according to role/authorization". It names no roles and defines no
+    per-role permissions, so which tools are sensitive is our call, and the
+    honest reading is the ones that CHANGE something.
+
+    calculate_tco and get_budget change nothing. Denying them cost the
+    commercial reviewer the tool that computes the total while leaving the
+    write tools as the only thing actually restricted, which is backwards.
+    """
+    assert names_that_actually_run("user") == ["lookup", "calculate"]
 
 
 def test_engineer_can_calculate_but_not_write():
@@ -255,8 +266,10 @@ def _plan(*hints):
 def test_steps_above_a_role_are_listed_with_their_risk():
     plan = _plan("lookup", "calculate", "record", None)
 
+    # A user loses the WRITE step and keeps the calculation: see
+    # test_a_user_can_use_everything_except_the_tools_that_write.
     assert [(s.tool_hint, r) for s, r in steps_above_role(plan, FLOORS, "user")] == [
-        ("calculate", "medium"), ("record", "high")]
+        ("record", "high")]
     assert steps_above_role(plan, FLOORS, "admin") == []
 
 
@@ -324,8 +337,14 @@ def test_the_skipped_step_is_recorded_as_a_failed_result(llm, store, domain, dee
 
 
 def test_skipped_steps_do_not_raise_the_level_the_gate_assesses(monkeypatch, llm, store, domain):
-    """A plan whose only medium step is skipped needs no approval, and the gate says so."""
-    floors = {**domain.action_risk(), "check_health": "medium"}
+    """A plan whose only restricted step is skipped needs no approval, and the gate says so.
+
+    The skipped step is HIGH now rather than medium, because medium is inside a
+    user's ceiling. The property under test is unchanged: a step removed for
+    this caller must not drag the plan's assessed level up with it, or every
+    run would stop for an approval of something that is not going to happen.
+    """
+    floors = {**domain.action_risk(), "check_health": "high"}
     monkeypatch.setattr(type(domain), "action_risk", lambda self: floors)
     plan = Plan(steps=[PlanStep(id="1", description="x", tool_hint="check_health")]
                 + [PlanStep(id="2", description="y", tool_hint="lookup_ticket")])

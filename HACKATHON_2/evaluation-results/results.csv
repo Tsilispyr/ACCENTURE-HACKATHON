@@ -367,3 +367,68 @@ at,domain,experiment,arm,metric,value,n,note
 2026-09-24T09:07:30+00:00,vendor_risk,chunking,corpus,pages,1.0,84,size=900 overlap=120
 2026-09-24T09:07:30+00:00,vendor_risk,chunking,corpus,sections,84.0,84,size=900 overlap=120
 2026-09-24T09:07:30+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,229.0595,84,size=900 overlap=120
+2026-09-24T09:04:02+00:00,vendor_risk,chunking,corpus,chunks,81.0,81,size=900 overlap=120
+2026-09-24T09:04:02+00:00,vendor_risk,chunking,corpus,pages,11.0,81,size=900 overlap=120
+2026-09-24T09:04:02+00:00,vendor_risk,chunking,corpus,sections,81.0,81,size=900 overlap=120
+2026-09-24T09:04:02+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,201.7901,81,size=900 overlap=120
+2026-09-24T10:26:00+00:00,vendor_risk,chunking,corpus,chunks,81.0,81,size=900 overlap=120
+2026-09-24T10:26:00+00:00,vendor_risk,chunking,corpus,pages,11.0,81,size=900 overlap=120
+2026-09-24T10:26:00+00:00,vendor_risk,chunking,corpus,sections,81.0,81,size=900 overlap=120
+2026-09-24T10:26:00+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,201.7901,81,size=900 overlap=120
+2026-09-24T10:27:08+00:00,vendor_risk,chunking,corpus,chunks,81.0,81,size=900 overlap=120
+2026-09-24T10:27:08+00:00,vendor_risk,chunking,corpus,pages,11.0,81,size=900 overlap=120
+2026-09-24T10:27:08+00:00,vendor_risk,chunking,corpus,sections,81.0,81,size=900 overlap=120
+2026-09-24T10:27:08+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,201.7901,81,size=900 overlap=120
+2026-09-24T10:27:44+00:00,vendor_risk,calibration,distances,worst_real,0.4728,14,
+2026-09-24T10:27:44+00:00,vendor_risk,calibration,distances,best_nonsense,0.8028,14,
+2026-09-24T10:27:44+00:00,vendor_risk,calibration,distances,suggested_ceiling,0.64,14,
+2026-09-24T10:27:44+00:00,vendor_risk,calibration,distances,configured_ceiling,0.61,14,
+2026-09-24T10:27:44+00:00,vendor_risk,calibration,distances,gap,0.33,14,
+2026-09-24T10:28:05+00:00,vendor_risk,retrieval,vector,recall@1,0.1429,14,filter=None hybrid=False
+2026-09-24T10:28:05+00:00,vendor_risk,retrieval,vector,recall@3,0.2143,14,filter=None hybrid=False
+2026-09-24T10:28:05+00:00,vendor_risk,retrieval,vector,recall@5,0.2857,14,filter=None hybrid=False
+2026-09-24T10:28:05+00:00,vendor_risk,retrieval,vector,mrr,0.1845,14,filter=None hybrid=False
+2026-09-24T10:28:05+00:00,vendor_risk,retrieval,through the gate,recall@1,0.1429,14,filter=None hybrid=False
+2026-09-24T10:28:05+00:00,vendor_risk,retrieval,through the gate,recall@3,0.2143,14,filter=None hybrid=False
+2026-09-24T10:28:05+00:00,vendor_risk,retrieval,through the gate,recall@5,0.2857,14,filter=None hybrid=False
+2026-09-24T10:28:05+00:00,vendor_risk,retrieval,through the gate,mrr,0.1845,14,filter=None hybrid=False
+2026-09-24T10:54:35+00:00,vendor_risk,retrieval,vector,recall@1,0.7143,14,filter=None hybrid=False
+2026-09-24T10:54:35+00:00,vendor_risk,retrieval,vector,recall@3,0.9286,14,filter=None hybrid=False
+2026-09-24T10:54:35+00:00,vendor_risk,retrieval,vector,recall@5,0.9286,14,filter=None hybrid=False
+2026-09-24T10:54:35+00:00,vendor_risk,retrieval,vector,mrr,0.8095,14,filter=None hybrid=False
+2026-09-24T10:54:35+00:00,vendor_risk,retrieval,through the gate,recall@1,0.7143,14,filter=None hybrid=False
+2026-09-24T10:54:35+00:00,vendor_risk,retrieval,through the gate,recall@3,0.9286,14,filter=None hybrid=False
+2026-09-24T10:54:35+00:00,vendor_risk,retrieval,through the gate,recall@5,0.9286,14,filter=None hybrid=False
+2026-09-24T10:54:35+00:00,vendor_risk,retrieval,through the gate,mrr,0.8095,14,filter=None hybrid=False
+2026-09-24T10:56:34+00:00,vendor_risk,retrieval,vector,recall@1,0.7857,14,filter=None hybrid=False
+2026-09-24T10:56:34+00:00,vendor_risk,retrieval,vector,recall@3,1.0,14,filter=None hybrid=False
+2026-09-24T10:56:34+00:00,vendor_risk,retrieval,vector,recall@5,1.0,14,filter=None hybrid=False
+2026-09-24T10:56:34+00:00,vendor_risk,retrieval,vector,mrr,0.881,14,filter=None hybrid=False
+2026-09-24T10:56:34+00:00,vendor_risk,retrieval,through the gate,recall@1,0.7857,14,filter=None hybrid=False
+2026-09-24T10:56:34+00:00,vendor_risk,retrieval,through the gate,recall@3,1.0,14,filter=None hybrid=False
+2026-09-24T10:56:34+00:00,vendor_risk,retrieval,through the gate,recall@5,1.0,14,filter=None hybrid=False
+2026-09-24T10:56:34+00:00,vendor_risk,retrieval,through the gate,mrr,0.881,14,filter=None hybrid=False
+2026-09-24T10:57:10+00:00,vendor_risk,retrieval,vector,recall@1,0.7857,14,filter=None hybrid=False
+2026-09-24T10:57:10+00:00,vendor_risk,retrieval,vector,recall@3,1.0,14,filter=None hybrid=False
+2026-09-24T10:57:10+00:00,vendor_risk,retrieval,vector,recall@5,1.0,14,filter=None hybrid=False
+2026-09-24T10:57:10+00:00,vendor_risk,retrieval,vector,mrr,0.881,14,filter=None hybrid=False
+2026-09-24T10:57:10+00:00,vendor_risk,retrieval,through the gate,recall@1,0.7857,14,filter=None hybrid=False
+2026-09-24T10:57:10+00:00,vendor_risk,retrieval,through the gate,recall@3,1.0,14,filter=None hybrid=False
+2026-09-24T10:57:10+00:00,vendor_risk,retrieval,through the gate,recall@5,1.0,14,filter=None hybrid=False
+2026-09-24T10:57:10+00:00,vendor_risk,retrieval,through the gate,mrr,0.881,14,filter=None hybrid=False
+2026-09-24T10:57:11+00:00,vendor_risk,retrieval,hybrid,recall@1,0.8571,14,filter=None hybrid=False
+2026-09-24T10:57:11+00:00,vendor_risk,retrieval,hybrid,recall@3,0.9286,14,filter=None hybrid=False
+2026-09-24T10:57:11+00:00,vendor_risk,retrieval,hybrid,recall@5,1.0,14,filter=None hybrid=False
+2026-09-24T10:57:11+00:00,vendor_risk,retrieval,hybrid,mrr,0.9107,14,filter=None hybrid=False
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,vector,recall@1,0.7857,14,filter=None hybrid=True
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,vector,recall@3,1.0,14,filter=None hybrid=True
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,vector,recall@5,1.0,14,filter=None hybrid=True
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,vector,mrr,0.881,14,filter=None hybrid=True
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,through the gate,recall@1,0.7857,14,filter=None hybrid=True
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,through the gate,recall@3,1.0,14,filter=None hybrid=True
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,through the gate,recall@5,1.0,14,filter=None hybrid=True
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,through the gate,mrr,0.881,14,filter=None hybrid=True
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@1,0.8571,14,filter=None hybrid=True
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@3,0.9286,14,filter=None hybrid=True
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@5,1.0,14,filter=None hybrid=True
+2026-09-24T10:58:30+00:00,vendor_risk,retrieval,hybrid (v+bm25),mrr,0.9107,14,filter=None hybrid=True

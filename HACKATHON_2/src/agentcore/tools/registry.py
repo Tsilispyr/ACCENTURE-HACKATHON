@@ -25,30 +25,38 @@ from agentcore.world import current_actor
 # added later and forgotten here - gets the lowest ceiling: an unknown caller
 # must never gain access by being unlisted.
 #
-# EVERY ROLE THIS SYSTEM ACTUALLY ISSUES IS LISTED, and the omission of one was
-# measured rather than argued. With only {"user", "admin"} listed, `engineer`
-# and `procurement` fell to the lowest ceiling, which denied `calculate_tco`
-# and `get_budget` to:
+# WHAT THE HANDOUT ACTUALLY REQUIRES. Section 9 says one thing about this:
+# "Restrict sensitive MCP tools according to role/authorization." It names no
+# roles and defines no per-role permissions, so the tiers below are our design,
+# and "sensitive" has to be read for what it plainly means: the tools that
+# CHANGE something. record_assessment, submit_for_signoff and raise_exception
+# write; search_policy, get_vendor_history and calculate_tco do not.
 #
-#   the terminal console        Actor(role="engineer")
-#   the API demo accounts       alice and bob, both "engineer"
-#   the chat UI's default       "engineer"
+# So a user may USE the system fully and may not MODIFY anything. Everything
+# up to medium - retrieval, history, totals, budget - is theirs. The writes are
+# not, and a plan that needs one has that step skipped with the reason shown
+# while every other step still runs (see s5_gate).
 #
-# So the commercial reviewer received a denial stand-in instead of the tool that
-# computes the total, and its finding rested on nothing. The EVAL DID NOT SEE
-# IT, because agent_eval runs as admin: the numbers stayed clean while the demo
-# path quietly got worse, which is the shape of defect this project keeps
-# finding (PROBLEMS P60).
+# AN EARLIER TABLE PUT USERS AT LOW, and it was measured wrong twice over.
+# calculate_tco and get_budget are medium, so the commercial reviewer received
+# a denial stand-in and its finding rested on nothing - on the console, the
+# chat UI and the demo accounts alike, while agent_eval ran as admin and no
+# number moved (PROBLEMS P60). It also taught the wrong lesson: a default that
+# cannot do the job trains people to pick admin, which hands them the write
+# tools they never needed.
 #
-# medium for the working roles, not high: reads and calculations yes, the WRITE
-# tools no. record_assessment, submit_for_signoff and raise_exception are high
-# on the risk floor, so they still need admin plus the human gate.
+# engineer and procurement are the same tier. They are labels this system
+# already issues - the console, the chat UI, alice and bob - not separate
+# privilege levels, and listing them stops a silent demotion to the floor.
 ROLE_MAX_RISK: dict[str, RiskLevel] = {
-    "user": "low",
+    "user": "medium",
     "engineer": "medium",
     "procurement": "medium",
     "admin": "high",
 }
+
+# The floor for a role nobody listed: read-only. Being unrecognised must never
+# be a way in, and it must never be a way to a WRITE.
 LOWEST_CEILING: RiskLevel = "low"
 
 

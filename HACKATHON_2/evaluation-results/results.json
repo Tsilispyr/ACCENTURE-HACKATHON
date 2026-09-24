@@ -1611,6 +1611,21 @@
     "detail": {}
   },
   {
+    "at": "2026-09-24T09:04:02+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 81.0,
+      "pages": 11.0,
+      "sections": 81.0,
+      "avg_chunk_chars": 201.7901
+    },
+    "n": 81,
+    "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
     "at": "2026-09-24T09:07:30+00:00",
     "domain": "vendor_risk",
     "experiment": "chunking",
@@ -1623,6 +1638,255 @@
     },
     "n": 84,
     "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:26:00+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 81.0,
+      "pages": 11.0,
+      "sections": 81.0,
+      "avg_chunk_chars": 201.7901
+    },
+    "n": 81,
+    "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:27:08+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 81.0,
+      "pages": 11.0,
+      "sections": 81.0,
+      "avg_chunk_chars": 201.7901
+    },
+    "n": 81,
+    "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:27:44+00:00",
+    "domain": "vendor_risk",
+    "experiment": "calibration",
+    "arm": "distances",
+    "metrics": {
+      "worst_real": 0.4728,
+      "best_nonsense": 0.8028,
+      "suggested_ceiling": 0.64,
+      "configured_ceiling": 0.61,
+      "gap": 0.33
+    },
+    "n": 14,
+    "note": "",
+    "detail": {
+      "real": [
+        0.337,
+        0.352,
+        0.242,
+        0.288,
+        0.4,
+        0.34,
+        0.29,
+        0.36,
+        0.263,
+        0.371,
+        0.434,
+        0.276,
+        0.342,
+        0.473
+      ],
+      "nonsense": [
+        0.958,
+        0.803,
+        0.807,
+        0.865
+      ]
+    }
+  },
+  {
+    "at": "2026-09-24T10:28:05+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.1429,
+      "recall@3": 0.2143,
+      "recall@5": 0.2857,
+      "mrr": 0.1845
+    },
+    "n": 14,
+    "note": "filter=None hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:28:05+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.1429,
+      "recall@3": 0.2143,
+      "recall@5": 0.2857,
+      "mrr": 0.1845
+    },
+    "n": 14,
+    "note": "filter=None hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:54:35+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.7143,
+      "recall@3": 0.9286,
+      "recall@5": 0.9286,
+      "mrr": 0.8095
+    },
+    "n": 14,
+    "note": "filter=None hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:54:35+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.7143,
+      "recall@3": 0.9286,
+      "recall@5": 0.9286,
+      "mrr": 0.8095
+    },
+    "n": 14,
+    "note": "filter=None hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:56:34+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.7857,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.881
+    },
+    "n": 14,
+    "note": "filter=None hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:56:34+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.7857,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.881
+    },
+    "n": 14,
+    "note": "filter=None hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:57:10+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.7857,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.881
+    },
+    "n": 14,
+    "note": "filter=None hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:57:10+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.7857,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.881
+    },
+    "n": 14,
+    "note": "filter=None hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:57:11+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "hybrid",
+    "metrics": {
+      "recall@1": 0.8571,
+      "recall@3": 0.9286,
+      "recall@5": 1.0,
+      "mrr": 0.9107
+    },
+    "n": 14,
+    "note": "filter=None hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:58:30+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.7857,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.881
+    },
+    "n": 14,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:58:30+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.7857,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.881
+    },
+    "n": 14,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T10:58:30+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "hybrid (v+bm25)",
+    "metrics": {
+      "recall@1": 0.8571,
+      "recall@3": 0.9286,
+      "recall@5": 1.0,
+      "mrr": 0.9107
+    },
+    "n": 14,
+    "note": "filter=None hybrid=True",
     "detail": {}
   }
 ]

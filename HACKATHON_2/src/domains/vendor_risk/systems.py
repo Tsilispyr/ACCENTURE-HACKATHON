@@ -8,6 +8,16 @@ approval gate then sits exactly on the boundary rather than beside it.
 All mock data. A hackathon build never touches a real procurement system, and a
 dict with the right SHAPE is worth more than an integration nobody can demo.
 
+THE MOCK MUST NOT DISAGREE WITH THE KNOWLEDGE PACK. The handout says "do not
+hard-code expected answers", and a system of record that invents an incident
+is exactly that: it decides the assessment before any document is read. So
+Asteria is recorded as what the pack says it is - a first engagement whose
+certifications are CLAIMED, not evidenced - and the prior assessments mirror
+knowledge-base/knowledge/historical-vendor-assessments/. A vendor with no
+record (the hidden case) gets "No vendor record", which is UNKNOWN, not PASS.
+
+Policy search is not here: it is served by mcp_servers/knowledge_server.py.
+
 Every function here appears in policy.py's ACTION_RISK, or
 `test_domain_contract` fails the build.
 """
@@ -20,37 +30,65 @@ from typing import Any, Callable
 # --- the simulated estate ---------------------------------------------------
 
 VENDORS: dict[str, dict[str, Any]] = {
+    # A PROPOSAL, not an incumbent: vendor-x-proposal.pdf is addressed to NFS
+    # and no historical assessment exists for it. Certifications as the
+    # questionnaire (section G) states them: claimed, reports under NDA, not
+    # supplied - which the vendor risk policy says is UNKNOWN.
     "asteria-ai-systems": {
-        "legal_name": "Asteria AI Systems Ltd",
+        "legal_name": "Asteria AI Systems",
         "tier": 1,
         "category": "AI platform",
-        "first_engaged": "2024-03-11",
-        "incidents": [
-            {
-                "date": "2025-02-04",
-                "severity": "medium",
-                "summary": "Unplanned 6 hour outage of the inference API. "
-                           "Root cause: expired certificate on a sub-processor.",
-                "resolved": True,
-            },
-            {
-                "date": "2025-09-19",
-                "severity": "high",
-                "summary": "Disclosed that a sub-processor in a non adequate "
-                           "jurisdiction had access to customer prompts for 11 days.",
-                "resolved": False,
-            },
-        ],
+        "first_engaged": "never - first engagement, proposal received 2026-08",
+        "incidents": [],
         "certifications": [
-            {"name": "ISO 27001", "expires": "2026-11-30", "verified": True},
+            {"name": "ISO 27001", "expires": None, "verified": False,
+             "note": "claimed in the security questionnaire; report under NDA, not supplied"},
             {"name": "SOC 2 Type II", "expires": None, "verified": False,
-             "note": "claimed by the vendor, report not supplied"},
+             "note": "claimed in the security questionnaire; report under NDA, not supplied"},
+        ],
+        "prior_assessments": [],
+    },
+    # The three historical records, mirroring historical-vendor-assessments/.
+    "vendor-alpha": {
+        "legal_name": "Vendor Alpha",
+        "tier": 2,
+        "category": "analytics",
+        "first_engaged": "2025",
+        "incidents": [],
+        "certifications": [],
+        "prior_assessments": [
+            {"date": "2025", "decision": "approve_with_conditions", "assessor": "vendor risk",
+             "conditions": ["Incident notification reduced from 72 to 24 hours by "
+                            "contract amendment before production use"]},
+        ],
+    },
+    "vendor-beta": {
+        "legal_name": "Vendor Beta",
+        "tier": 1,
+        "category": "AI platform",
+        "first_engaged": "2026",
+        "incidents": [],
+        "certifications": [],
+        "prior_assessments": [
+            {"date": "2026", "decision": "reject", "assessor": "vendor risk",
+             "conditions": [],
+             "note": "Confidential prompts retained 90 days; customer content used to "
+                     "improve models; no enterprise opt-out"},
+        ],
+    },
+    "vendor-gamma": {
+        "legal_name": "Vendor Gamma",
+        "tier": 2,
+        "category": "document automation",
+        "first_engaged": "2026",
+        "incidents": [],
+        "certifications": [
+            {"name": "SOC 2", "expires": None, "verified": False,
+             "note": "missing from the assessment package, recorded as UNKNOWN"},
         ],
         "prior_assessments": [
-            {"date": "2024-03-01", "decision": "approve_with_conditions",
-             "conditions": ["Annual penetration test evidence",
-                            "Notify of sub-processor changes within 30 days"],
-             "assessor": "procurement"},
+            {"date": "2026", "decision": "approve_with_conditions", "assessor": "vendor risk",
+             "conditions": ["Pilot limited to Internal data until SOC 2 evidence is supplied"]},
         ],
     },
     "helios-data-co": {
@@ -64,9 +102,13 @@ VENDORS: dict[str, dict[str, Any]] = {
     },
 }
 
+# Budgets are finance-system facts the pack does not contain, so they stay
+# mock. The THRESHOLD is not: procurement-policy.pdf section 2.3 puts it at
+# EUR 100,000 (above it, the Technology Investment Committee must approve), and
+# a system of record that disagreed with the policy would be a second truth.
 BUDGETS: dict[str, dict[str, Any]] = {
     "ai-platform": {"annual_budget_eur": 750_000, "committed_eur": 610_000,
-                    "approval_threshold_eur": 250_000},
+                    "approval_threshold_eur": 100_000},
     "analytics": {"annual_budget_eur": 200_000, "committed_eur": 45_000,
                   "approval_threshold_eur": 100_000},
 }
@@ -150,6 +192,7 @@ def get_prior_assessments(vendor: str) -> str:
     return "\n".join(
         f"{p['date']} by {p['assessor']}: {p['decision']}\n"
         f"  conditions: {'; '.join(p.get('conditions', [])) or 'none'}"
+        f"{chr(10) + '  reason: ' + p['note'] if p.get('note') else ''}"
         for p in priors
     )
 
