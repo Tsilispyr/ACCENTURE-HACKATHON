@@ -465,3 +465,63 @@ def test_the_gate_marks_what_it_skips(monkeypatch, llm, store, domain):
     results = out.get("past_steps", [])
     assert [r.step_id for r in results] == ["s2"], "only the write step is above a user"
     assert all(r.skipped and not r.ok for r in results)
+
+
+# --------------------------------------------- the path the harnesses miss ---
+#
+# Both harnesses default to admin: `agent_eval.EVALUATOR` and the autouse
+# fixture in conftest.py. Admin clears every ceiling, so no step is ever
+# skipped and none of this executes. That is how a role-skipped step came back
+# marked `partial` with 456 tests and a 19-case eval all green.
+#
+# `agent_eval --role` makes the path reachable from the eval. This test is the
+# cheap half: a full graph run as a `user`, offline, in milliseconds.
+
+
+def test_a_user_gets_an_answer_not_a_partial_when_a_step_is_above_their_role(
+    llm, store, domain, deep_agent
+):
+    """End to end as a `user`: the write is skipped, the answer still stands.
+
+    The regression this pins: `skipped` and `failed` were the same thing to
+    `s8_compose`, so asking a user-role question that touched a write tool
+    produced a complete, correct answer labelled `partial` - which reads as
+    "something went wrong" when nothing did.
+    """
+    from agentcore.pipeline.graph import build_app
+    from agentcore.pipeline.s2_guard_in import InjectionVerdict
+    from agentcore.pipeline.s3_ground import Sufficiency
+    from agentcore.pipeline.s4_plan import Draft, DraftStep
+    from agentcore.pipeline.s7_replan import Replan
+    from agentcore.world import bound
+    from domains.deterministic import DeterministicReport
+
+    llm.queue(InjectionVerdict, InjectionVerdict(is_injection=False))
+    llm.queue(Sufficiency, Sufficiency(enough=True, missing=""))
+    llm.queue(Draft, Draft(steps=[
+        DraftStep(description="Check the service", tool_hint="check_health"),
+        DraftStep(description="Restart the service", tool_hint="restart_service"),
+    ]))
+    llm.queue(Replan, Replan(done=True, remaining_steps=[]))
+    llm.queue(DeterministicReport,
+              DeterministicReport(summary="The service is healthy.", resolved=True))
+
+    user = Actor(id="u", role="user", scope="public")
+    request = Request(id="r-role", raw_text="Is the service healthy?", actor=user)
+    with bound(user, request.id):
+        state = build_app().invoke(
+            {"request": request, "actor": user},
+            {"configurable": {"thread_id": "t-role-e2e"}},
+        )
+
+    skipped = [e for e in state.get("audit", [])
+               if e.get("event") == "role_skipped"]
+    assert skipped, "a user may not restart a service; the gate must skip that step"
+
+    answer = state.get("answer")
+    assert answer is not None, "the rest of the plan must still produce an answer"
+    assert answer.partial is False, (
+        "a step the gate declined to run for this role is not a failure, and "
+        "marking the answer partial tells the user something broke"
+    )
+    assert "role" in answer.summary.lower(), "the summary has to say what was skipped"

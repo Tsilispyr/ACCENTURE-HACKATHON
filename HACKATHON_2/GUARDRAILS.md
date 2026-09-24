@@ -71,8 +71,14 @@ The whole request is refused only when no runnable step is left.
 
 `tests/test_safety_invariants.py` holds the planted-paragraph tests, the paraphrase and second-layer tests, the
 PII tests and their negative controls, and the authority tests. `tests/test_role_authorization.py` covers role
-ceilings, the denial stand-in, the gate's skip and refusal paths, and that the gate and the executor agree on
-what a role may run.
+ceilings, the denial stand-in, the gate's skip and refusal paths, that the gate and the executor agree on
+what a role may run, and one full graph run as a `user` - offline, in milliseconds - asserting that a step
+skipped for the role does not come back as a `partial` answer.
+
+That last test exists because **both harnesses default to admin**: `agent_eval.EVALUATOR` and the autouse
+fixture in `conftest.py`. Admin clears every ceiling, so no step is skipped and nothing below this line
+executes. `python -m evaluation.agent_eval --role user` makes the path reachable from the evaluation as
+well, and the ledger records which role produced each number.
 
 ## Not part of the six, but shipped with them
 

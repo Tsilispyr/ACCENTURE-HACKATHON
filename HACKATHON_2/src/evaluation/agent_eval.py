@@ -34,6 +34,24 @@ from evaluation.judge import check_groundedness, judge
 EVALUATOR = Actor(id="evaluator", role="admin", scope="public")
 
 
+def evaluator(role: str = "admin") -> Actor:
+    """The actor a case runs as. `admin` by default, and that default has cost.
+
+    Admin clears every role ceiling, so no step is ever skipped and the whole
+    role-authorization path is invisible to this suite. That is exactly how
+    P60 survived - a ceiling that removed `calculate_tco` from the console and
+    the chat UI moved no metric here - and how a role-skipped step came back
+    marked `partial` with nothing objecting.
+
+    A metric that cannot see a path does not protect it, so the path has to be
+    reachable from the harness. `--role` makes it reachable; the fast
+    regression lives in tests/test_role_authorization.py, because running all
+    19 cases again under a second role costs real money for a question a
+    scripted run answers in milliseconds.
+    """
+    return Actor(id="evaluator", role=role, scope="public")
+
+
 @dataclass
 class CaseResult:
     question: str
@@ -50,20 +68,26 @@ class CaseResult:
         return {m.name: m.score for m in self.metrics}
 
 
-def run_case(case: EvalCase, *, auto_approve: bool = True) -> dict[str, Any]:
+def run_case(case: EvalCase, *, auto_approve: bool = True,
+             actor: Actor | None = None) -> dict[str, Any]:
     """One full pipeline run, with a fresh thread so cases cannot interfere.
 
     Approvals are auto-approved so the eval measures the PIPELINE rather than a
     human's reaction time - but whether the gate fired is still recorded, and
     the trajectory check asserts on it.
+
+    `actor` defaults to admin. Pass a lower role to measure what that role can
+    actually get, which is not the same suite: steps above the ceiling are
+    skipped, so cases that need a write will legitimately score lower.
     """
+    who = actor or EVALUATOR
     domain = load_domain()
     app = build_app(MemorySaver())
-    request = domain.parse_request(case.question, EVALUATOR)
+    request = domain.parse_request(case.question, who)
     config = {"configurable": {"thread_id": f"eval-{request.id}"}}
 
-    with bound(EVALUATOR, request.id):
-        state = app.invoke({"request": request, "actor": EVALUATOR}, config)
+    with bound(who, request.id):
+        state = app.invoke({"request": request, "actor": who}, config)
 
         rounds = 0
         while "__interrupt__" in state and auto_approve and rounds < 3:
@@ -142,7 +166,7 @@ def grade(case: EvalCase, state: dict) -> CaseResult:
 
 
 def run(domain_name: str | None = None, *, limit: int | None = None,
-        record_run: bool = True) -> list[CaseResult]:
+        record_run: bool = True, role: str = "admin") -> list[CaseResult]:
     """Every eval case, graded and recorded.
 
     Cases run in order and are NOT short-circuited on failure. A suite that
@@ -157,11 +181,12 @@ def run(domain_name: str | None = None, *, limit: int | None = None,
     """
     domain = load_domain(domain_name)
     cases = domain.eval_cases()[:limit]
+    actor = evaluator(role)
     results = []
 
-    print(f"Agent eval: {domain.name}, {len(cases)} case(s)\n")
+    print(f"Agent eval: {domain.name}, {len(cases)} case(s), as {role}\n")
     for i, case in enumerate(cases, 1):
-        state = run_case(case)
+        state = run_case(case, actor=actor)
         result = grade(case, state)
         results.append(result)
         mark = "PASS" if result.passed else "FAIL"
@@ -188,9 +213,10 @@ def run(domain_name: str | None = None, *, limit: int | None = None,
         try:
             from evaluation.ledger import record
 
-            record(domain=domain.name, experiment="agent", arm="pipeline",
+            record(domain=domain.name, experiment="agent",
+                   arm="pipeline" if role == "admin" else f"pipeline ({role})",
                    metrics={"pass_rate": rate, **means}, n=len(results),
-                   note="agent_eval")
+                   note=f"agent_eval role={role}")
         except Exception as error:  # noqa: BLE001 - a ledger failure is not an eval failure
             print(f"   (not recorded: {type(error).__name__})")
 
@@ -210,5 +236,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--domain", default=None)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--role", default="admin",
+                        help="the role to run as. admin clears every ceiling, so it "
+                             "is the only role for which no step is ever skipped")
     args = parser.parse_args()
-    run(args.domain, limit=args.limit)
+    run(args.domain, limit=args.limit, role=args.role)
