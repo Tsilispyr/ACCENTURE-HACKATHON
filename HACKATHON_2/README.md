@@ -144,6 +144,9 @@ risk. Approve, approve with conditions, or reject, then read the assessment: fin
 domain, citations, UNKNOWN evidence, and conditions. API logins for scripts are `alice@example.com`
 / `demo1234` (also `bob@`, `admin@`).
 
+To exercise every feature from the chat UI (lookups, contradictions, refusals, injection, MCP tools,
+roles), use the prepared questions in **[UI_Test_Questions.md](UI_Test_Questions.md)**.
+
 **7. Evaluate** (optional; uses the live model):
 
 ```bash
@@ -333,6 +336,7 @@ DOMAIN=<name> uv run pytest tests/test_domain_contract.py
 |---|---|
 | **[architecture/](architecture/)** | you want the system map, the stage table, and the handout |
 | **[CORPUS.md](CORPUS.md)** | **the knowledge pack changes** - reindex, recalibrate, relabel, remeasure, in order |
+| [UI_Test_Questions.md](UI_Test_Questions.md) | you want to try every feature in the chat UI, with what each reply should show |
 | [CONSOLE.md](CONSOLE.md) | you want the terminal front end: commands, output, how to script it |
 | [RUNBOOK.md](RUNBOOK.md) | something is broken, or you want the landmine list |
 | [DECISIONS.md](DECISIONS.md) | you want to know *why*, or are about to reverse something |
