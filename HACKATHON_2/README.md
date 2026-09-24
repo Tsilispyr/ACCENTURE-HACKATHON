@@ -24,13 +24,32 @@ You supply four values: your Azure OpenAI key and endpoint, and the *separate* e
 endpoint. `preflight.sh` asks once and writes them to `.env`. Langfuse keys are optional and nothing
 depends on them. Everything else ships pre-filled.
 
-Then open **http://localhost:8020/docs**.
+That brings up everything and prints every address at the end. Start here:
+
+**http://localhost:8030** - the chat UI, which is where a reviewer works.
 
 | Service | URL | Credentials |
 |---|---|---|
-| API | http://localhost:8020 | `GET /healthz` |
+| **Chat UI** | **http://localhost:8030** | none |
+| API docs | http://localhost:8020/docs | none |
+| API | http://localhost:8020/healthz | none |
 | Postgres + pgvector | `localhost:5446`, db `hackathon2` | `h2` / `h2passQWqw12` |
+| MCP | in-network only | not published to the host, on purpose |
 | Traces *(optional)* | https://cloud.langfuse.com | set `LANGFUSE_*` in `.env` |
+
+### Or run it with nothing at all
+
+The built index is **committed**, so a fresh clone answers questions immediately: no Postgres, no
+container, no embedding calls.
+
+```bash
+DOMAIN=vendor_risk VECTOR_BACKEND=chroma uv run python -m agentcore.console
+```
+
+That is the fastest way to see the system work, and the one path that cannot be broken by Docker,
+WSL or a network. Rebuild the index with `python -m agentcore.rag.index --reset` after changing
+anything in `docs/` - and if you change the corpus, follow [CORPUS.md](CORPUS.md), because every
+number is derived from it.
 
 No account is needed to see what a run did. The audit trail is always on:
 
@@ -100,21 +119,26 @@ downstream of the corpus is derived from it, and every one of those things fails
 
 ## Measured, not asserted
 
-Against the real pack, `DOMAIN=vendor_risk`:
+Against the real pack, `DOMAIN=vendor_risk`, 14 labelled cases:
 
-| | recall@1 | recall@3 | MRR |
-|---|---|---|---|
-| vector | **92%** | 100% | **0.944** |
-| vector + BM25 fused | 83% | 100% | 0.917 |
+| | recall@1 | recall@3 | recall@5 | MRR |
+|---|---|---|---|---|
+| vector | 79% | **100%** | **100%** | 0.881 |
+| vector + BM25 fused | **86%** | 93% | **100%** | **0.911** |
 
-Hybrid lexical search is measurably **worse** here, and the prediction that said otherwise was
-wrong. BM25 pulls in sections that share a token without answering the question: the policy and the
-vendor's answer both say "retention" and "24 hours", so lexical overlap peaks exactly where the
-corpus was designed to have two sides.
+**Read recall@5, not recall@1.** `k` is 5, so recall@5 is what the pipeline actually receives, and
+every labelled section is in it. recall@1 and MRR measure the ORDER the model reads them in, which
+is where hybrid earns its place.
 
-The distance ceiling is calibrated, never inherited - worst real question 0.429, best nonsense
-0.799, so 0.61. A ceiling copied from another corpus once rejected everything while the eval still
-reported 91% recall, because the eval measured ranking and never saw the gate.
+Hybrid is on, and that reverses an earlier call. Measured before the chunking was fixed, BM25 lost
+(83% against 92%) because it was scoring on the organisation line, the footer and the page marker
+that appear on all eleven files - present everywhere, discriminating between nothing. With those
+stripped corpus-wide the lexical arm matches on content and wins. The prediction that a vendor pack
+full of `SOC 2` and `EUR 100,000` would suit BM25 turned out right, for a reason nobody predicted.
+
+The distance ceiling is calibrated, never inherited: worst real question 0.473, best nonsense 0.803,
+so 0.64. A ceiling copied from another corpus once rejected everything while the eval still reported
+91% recall, because the eval measured ranking and never saw the gate.
 
 Every number comes from `evaluation-results/results.json` and is plotted in
 `evaluation-results/charts/`. Re-run the evals and re-render, and the deck is current.
@@ -143,8 +167,17 @@ things rather than assumed.
 
 ## Interfaces
 
-| | Command | For |
+| | Where | For |
 |---|---|---|
+| **Chat UI** | **http://localhost:8030** | **the user view.** Ask, read the assessment, answer the approval gate, and see what a document claimed versus what was trusted. Deployed by `deploy.sh`, nothing to start by hand |
+| **Terminal** | `uv run python -m agentcore.console` | **the developer view.** No port, no browser, works over ssh. [CONSOLE.md](CONSOLE.md) |
+| Trace | `uv run python -m agentcore.tracing "question"` | all nine stages with timings, no account needed |
+| API | http://localhost:8020/docs | what a grader scripts against |
+| Evals | `uv run python -m evaluation.agent_eval` | the numbers |
+
+`deploy.sh` prints every address at the end, so none of this needs looking up.
+
+---|---|---|
 | **Chat UI** | `uv run chainlit run src/agentcore/api/chainlit_app.py` | **the user view.** Ask, read the assessment, answer the approval gate, and see what a document claimed versus what was trusted |
 | **Terminal** | `uv run python -m agentcore.console` | **the developer view.** No port, no browser, works over ssh. [CONSOLE.md](CONSOLE.md) |
 | Trace | `uv run python -m agentcore.tracing "question"` | all nine stages with timings, no account needed |

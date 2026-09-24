@@ -25,10 +25,38 @@ from agentcore.world import current_actor
 # added later and forgotten here - gets the lowest ceiling: an unknown caller
 # must never gain access by being unlisted.
 #
-# Two roles, not three. The demo accounts alice and bob are labelled "engineer",
-# a label from before this table existed; it is deliberately NOT listed, so they
-# get the lowest ceiling like any other unlisted role.
-ROLE_MAX_RISK: dict[str, RiskLevel] = {"user": "low", "admin": "high"}
+# WHAT THE HANDOUT ACTUALLY REQUIRES. Section 9 says one thing about this:
+# "Restrict sensitive MCP tools according to role/authorization." It names no
+# roles and defines no per-role permissions, so the tiers below are our design,
+# and "sensitive" has to be read for what it plainly means: the tools that
+# CHANGE something. record_assessment, submit_for_signoff and raise_exception
+# write; search_policy, get_vendor_history and calculate_tco do not.
+#
+# So a user may USE the system fully and may not MODIFY anything. Everything
+# up to medium - retrieval, history, totals, budget - is theirs. The writes are
+# not, and a plan that needs one has that step skipped with the reason shown
+# while every other step still runs (see s5_gate).
+#
+# AN EARLIER TABLE PUT USERS AT LOW, and it was measured wrong twice over.
+# calculate_tco and get_budget are medium, so the commercial reviewer received
+# a denial stand-in and its finding rested on nothing - on the console, the
+# chat UI and the demo accounts alike, while agent_eval ran as admin and no
+# number moved (PROBLEMS P60). It also taught the wrong lesson: a default that
+# cannot do the job trains people to pick admin, which hands them the write
+# tools they never needed.
+#
+# engineer and procurement are the same tier. They are labels this system
+# already issues - the console, the chat UI, alice and bob - not separate
+# privilege levels, and listing them stops a silent demotion to the floor.
+ROLE_MAX_RISK: dict[str, RiskLevel] = {
+    "user": "medium",
+    "engineer": "medium",
+    "procurement": "medium",
+    "admin": "high",
+}
+
+# The floor for a role nobody listed: read-only. Being unrecognised must never
+# be a way in, and it must never be a way to a WRITE.
 LOWEST_CEILING: RiskLevel = "low"
 
 

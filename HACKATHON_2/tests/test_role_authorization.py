@@ -9,8 +9,14 @@ from __future__ import annotations
 import pytest
 from langchain_core.tools import tool
 
-from agentcore.contracts import Actor, PlanStep
-from agentcore.tools.registry import restrict_by_role, role_ceiling, tools_for_step
+from agentcore.contracts import RISK_ORDER, Actor, PlanStep
+from agentcore.tools.registry import (
+    LOWEST_CEILING,
+    ROLE_MAX_RISK,
+    restrict_by_role,
+    role_ceiling,
+    tools_for_step,
+)
 from agentcore.world import bound
 
 pytestmark = pytest.mark.workflow
@@ -56,21 +62,44 @@ def names_that_actually_run(role: str) -> list[str]:
     return list(CALLS)
 
 
-def test_a_user_can_only_read():
-    assert names_that_actually_run("user") == ["lookup"]
+def test_a_user_can_use_everything_except_the_tools_that_write():
+    """CHANGED CONTRACT. This asserted a user could only read.
+
+    The handout says one thing about this (section 9): "restrict SENSITIVE MCP
+    tools according to role/authorization". It names no roles and defines no
+    per-role permissions, so which tools are sensitive is our call, and the
+    honest reading is the ones that CHANGE something.
+
+    calculate_tco and get_budget change nothing. Denying them cost the
+    commercial reviewer the tool that computes the total while leaving the
+    write tools as the only thing actually restricted, which is backwards.
+    """
+    assert names_that_actually_run("user") == ["lookup", "calculate"]
 
 
-def test_the_old_engineer_label_is_an_unlisted_role_with_the_lowest_ceiling():
-    """alice and bob are labelled engineer in the demo accounts; there is no engineer tier."""
-    assert role_ceiling("engineer") == "low"
-    assert names_that_actually_run("engineer") == ["lookup"]
+def test_engineer_can_calculate_but_not_write():
+    """CHANGED CONTRACT. This asserted engineer had the lowest ceiling.
+
+    `engineer` is not a legacy label: it is what the terminal console, the chat
+    UI and the demo accounts alice and bob all run as. Leaving it unlisted
+    denied calculate_tco and get_budget on every one of those paths, so the
+    commercial reviewer got a denial stand-in and its finding rested on
+    nothing. agent_eval runs as admin and never saw it (PROBLEMS P60).
+
+    Medium, not high: the calculation yes, the write tools no.
+    """
+    assert role_ceiling("engineer") == "medium"
+    assert names_that_actually_run("engineer") == ["lookup", "calculate"]
 
 
 def test_an_admin_can_use_everything():
     assert names_that_actually_run("admin") == ["lookup", "calculate", "record"]
 
 
-@pytest.mark.parametrize("role", ["anonymous", "", "procurement", "ADMIN", "root"])
+# `procurement` was here as an example of an unlisted role. It is listed now,
+# for the same reason as `engineer`: it is a role this system issues to a
+# person doing the job. `ADMIN` stays, because case sensitivity is the point.
+@pytest.mark.parametrize("role", ["anonymous", "", "ADMIN", "root", "auditor"])
 def test_a_role_nobody_listed_gets_the_lowest_ceiling(role):
     """Fails closed: being unlisted must never be a way in. Case matters too."""
     assert role_ceiling(role) == "low"
@@ -237,8 +266,10 @@ def _plan(*hints):
 def test_steps_above_a_role_are_listed_with_their_risk():
     plan = _plan("lookup", "calculate", "record", None)
 
+    # A user loses the WRITE step and keeps the calculation: see
+    # test_a_user_can_use_everything_except_the_tools_that_write.
     assert [(s.tool_hint, r) for s, r in steps_above_role(plan, FLOORS, "user")] == [
-        ("calculate", "medium"), ("record", "high")]
+        ("record", "high")]
     assert steps_above_role(plan, FLOORS, "admin") == []
 
 
@@ -306,8 +337,14 @@ def test_the_skipped_step_is_recorded_as_a_failed_result(llm, store, domain, dee
 
 
 def test_skipped_steps_do_not_raise_the_level_the_gate_assesses(monkeypatch, llm, store, domain):
-    """A plan whose only medium step is skipped needs no approval, and the gate says so."""
-    floors = {**domain.action_risk(), "check_health": "medium"}
+    """A plan whose only restricted step is skipped needs no approval, and the gate says so.
+
+    The skipped step is HIGH now rather than medium, because medium is inside a
+    user's ceiling. The property under test is unchanged: a step removed for
+    this caller must not drag the plan's assessed level up with it, or every
+    run would stop for an approval of something that is not going to happen.
+    """
+    floors = {**domain.action_risk(), "check_health": "high"}
     monkeypatch.setattr(type(domain), "action_risk", lambda self: floors)
     plan = Plan(steps=[PlanStep(id="1", description="x", tool_hint="check_health")]
                 + [PlanStep(id="2", description="y", tool_hint="lookup_ticket")])
@@ -328,3 +365,59 @@ def test_the_skip_note_names_the_role_and_the_tools_and_is_empty_without_events(
         "[Skipped for your role ('user'): restart_service (high risk). This part was not "
         "executed; the analysis above covers only the remaining steps.]")
     assert role_skip_note([]) == ""
+
+
+# ------------------------------- the roles this system actually issues ------
+#
+# The table shipped with {"user", "admin"} only, so `engineer` and
+# `procurement` fell to the lowest ceiling and lost calculate_tco and
+# get_budget. agent_eval runs as admin, so every metric stayed clean while the
+# console, the chat UI and the API demo accounts all quietly got worse.
+# PROBLEMS P60. These tests exist because the eval cannot see this.
+
+
+@pytest.mark.parametrize("role", ["engineer", "procurement"])
+def test_the_roles_real_entry_points_use_can_still_calculate(role):
+    """console, chat UI and the demo accounts must keep their medium tools.
+
+    A vendor assessment that cannot compute a total is not an assessment. If
+    this fails, the commercial reviewer is receiving a denial stand-in and its
+    finding rests on nothing.
+    """
+    assert RISK_ORDER[role_ceiling(role)] >= RISK_ORDER["medium"]
+
+
+@pytest.mark.parametrize("role", ["user", "engineer", "procurement"])
+def test_no_role_below_admin_may_write(role):
+    """The other half. Reads and calculations yes, writes no.
+
+    record_assessment, submit_for_signoff and raise_exception are high on the
+    risk floor precisely because they change something somebody acts on.
+    """
+    assert RISK_ORDER[role_ceiling(role)] < RISK_ORDER["high"]
+
+
+def test_every_role_the_code_issues_is_in_the_table():
+    """An unlisted role still fails closed, but silently losing a tool is not
+    the failure anyone wants to discover during a demo. This catches a new
+    Actor(role=...) added anywhere in src/ that nobody thought to list.
+    """
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1] / "src"
+    issued = {
+        match
+        for path in root.rglob("*.py")
+        for match in re.findall(r'Actor\([^)]*role\s*=\s*"([a-z_]+)"', path.read_text(encoding="utf-8"))
+    }
+    # ANONYMOUS is deliberately absent: an unauthenticated caller should hold
+    # the lowest ceiling, and listing it would invite someone to raise it.
+    deliberately_unlisted = {"anonymous"}
+    unlisted = sorted(issued - set(ROLE_MAX_RISK) - deliberately_unlisted)
+
+    assert not unlisted, (
+        f"src/ creates Actor(role=...) for {unlisted}, which ROLE_MAX_RISK does not list. "
+        f"They fall to '{LOWEST_CEILING}' and lose every tool above it. Add them or change "
+        f"the caller."
+    )

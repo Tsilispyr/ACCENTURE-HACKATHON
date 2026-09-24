@@ -237,11 +237,20 @@ piping to a file or a screenshot gives clean ASCII.
 
 ## The frontend
 
-```bash
-DOMAIN=sample_policy uv run chainlit run src/agentcore/api/chainlit_app.py -w
+**It is deployed. Nothing to start by hand:**
+
+```
+http://localhost:8030
 ```
 
-Opens on port 8000 by default; add `--port 8030` to avoid a clash. It shows which stages ran, the
+`deploy.sh` brings it up with everything else and prints the address at the end. Run it standalone
+only when you want auto-reload while editing the UI:
+
+```bash
+DOMAIN=vendor_risk uv run chainlit run src/agentcore/api/chainlit_app.py -w --port 8030
+```
+
+That binds 8000 without `--port`, which collides with the course units, so pass it. It shows which stages ran, the
 plan with per step risk, and an approval dialog for anything high risk. Dismissing that dialog or
 letting it time out counts as a **rejection**, the same rule the API and the CLI follow.
 

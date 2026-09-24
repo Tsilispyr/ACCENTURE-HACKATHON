@@ -179,3 +179,30 @@ def test_the_planner_can_name_every_specialist(any_domain):
     domain = any_domain
     vocabulary = domain.specialist_vocabulary()
     assert vocabulary == [s["name"] for s in domain.specialists()]
+
+
+def test_the_risk_table_names_no_tool_that_does_not_exist():
+    """The reverse of the check above, and it caught a real one.
+
+    `test_every_tool_has_a_risk_floor` runs tools -> table, so a tool nobody
+    listed is caught. Nothing ran table -> tools, so `submit_for_signoff` sat
+    in ACTION_RISK as a high risk tool for as long as it existed, and it was
+    never implemented.
+
+    Harmless on its own: a floor for a tool nobody can call never applies. But
+    it is a claim the code cannot back, and it appeared in every discussion of
+    which tools a role may use, including one where a phantom tool looked
+    permitted because no tool of that name was there to deny.
+    """
+    from agentcore.registry import load_domain
+    from agentcore.tools.registry import _all_tools
+
+    for name in ("vendor_risk", "sample_policy", "sample_ops"):
+        domain = load_domain(name)
+        real = {tool.name for tool in _all_tools(name)}
+        phantom = sorted(set(domain.action_risk()) - real)
+        assert not phantom, (
+            f"{name}'s action_risk() lists {phantom}, which are not tools. Either implement "
+            f"them or drop the entry: a risk floor for a tool nobody can call is a claim "
+            f"the code cannot back."
+        )

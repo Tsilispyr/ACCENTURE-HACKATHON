@@ -13,7 +13,6 @@ from agentcore.contracts import RiskLevel
 ACTION_RISK: dict[str, RiskLevel] = {
     # writes - these need a human
     "record_assessment": "high",
-    "submit_for_signoff": "high",
     "raise_exception": "high",
     # reads
     "search_policy": "low",

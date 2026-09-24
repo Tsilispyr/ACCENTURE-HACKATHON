@@ -255,15 +255,38 @@ echo "[deploy] bringing up the app stack..."
 docker compose -f "$APP_COMPOSE" -f "$APP_LIMITS"     --project-directory "$APP_DIR/deployment" up -d --build
 
 echo ""
-echo "== Deployed (run #${run_number_padded}) =="
-echo "  API      : http://localhost:8020        (GET /healthz)"
-echo "  API docs : http://localhost:8020/docs"
-echo "  Postgres : localhost:5446  db hackathon2  (h2 / h2passQWqw12)"
+# EVERYTHING IN ONE PLACE, at the end, with no hunting. A front end that
+# needs a README and a second command is a front end most people never open,
+# so the deploy prints every address it just made reachable - and says plainly
+# which of them is off and how to switch it on.
+DOMAIN_NAME="$(sed -n 's/^DOMAIN=//p' "$APP_DIR/.env" 2>/dev/null | head -1 | tr -d '"')"
+
+echo "=============================================================================="
+echo "  Deployed (run #${run_number_padded})   domain: ${DOMAIN_NAME:-unset}   profile: $DEPLOY_PROFILE"
+echo "=============================================================================="
+echo ""
+echo "  OPEN THESE"
+echo "    Chat UI    http://localhost:8030     ask, read the assessment, approve"
+echo "    API docs   http://localhost:8020/docs"
+echo ""
+echo "  ALSO RUNNING"
+echo "    API        http://localhost:8020/healthz"
+echo "    Postgres   localhost:5446   db hackathon2   h2 / h2passQWqw12"
+echo "    MCP        in-network only, http://mcp-systems:8100/mcp"
+echo ""
+echo "  TRACES"
 if [ -n "${LANGFUSE_PUBLIC_KEY:-}" ]; then
-    echo "  Traces   : ${LANGFUSE_HOST:-https://cloud.langfuse.com}"
+    echo "    Langfuse   ${LANGFUSE_HOST:-https://cloud.langfuse.com}"
 else
-    echo "  Traces   : local only - uv run python -m agentcore.tracing \"question\""
+    echo "    Langfuse   OFF. Add LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY to .env,"
+    echo "               from cloud.langfuse.com, then re-run this script."
 fi
-echo "  Log      : $LOG_FILE"
+echo "    Local      uv run python -m agentcore.tracing \"your question\"     (no account)"
+echo ""
+echo "  TERMINAL, for developers"
+echo "    uv run python -m agentcore.console"
+echo ""
+echo "  Log        $LOG_FILE"
+echo "  Stop       docker compose -f deployment/docker-compose.yml --project-directory deployment down"
 echo ""
 echo "Smoke test: bash scripts/smoke.sh"

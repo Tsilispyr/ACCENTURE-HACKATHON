@@ -42,9 +42,18 @@ STAGE_LABELS = {
 }
 
 
+# Two tiers, matching what the handout asks for and nothing more: section 9
+# says "restrict sensitive MCP tools according to role/authorization" and names
+# no roles. Sensitive means the tools that change something.
+#
+# `user` is the default and can do the whole job - ask, retrieve, assess,
+# calculate a total. What it cannot do is WRITE: recording or filing an
+# assessment is skipped, with the reason shown, while every other step still
+# runs. A default that could not assess would teach people to pick admin,
+# which hands them the write tools they never needed.
 ROLE_PROFILES = {
-    "user": "Read-only tools. Anything above low risk is denied.",
-    "admin": "Every tool. High risk work still pauses for your approval.",
+    "user": "Ask and assess. Retrieval, history and totals; cannot record or file anything.",
+    "admin": "Every tool, including the ones that write. High risk work still pauses for approval.",
 }
 
 

@@ -23,3 +23,11 @@ build/
 # NOTE: README.md must NOT be excluded - pyproject.toml declares
 # readme = "README.md", so the build fails with "failed to open file
 # /app/README.md" if it is missing from the context.
+
+# Reference material and local state, neither of which the image needs. Both
+# are COPY . . bait: course-material/ is 11MB of the provider's course content
+# and .chroma/ is a local index the container never reads, because the
+# deployed API is pinned to pgvector.
+course-material/
+.chroma/
+evaluation-results/charts/
