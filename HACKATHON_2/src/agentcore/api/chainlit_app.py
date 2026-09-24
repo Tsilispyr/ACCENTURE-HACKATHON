@@ -1,10 +1,15 @@
-"""Chainlit frontend with real-time streaming of thinking, tools, agent actions, and logging.
+"""Chainlit frontend with real-time streaming, persistent history, and state retention across page refreshes.
 
     DOMAIN=vendor_risk uv run chainlit run src/agentcore/api/chainlit_app.py -w
 
 Why Chainlit: the pipeline PAUSES for human approval, streams multi-step agent
 execution, shows specialist delegation, tool invocations, and generates
 transparent, evidence-grounded vendor risk assessments.
+
+State & History Retention:
+- Uses persistent SQLite checkpointer (`.cache/checkpoints.sqlite`).
+- Retains evidence, findings, citations, and conversation context across turns and page refreshes.
+- Type `:reset` or `:clear` to start a fresh thread session.
 """
 
 from __future__ import annotations
@@ -15,6 +20,7 @@ from typing import Any
 import chainlit as cl
 from langgraph.types import Command
 
+from agentcore.checkpointer import SqliteCheckpointer
 from agentcore.contracts import Actor
 from agentcore.pipeline.graph import build_app
 from agentcore.registry import load_domain
@@ -62,20 +68,50 @@ async def role_profiles() -> list[cl.ChatProfile]:
 @cl.on_chat_start
 async def start() -> None:
     domain = load_domain()
-    cl.user_session.set("graph", build_app())
+    checkpointer = SqliteCheckpointer()
+    graph = build_app(checkpointer=checkpointer)
+    cl.user_session.set("graph", graph)
     cl.user_session.set("domain", domain)
+    cl.user_session.set("checkpointer", checkpointer)
+
     role = cl.user_session.get("chat_profile") or "user"
     if role not in ROLE_PROFILES:
         role = "user"
-    cl.user_session.set("actor", Actor(id=f"ui-{role}", role=role, scope="public"))
+    
+    actor = Actor(id=f"ui-{role}", role=role, scope="public")
+    cl.user_session.set("actor", actor)
 
-    await cl.Message(
-        content=(
-            f"**Domain `{domain.name}` loaded.** Acting as **{role}** ({ROLE_PROFILES[role]}).\n\n"
-            f"{domain.persona().splitlines()[0]}\n\n"
-            "Ask a vendor assessment or compliance question. High-risk actions will pause for approval."
-        )
-    ).send()
+    thread_id = f"ui-thread-{role}"
+    cl.user_session.set("thread_id", thread_id)
+
+    # Check for existing checkpoint state on this thread to restore across refreshes
+    prior_state = None
+    try:
+        prior_state = graph.get_state({"configurable": {"thread_id": thread_id}})
+    except Exception:
+        prior_state = None
+
+    if prior_state and getattr(prior_state, "values", None) and prior_state.values.get("answer"):
+        ans = prior_state.values.get("answer")
+        ev_count = len(prior_state.values.get("evidence", []))
+        verdict = getattr(ans, "decision", getattr(ans, "recommendation", "N/A")).replace("_", " ").upper()
+        await cl.Message(
+            content=(
+                f"🔄 **Session Restored for {role}** (Thread `{thread_id}`)\n\n"
+                f"- **Retained Evidence**: `{ev_count}` passage(s)\n"
+                f"- **Prior Verdict**: `{verdict}`\n"
+                f"- **Prior Summary**: {getattr(ans, 'summary', '')[:160]}...\n\n"
+                "You can ask follow-up questions building upon prior assessment state, or type `:reset` to clear."
+            )
+        ).send()
+    else:
+        await cl.Message(
+            content=(
+                f"**Domain `{domain.name}` loaded.** Acting as **{role}** ({ROLE_PROFILES[role]}).\n\n"
+                f"{domain.persona().splitlines()[0]}\n\n"
+                "Ask a vendor assessment or compliance question. State & history are preserved across turns and page refreshes."
+            )
+        ).send()
 
 
 LEVEL_MARK = {"high": "HIGH", "medium": "MEDIUM", "low": "LOW", "none": "-"}
@@ -236,7 +272,6 @@ async def _ask_approval(payload: dict) -> dict:
 
 
 def _format_stage_summary(stage: str, delta: dict[str, Any]) -> str:
-    """Format concise, informative output for a pipeline step."""
     lines: list[str] = []
     if stage == "s1_intake":
         req = delta.get("request")
@@ -294,9 +329,20 @@ async def on_message(message: cl.Message) -> None:
     graph = cl.user_session.get("graph")
     domain = cl.user_session.get("domain")
     actor = cl.user_session.get("actor")
+    thread_id = cl.user_session.get("thread_id") or f"ui-thread-{actor.role}"
+    checkpointer = cl.user_session.get("checkpointer")
 
-    request = domain.parse_request(message.content, actor)
-    config = {"configurable": {"thread_id": request.id}}
+    text = message.content.strip()
+
+    if text in (":reset", ":clear", "reset", "clear"):
+        if checkpointer:
+            checkpointer.delete_thread(thread_id)
+        cl.user_session.set("graph", build_app(checkpointer=checkpointer))
+        await cl.Message(content=f"🧹 Session state for thread `{thread_id}` has been cleared.").send()
+        return
+
+    request = domain.parse_request(text, actor)
+    config = {"configurable": {"thread_id": thread_id}}
 
     accumulated_state: dict[str, Any] = {"request": request, "actor": actor}
     audit_trail: list[dict[str, Any]] = []
@@ -326,7 +372,6 @@ async def on_message(message: cl.Message) -> None:
                         new_audit = delta.get("audit") or []
                         audit_trail.extend(new_audit)
 
-                    # Stream interactive step to Chainlit UI
                     step_title = STAGE_LABELS.get(stage, stage)
                     step_type = STAGE_TYPES.get(stage, "run")
                     async with cl.Step(name=step_title, type=step_type) as step:
@@ -341,7 +386,6 @@ async def on_message(message: cl.Message) -> None:
             resume_data = await _ask_approval(interrupt_payload)
             payload = Command(resume=resume_data)
 
-    # Save agent trace log to logs/agent_runs/
     log_path = None
     try:
         log_path = save_agent_log(
