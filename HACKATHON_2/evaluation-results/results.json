@@ -1424,11 +1424,16 @@
     "detail": {}
   },
   {
+<<<<<<< HEAD:HACKATHON_2/evaluation-results/results.json
     "at": "2026-09-24T07:59:06+00:00",
+=======
+    "at": "2026-09-24T09:04:02+00:00",
+>>>>>>> 69d9d9c (mcp security issues fixed, rag and mcp working, default is hybrid rag, and ran locally. remains to be ran with live LLM and embeddings model after merge):evaluation-results/results.json
     "domain": "vendor_risk",
     "experiment": "chunking",
     "arm": "corpus",
     "metrics": {
+<<<<<<< HEAD:HACKATHON_2/evaluation-results/results.json
       "chunks": 84.0,
       "pages": 1.0,
       "sections": 84.0,
@@ -1622,6 +1627,14 @@
       "avg_chunk_chars": 229.0595
     },
     "n": 84,
+=======
+      "chunks": 81.0,
+      "pages": 11.0,
+      "sections": 81.0,
+      "avg_chunk_chars": 201.7901
+    },
+    "n": 81,
+>>>>>>> 69d9d9c (mcp security issues fixed, rag and mcp working, default is hybrid rag, and ran locally. remains to be ran with live LLM and embeddings model after merge):evaluation-results/results.json
     "note": "size=900 overlap=120",
     "detail": {}
   }

@@ -15,7 +15,7 @@ Budget about **40 minutes**, most of it waiting.
 
 | | stand in (now) | the real pack |
 |---|---|---|
-| files | 2 markdown | **12 PDFs**, 5 policies + 3 `vendor-x-*` + 3 under `historical-vendor-assessments/` |
+| files | 2 markdown | **11 PDFs**, 5 policies + 3 `vendor-x-*` + 3 under `historical-vendor-assessments/` |
 | chunks | 12 | unknown, expect a few hundred |
 | eval labels | `Section 3` to `Section 11`, positional | **will all be wrong** |
 | distance ceiling | 0.70, calibrated on this corpus | **will be wrong** |
@@ -31,10 +31,11 @@ results.
 ### 1. Drop the files in
 
 ```bash
-src/domains/vendor_risk/docs/
+knowledge-base/knowledge/
 ```
 
-Subfolders are handled: `corpus.py` uses `rglob`, so `historical-vendor-assessments/` is picked up
+That is where `vendor_risk/corpus.py` reads from (the old `src/domains/vendor_risk/docs/` stand in
+is no longer read). A hidden vendor's files go in the same folder. Subfolders are handled: `corpus.py` uses `rglob`, so `historical-vendor-assessments/` is picked up
 without anyone editing a path. Dotfiles are skipped, which is what stops a macOS `.DS_Store` being
 indexed as a document.
 
@@ -53,7 +54,7 @@ Read the output. It prints one line per file and a total:
 ```
   procurement-policy.pdf: 14 pages -> 38,201 chars -> 22 sections
   ...
-  12 file(s) -> 431 chunks
+  11 file(s) -> 81 chunks
 ```
 
 **If a file shows far fewer sections than it has headings, stop.** That is PROBLEMS P03: boilerplate
@@ -135,7 +136,7 @@ DOMAIN=vendor_risk VECTOR_BACKEND=chroma \
 ```
 
 The existing baselines are against a 12 chunk stand in and mean nothing afterwards. This is also
-the moment to settle PROBLEMS P54, since the chunking question is much more interesting on twelve
+the moment to settle PROBLEMS P54, since the chunking question is much more interesting on eleven
 files than on two.
 
 ### 9. Run the whole eval and the gate
@@ -180,6 +181,6 @@ The stand in is 12 chunks; the real one may be several hundred. Two things chang
 **Indexing costs embedding calls.** 459 chunks took a few minutes on the GDPR corpus. Reindex
 deliberately, not casually, and never in the middle of an experiment.
 
-**`k` may need raising.** `POLICY.k` is 5, chosen for a 12 chunk corpus. With twelve documents, a
+**`k` may need raising.** `POLICY.k` is 5, chosen for a 12 chunk corpus. With eleven documents, a
 question that spans several of them may need more. Raise it and re-measure rather than guessing,
 and watch the latency: `s3_ground` is currently 4 to 14 seconds and grows with `k`.

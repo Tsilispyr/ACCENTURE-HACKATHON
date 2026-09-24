@@ -34,6 +34,33 @@ def test_every_chunk_cites_its_own_file(two_files):
     assert "some_domain" not in by_text.values()
 
 
+def test_bold_pdf_headings_give_clean_section_paths(tmp_path):
+    """pymupdf4llm renders PDF headings as '## **1. Scope**'. Citations must not."""
+    doc = tmp_path / "policy.md"
+    doc.write_text("# **Security Policy**\n\n## **1. Scope**\n\nApplies to snake_case_names.\n",
+                   encoding="utf-8")
+    [chunk] = chunk_corpus([doc], source="some_domain")
+
+    assert chunk.metadata["section"] == "Security Policy > 1. Scope"
+    assert "snake_case_names" in chunk.page_content
+
+
+def test_a_footer_on_every_one_page_file_is_stripped(tmp_path):
+    """One-page files never have three pages each, so only a corpus-wide pass sees the footer."""
+    paths = []
+    for name in ("a", "b", "c", "d"):
+        path = tmp_path / f"{name}.md"
+        path.write_text(f"# Doc {name}\n\n## Rule\n\nRule text {name}.\n\n"
+                        "Northstar - Fictional Material\n\nPage 1\n", encoding="utf-8")
+        paths.append(path)
+    chunks = chunk_corpus(paths, source="some_domain")
+
+    assert chunks
+    assert not any("Fictional Material" in c.page_content for c in chunks)
+    assert not any("Page 1" in c.page_content for c in chunks)
+    assert {c.metadata["source"] for c in chunks} == {"a.md", "b.md", "c.md", "d.md"}
+
+
 def test_positional_section_numbers_and_order_stay_corpus_wide(two_files):
     """'section 3' must still be ONE place, or eval labels and locators break."""
     chunks = chunk_corpus(two_files, source="some_domain")

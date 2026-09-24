@@ -43,6 +43,10 @@ INLINE_TAG = re.compile(r"</?(?:u|sup|sub|b|i)>")
 # The generic fallback: real markdown headings.
 MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$", re.M)
 
+# pymupdf4llm renders a bold PDF heading as '## **1. Scope**'. Only WRAPPING
+# markers are removed, so an underscore inside a word survives.
+EMPHASIS = re.compile(r"(\*\*|__|\*|_)(.+?)\1")
+
 
 class Section(NamedTuple):
     """One structural unit of the document."""
@@ -249,7 +253,9 @@ def markdown_sections(markdown: str) -> list[Section]:
 
     out, stack = [], []
     for i, match in enumerate(matches):
-        level, title = len(match.group(1)), match.group(2).strip()
+        # Without this the label reads '**Policy** > **1. Scope**', and that
+        # is what every citation built from it would show.
+        level, title = len(match.group(1)), EMPHASIS.sub(r"\2", match.group(2)).strip()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(markdown)
         stack = stack[: level - 1] + [title]
         body = markdown[match.end() : end].strip()
@@ -343,6 +349,12 @@ def chunk_corpus(
     pages = load_pages(paths, cache_dir)
     if not pages:
         raise RuntimeError(f"No readable pages in: {[str(p) for p in paths]}")
+
+    # Corpus-wide first, then per file below. A pack of one-page PDFs has a
+    # footer on every FILE but never three pages in one, so the per-file pass
+    # alone cannot see it. For a single-file corpus the two passes see the
+    # same pages.
+    pages = strip_boilerplate(pages, is_heading)
 
     by_file: dict[str, list[dict]] = {}
     for page in pages:

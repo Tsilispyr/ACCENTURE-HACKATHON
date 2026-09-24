@@ -42,9 +42,13 @@ def build(domain_name: str | None = None, *, reset: bool = False) -> int:
     sections = domain.section_finder()
     record(
         domain=domain.name, experiment="chunking", arm="corpus",
+        # Keyed per FILE. Page numbers restart in every document, so a bare
+        # set of page numbers counted eleven one-page PDFs as one page; a
+        # heading shared by two files would collapse the same way.
         metrics={"chunks": len(chunks),
-                 "pages": len({c.metadata.get("page") for c in chunks}),
-                 "sections": len({c.metadata.get("section") for c in chunks}),
+                 "pages": len({(c.metadata.get("source"), c.metadata.get("page")) for c in chunks}),
+                 "sections": len({(c.metadata.get("source"), c.metadata.get("section"))
+                                  for c in chunks}),
                  "avg_chunk_chars": sum(len(c.page_content) for c in chunks) / max(len(chunks), 1)},
         n=len(chunks),
         note=f"size={corpus.chunk_size} overlap={corpus.chunk_overlap}",

@@ -318,6 +318,7 @@ at,domain,experiment,arm,metric,value,n,note
 2026-09-23T16:04:28+00:00,vendor_risk,reliability,D-level-salvage-plus-domain-match,delegations_mean,4.1,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
 2026-09-23T16:04:28+00:00,vendor_risk,reliability,D-level-salvage-plus-domain-match,compose_failures,0.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
 2026-09-23T16:04:28+00:00,vendor_risk,reliability,D-level-salvage-plus-domain-match,seconds_mean,90.2792,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+<<<<<<< HEAD:HACKATHON_2/evaluation-results/results.csv
 2026-09-24T07:59:06+00:00,vendor_risk,chunking,corpus,chunks,84.0,84,size=900 overlap=120
 2026-09-24T07:59:06+00:00,vendor_risk,chunking,corpus,pages,1.0,84,size=900 overlap=120
 2026-09-24T07:59:06+00:00,vendor_risk,chunking,corpus,sections,84.0,84,size=900 overlap=120
@@ -367,3 +368,9 @@ at,domain,experiment,arm,metric,value,n,note
 2026-09-24T09:07:30+00:00,vendor_risk,chunking,corpus,pages,1.0,84,size=900 overlap=120
 2026-09-24T09:07:30+00:00,vendor_risk,chunking,corpus,sections,84.0,84,size=900 overlap=120
 2026-09-24T09:07:30+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,229.0595,84,size=900 overlap=120
+=======
+2026-09-24T09:04:02+00:00,vendor_risk,chunking,corpus,chunks,81.0,81,size=900 overlap=120
+2026-09-24T09:04:02+00:00,vendor_risk,chunking,corpus,pages,11.0,81,size=900 overlap=120
+2026-09-24T09:04:02+00:00,vendor_risk,chunking,corpus,sections,81.0,81,size=900 overlap=120
+2026-09-24T09:04:02+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,201.7901,81,size=900 overlap=120
+>>>>>>> 69d9d9c (mcp security issues fixed, rag and mcp working, default is hybrid rag, and ran locally. remains to be ran with live LLM and embeddings model after merge):evaluation-results/results.csv
