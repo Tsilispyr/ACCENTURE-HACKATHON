@@ -1146,3 +1146,46 @@ something it should not.
 **What it costs:** no graph RAG to demonstrate, which was a differentiator on paper and nothing in
 practice, since no query existed to run. Bringing it back is a compose service and a filled in
 `GRAPH_QUERIES`, not a rewrite.
+
+
+## D49 · Tools are gated by the caller's role, and the gate skips what a role may not run
+`src/agentcore/tools/registry.py`, `src/agentcore/pipeline/s5_gate.py`, `src/agentcore/pipeline/s9_guard_out.py`
+Guardrails role. Handout section 9: "Restrict sensitive MCP tools according to role/authorization."
+
+**Before:** the allowlist asked whether a step declared a tool and the risk gate whether it was
+dangerous. Nothing asked who was calling.
+
+**Rule:** each role has a ceiling on the existing low/medium/high scale, so there is no second
+per-tool table to keep in step with the first. `user`, `engineer` and `procurement` are medium (read,
+retrieve, calculate); `admin` is high. A role the table does not name gets the lowest ceiling, so
+being unlisted is never a way in. The role is read from the bound actor (`world.bound`), the same
+source that scopes retrieval, so the API, Chainlit and the evaluation all supply it.
+
+**Two enforcement points, one rule.** `steps_above_role` decides for the gate and `restrict_by_role`
+for the executor, both on the tool's own floor, and a test asserts they agree.
+- *Executor:* a tool above the ceiling is replaced by a stand-in with the same name and arguments
+  that runs nothing and returns "Denied: ...". Removing it would leave "unknown tool" for the reader
+  to decode.
+- *Gate:* it skips only the steps above the requester's role. Each becomes `skipped` with a failed
+  `StepResult`, a `role_skipped` audit event records it, and the rest of the plan runs. The risk level
+  is recomputed over the steps that will actually run, so a plan whose only high risk step was skipped
+  no longer pauses for approval, and the approval prompt lists only what will run. `s9` appends a
+  "[Skipped for your role ...]" note and `s8` marks the answer partial. Only when NO runnable step is
+  left does the gate refuse the whole request ("Not authorised"), because an empty plan would look
+  like a success.
+
+**Why the gate and not only the executor:** before this, a user saw the approval prompt, approved,
+and only then met "Denied" - a real click that changed nothing.
+
+**Human authority is the companion rule, in `s9`.** An unconditional `approve` on a plan with any
+`high` finding becomes `pending`; a conditional approval with no human review is labelled as awaiting
+one. This follows AI-004 s6 and PR-001 s4: a High risk AI vendor is not approved by an automated
+recommendation alone.
+
+**Alternatives:** an admin-only rule (clear in a demo, but the default user could then do nothing);
+refusing the whole plan when one step is above the role (simpler, but a user who asked for an
+assessment and a filing would lose the assessment).
+
+**What it costs:** the Chainlit role picker is a demo device, not authentication - over the API the
+role comes from the account. A skipped write step is reported in the answer, so a reader has to notice
+the note to know the filing did not happen.
