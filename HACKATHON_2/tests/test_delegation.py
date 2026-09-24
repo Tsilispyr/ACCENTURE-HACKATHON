@@ -1,7 +1,10 @@
 """Delegation: the executor handing a step to a specialist, end to end and offline.
 
-FR07 requires agent-to-agent interaction with at least two specialist agents,
-and it is worth 10 of the 100 scoring points. Three specialists had been wired
+Delegation was FR07 in the PRELIMINARY handout, worth 10 of 100. The official
+handout deletes that row: specialists are only suggested, and this work now
+scores under "Deep Agent architecture & planning" instead of a line of its own.
+It is not worth less, it is counted elsewhere - and the defect below is the
+reason to keep testing it either way. Three specialists had been wired
 as deep-agent subagents for a while and `agent_delegation` measured **0.00** on
 every one of twelve eval cases.
 

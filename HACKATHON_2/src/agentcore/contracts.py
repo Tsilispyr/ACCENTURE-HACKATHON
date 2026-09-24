@@ -239,7 +239,7 @@ class Contradiction(BaseModel):
 class RiskFinding(BaseModel):
     """The verdict for ONE risk domain.
 
-    FR08 requires several domains assessed. Keeping them as separate findings
+    FR07 requires several domains assessed. Keeping them as separate findings
     rather than one blob means coverage is checkable: a domain with no findings
     is visibly unassessed instead of quietly absent.
     """
@@ -321,7 +321,7 @@ class Answer(BaseModel):
     refused: bool = False
     refusal_reason: str | None = None
 
-    # --- assessment structure (FR05, FR08, FR11, FR12) --------------------
+    # --- assessment structure (FR05, FR07, FR10, FR11) --------------------
     claims: list[Claim] = Field(default_factory=list)
     findings: list[RiskFinding] = Field(default_factory=list)
     contradictions: list[Contradiction] = Field(default_factory=list)

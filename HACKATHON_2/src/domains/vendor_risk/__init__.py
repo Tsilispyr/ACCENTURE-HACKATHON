@@ -12,17 +12,20 @@ the day and drops into `docs/`. Nothing in this file assumes its structure --
 handles it. If the pack turns out to have real structure worth keeping,
 override `find_sections` there and nothing else changes.
 
-Mapping to the stated requirements:
+Mapping to the stated requirements, numbered from the OFFICIAL handout, which
+has 14. The preliminary text had A2A as FR07; the official one deletes that row
+and every requirement below it shifts up by one, so a comment elsewhere that
+says FR15 predates the correction.
     FR01  parse_request           structured vendor assessment request
     FR02  s4_plan + s7_replan     a multi-step plan that is maintained
     FR03  corpus + s3_ground      RAG over the supplied pack
     FR04  Answer.citations        cited evidence
     FR05  Claim.basis             evidence / inference / missing
     FR06  systems() + MCP         four enterprise capabilities
-    FR08  risk_domains()          security, commercial, AI governance, data privacy
-    FR11  contradictions          detected in s8_compose
-    FR12  conditional approval    s5_gate three-way decision
-    FR13  action_risk()           the risk floor drives the HITL gate
+    FR07  risk_domains()          security, commercial, AI governance, legal compliance
+    FR10  contradictions          detected in s8_compose
+    FR11  conditional approval    s5_gate three-way decision
+    FR12  action_risk()           the risk floor drives the HITL gate
 """
 
 from __future__ import annotations

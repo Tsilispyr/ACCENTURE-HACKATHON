@@ -150,7 +150,8 @@ def test_the_two_reference_domains_are_genuinely_different_shapes():
 
 # ------------------------------------------------------------ specialists ---
 #
-# FR07 needs at least two specialist agents. These are mechanical checks that
+# At least two specialist agents. This was FR07 before the official handout
+# deleted that row; the check stays because the capability does. Mechanical checks that
 # a domain's specialists are usable, parametrised over every domain so a new
 # one cannot ship a subtly broken set.
 

@@ -91,7 +91,7 @@ def check_groundedness(answer: str, sources: str) -> Groundedness:
     THE ABSENCE CASE is why this prompt is longer than it looks like it should
     be. An assessment is required to report what is MISSING - "no penetration
     test report was supplied", "data privacy could not be assessed". Those are
-    the `basis="missing"` claims, and they are a feature (FR11), not sloppiness.
+    the `basis="missing"` claims, and they are a feature (FR10), not sloppiness.
 
     Asked only "do the sources support this claim", a judge marks every one of
     them unsupported, because nothing in the sources says a thing is absent.

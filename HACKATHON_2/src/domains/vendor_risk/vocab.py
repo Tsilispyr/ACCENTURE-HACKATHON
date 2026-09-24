@@ -26,7 +26,7 @@ GLOSSARY = (
 )
 
 # The four findings the handout's section 2 requires the report to carry:
-# Security, Legal/Compliance, Procurement/Commercial and AI Governance. FR08
+# Security, Legal/Compliance, Procurement/Commercial and AI Governance. FR07
 # asks for security + commercial + at least one more; this is all four.
 #
 # `legal_compliance` was called `data_privacy` until the real handout arrived.

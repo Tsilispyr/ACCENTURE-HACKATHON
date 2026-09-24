@@ -14,6 +14,7 @@ root. Moving one out breaks `uv sync` inside the Docker build, three output path
 ```bash
 DOMAIN=vendor_risk uv run python -m evaluation.retrieval_eval   # recall@k, MRR
 DOMAIN=vendor_risk uv run python -m evaluation.agent_eval       # the full pipeline per case
+DOMAIN=vendor_risk uv run python -m evaluation.agent_eval --role user   # as a role that is NOT admin
 DOMAIN=vendor_risk uv run python -m evaluation.timing           # per-stage wall time
 DOMAIN=vendor_risk uv run python -m evaluation.usage            # tokens and cost per run
 bash scripts/eval_gate.sh                                       # CI gate; EXITS NON-ZERO
