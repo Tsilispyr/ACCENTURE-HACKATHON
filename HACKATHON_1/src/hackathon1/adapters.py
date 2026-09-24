@@ -63,7 +63,7 @@ from hackathon1.tools import (
     search_knowledge_base,
     search_logs,
 )
-from hackathon1.world import active_world
+from hackathon1.world import ToolUnavailableError, active_world
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +151,43 @@ def action_from_plan(plan: RemediationPlan) -> str:
         if any(word in haystack for word in keywords):
             return action
     return "restart_service"
+
+
+#: How many extra metrics reads the adapter makes when the collector reports
+#: itself unavailable. The tool reports the outage rather than hiding it, so
+#: the retry decision lives here, in the agent -- and one retry is the whole
+#: policy: the modelled failure is a busy collector that answers the next read,
+#: and an incident is not served by waiting on a backend that is really down.
+METRICS_RETRY_ATTEMPTS = 2
+
+
+def _read_metrics(service: str) -> dict[str, Any]:
+    """Read metrics, retrying while the collector reports itself unavailable.
+
+    `get_service_metrics` returns ``status: "unavailable"`` instead of raising,
+    which is what makes this retry a decision the agent takes rather than one
+    the tool takes for it. A read that is still unavailable afterwards is a
+    real gap, so it becomes a ``ToolUnavailableError`` -- investigate_incident
+    records the area as failed (FR15) and the diagnosis proceeds on the rest of
+    the evidence. Returning the empty payload instead would let "nothing was
+    measured" be read as "nothing was wrong".
+    """
+    for attempt in range(METRICS_RETRY_ATTEMPTS + 1):
+        payload = get_service_metrics.invoke({"service": service})
+        if payload.get("status") != "unavailable":
+            return payload
+        logger.warning(
+            "metrics unavailable for %s (attempt %d of %d): %s",
+            service,
+            attempt + 1,
+            METRICS_RETRY_ATTEMPTS + 1,
+            payload.get("error"),
+        )
+
+    raise ToolUnavailableError(
+        f"metrics for {service} still unavailable after "
+        f"{METRICS_RETRY_ATTEMPTS + 1} attempt(s): {payload.get('error')}"
+    )
 
 
 def _evidence_lines(payload: Any, limit: int = 6) -> list[str]:
@@ -324,7 +361,7 @@ class LiveIncidentAdapter:
             payload = search_logs.invoke({"service": service})
             summary = f"{len(payload)} log group(s) at WARN or above for {service}."
         elif area == "metrics":
-            payload = get_service_metrics.invoke({"service": service})
+            payload = _read_metrics(service)
             breached = [r for r in payload.get("readings", []) if r.get("breached")]
             summary = (
                 f"{len(breached)} metric(s) breaching baseline for {service}."

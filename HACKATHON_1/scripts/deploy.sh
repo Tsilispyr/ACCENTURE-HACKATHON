@@ -21,7 +21,7 @@ if [ -z "${BASH_VERSION:-}" ]; then
     if command -v bash >/dev/null 2>&1; then
         exec bash "$0" "$@"
     fi
-    echo "ERROR: this script needs bash (it uses pipefail and associative arrays)." >&2
+    echo "ERROR: this script needs bash (it uses pipefail and arrays)." >&2
     echo "       No bash found on PATH." >&2
     echo "       On Windows, run it from WSL, or use PowerShell:  .\scripts\deploy.ps1" >&2
     exit 1
@@ -41,7 +41,7 @@ APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 # so `bash scripts/deploy.sh` does the right thing from any shell, and the only
 # thing that differs between environments is who ends up executing it:
 #
-#   WSL / Linux    run directly (docker is on PATH, nothing to do)
+#   WSL / Linux / macOS  run directly (docker is on PATH, nothing to do)
 #   Git Bash/MSYS  re-exec inside WSL, below
 #   PowerShell/cmd scripts/deploy.ps1, which does the same translation
 # ---------------------------------------------------------------------------
@@ -175,15 +175,16 @@ infra_healthy() {
 # of 3 from the baseline captured before waiting, not any restart at all.
 wait_for_infra() {
     local deadline=$((SECONDS + TIMEOUT_SECONDS))
-    local -A baseline_restarts=()
-    local name
+    local baseline_restarts=()
+    local name i
     for name in "${INFRA_CONTAINERS[@]}"; do
-        baseline_restarts["$name"]="$(docker inspect -f '{{.RestartCount}}' "$name" 2>/dev/null || echo 0)"
+        baseline_restarts+=("$(docker inspect -f '{{.RestartCount}}' "$name" 2>/dev/null || echo 0)")
     done
 
     while true; do
         local all_healthy=true fatal=""
-        for name in "${INFRA_CONTAINERS[@]}"; do
+        for i in "${!INFRA_CONTAINERS[@]}"; do
+            name="${INFRA_CONTAINERS[$i]}"
             local state health restarts oom
             state="$(docker inspect -f '{{.State.Status}}' "$name" 2>/dev/null || echo missing)"
             health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$name" 2>/dev/null || echo missing)"
@@ -194,7 +195,7 @@ wait_for_infra() {
                 fatal="$name was OOM-killed -- raise its mem_limit in compose/infra.${DEPLOY_PROFILE}.yaml"
             elif [ "$state" = "exited" ] || [ "$state" = "dead" ]; then
                 fatal="$name $state (exit $(docker inspect -f '{{.State.ExitCode}}' "$name" 2>/dev/null))"
-            elif [ "$restarts" -ge $(( ${baseline_restarts[$name]:-0} + 3 )) ]; then
+            elif [ "$restarts" -ge $(( ${baseline_restarts[$i]:-0} + 3 )) ]; then
                 fatal="$name is restart-looping ($restarts restarts) -- see: docker logs $name"
             fi
             [ "$health" = "healthy" ] || all_healthy=false

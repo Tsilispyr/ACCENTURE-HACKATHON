@@ -112,10 +112,62 @@ The estate is not uniform, which is what makes the workflow's behaviour meaningf
 | `payment-service` | scale the pool, **then** restart - scaling alone is partial |
 | `identity-service` | roll back the change |
 | `order-service` | restart |
+| `catalog-service` | scale the pool - the running process reloads the new ceiling |
+| `inventory-service` | scale the pool, **then** approve a restart - scaling alone is partial |
 | `reporting-service` | nothing works - exercises the bounded-retry path |
 
 `get_service_metrics` also fails its **first** call for a service, by design, so the tool-failure
 path is exercised on a normal run rather than only under contrivance.
+
+### UI scenario templates
+
+The UI at `http://localhost:8010/ui` asks for five fields: **Incident ID**, **Service**,
+**Severity**, **Description**, and **Error**. The following templates demonstrate three different
+workflow outcomes. Submit each template as a separate incident.
+
+#### 1. Immediate resolution: scale succeeds
+
+Use `catalog-service`. The pool is saturated, but this service reloads the new pool ceiling while
+running. `scale_connection_pool` is low risk, executes without approval, and verification should
+finish the incident as **resolved**.
+
+| Field | Value |
+|---|---|
+| Incident ID | `INC-CATALOG-001` |
+| Service | `catalog-service` |
+| Severity | `low` |
+| Description | `Catalog requests are timing out because the database connection pool is exhausted. Increase the pool size.` |
+| Error | `Database connection timeout` |
+
+#### 2. First attempt fails, approved restart resolves it
+
+Use `inventory-service`. Scaling lowers the symptoms but leaked connections remain held, so the
+first verification is still degraded. The graph proposes `restart_service`; because this service
+is not on the low-impact allowlist, the UI pauses at **Human approval required**. Choose **Approve**
+to run the restart and finish as **resolved**.
+
+| Field | Value |
+|---|---|
+| Incident ID | `INC-INVENTORY-001` |
+| Service | `inventory-service` |
+| Severity | `high` |
+| Description | Inventory requests are timing out because connections are leaking from the stock reservation repository. Scaling the pool may reduce pressure, but a restart is needed to reclaim leaked connections.` |
+| Error | `Database connection timeout; connection leak suspected` |
+
+#### 3. Second attempt fails: escalate unresolved
+
+Use `reporting-service`. The failure is in the upstream analytics warehouse, not the local
+service. Local remediation actions do not change the breached metrics. The graph will retry its
+plan within the bounded limit and eventually finish as **unresolved**, with escalation recorded in
+the final report.
+
+| Field | Value |
+|---|---|
+| Incident ID | `INC-REPORTING-001` |
+| Service | `reporting-service` |
+| Severity | `high` |
+| Description | Scheduled reports are failing because the upstream analytics warehouse is degraded. Local CPU and memory are normal. |
+| Error | `Warehouse query timed out; upstream data source unavailable` |
 
 ## Testing
 
