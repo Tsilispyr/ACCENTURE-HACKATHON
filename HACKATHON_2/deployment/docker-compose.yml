@@ -1,5 +1,17 @@
 # APP stack - rebuilt and redeployed constantly, so it is kept separate from
 # the stateful infra stack. It joins the infra network as `external`.
+# PIN THE PROJECT NAME. Compose derives it from the directory when it is not
+# set, so moving these files into deployment/ silently renamed the project from
+# "hackathon2" to "deployment". Compose then saw none of its own containers,
+# tried to create fresh ones, and hit the pinned container_name:
+#
+#   Conflict. The container name "/h2-postgres" is already in use
+#
+# The stack was healthy the whole time; compose just no longer recognised it.
+# Pinned here rather than via COMPOSE_PROJECT_NAME in deploy.sh so that a bare
+# `docker compose` run from any directory adopts the same containers.
+name: hackathon2
+
 services:
 
   api:
@@ -31,6 +43,11 @@ services:
       # search_corpus instead.
       - MCP_MODE=http
       - MCP_URL=http://mcp-systems:8100/mcp
+      # Pinned so .env can default to chroma for local CLI work. The container
+      # has no Chroma index on disk - the index lives in the postgres service
+      # beside it - so inheriting chroma here would start an API that
+      # retrieves nothing and says so only in the audit trail.
+      - VECTOR_BACKEND=pgvector
     networks:
       - h2-infra
     healthcheck:

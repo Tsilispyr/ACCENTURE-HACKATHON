@@ -1609,5 +1609,20 @@
     "n": 1,
     "note": "Evaluate Asteria AI Systems as an enterprise Generative AI platform for 2,000 em",
     "detail": {}
+  },
+  {
+    "at": "2026-09-24T09:07:30+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 84.0,
+      "pages": 1.0,
+      "sections": 84.0,
+      "avg_chunk_chars": 229.0595
+    },
+    "n": 84,
+    "note": "size=900 overlap=120",
+    "detail": {}
   }
 ]

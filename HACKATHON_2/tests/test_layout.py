@@ -145,3 +145,32 @@ def test_the_ci_workflow_validates_the_moved_stack():
     text = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     for match in re.findall(r"-f (\S+\.ya?ml)", text):
         assert (ROOT / match).is_file(), f"CI references {match}, which does not exist"
+
+
+# ---------------------------------------------------- shell scripts are LF ---
+
+
+def test_shell_scripts_have_unix_line_endings():
+    """A CR in a shell script breaks it on Linux, and the error blames the wrong line.
+
+    `deploy.sh` was rewritten by a tool that used the platform default newline,
+    so every line gained a CR. bash then read `case "$OSTYPE" in\r` and reported
+    a syntax error at a line that was perfectly correct, because the CR is
+    invisible in most editors and in Git Bash's own grep.
+
+    `.gitattributes` sets `eol=lf`, but that governs what GIT writes. Anything
+    that edits a file directly bypasses it, which is exactly what happened.
+    These scripts run inside WSL and inside the container, so LF is not a
+    preference here, it is a requirement.
+    """
+    root = Path(__file__).resolve().parents[1]
+    offenders = [
+        path.relative_to(root).as_posix()
+        for path in sorted(root.glob("scripts/*.sh")) + sorted(root.glob("deployment/**/*.sh"))
+        if b"\r" in path.read_bytes()
+    ]
+
+    assert not offenders, (
+        f"CRLF line endings in {offenders}. bash will fail on these with a "
+        f"syntax error pointing at the wrong line. Fix: sed -i 's/\r$//' <file>"
+    )

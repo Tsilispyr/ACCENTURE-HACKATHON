@@ -239,8 +239,20 @@ wait_for_infra || {
 echo "[deploy] infra healthy."
 
 echo "[deploy] bringing up the app stack..."
-# --project-directory is required because the -f files are absolute paths.
-docker compose -f "$APP_COMPOSE" -f "$APP_LIMITS" --project-directory "$APP_DIR" up -d --build
+# --project-directory is required because the -f files are absolute paths, and
+# it must be deployment/, NOT the repo root. Compose resolves every relative
+# path in a compose file against the PROJECT DIRECTORY, not against the file
+# that contains it, so pointing it at the repo root made both relative paths
+# climb one level too far:
+#
+#   env_file: ../.env   ->  /mnt/c/projects/.env        (above the repo)
+#   context:  ..        ->  /mnt/c/projects             (above the repo)
+#
+# The first failed loudly. The second would have built the image from the
+# wrong tree. deployment/ is also what a bare `docker compose -f
+# deployment/docker-compose.yml` infers on its own, so both invocations now
+# resolve identically.
+docker compose -f "$APP_COMPOSE" -f "$APP_LIMITS"     --project-directory "$APP_DIR/deployment" up -d --build
 
 echo ""
 echo "== Deployed (run #${run_number_padded}) =="

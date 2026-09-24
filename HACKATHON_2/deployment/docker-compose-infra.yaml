@@ -3,6 +3,18 @@
 #
 # Cross-stack ordering lives in scripts/deploy.sh, NOT here: compose's
 # depends_on only works within a single compose invocation, never across files.
+# PIN THE PROJECT NAME. Compose derives it from the directory when it is not
+# set, so moving these files into deployment/ silently renamed the project from
+# "hackathon2" to "deployment". Compose then saw none of its own containers,
+# tried to create fresh ones, and hit the pinned container_name:
+#
+#   Conflict. The container name "/h2-postgres" is already in use
+#
+# The stack was healthy the whole time; compose just no longer recognised it.
+# Pinned here rather than via COMPOSE_PROJECT_NAME in deploy.sh so that a bare
+# `docker compose` run from any directory adopts the same containers.
+name: hackathon2
+
 services:
 
   postgres:

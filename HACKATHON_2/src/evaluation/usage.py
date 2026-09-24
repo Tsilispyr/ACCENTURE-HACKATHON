@@ -39,6 +39,11 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
+# Importing for the side effect: llm.py holds the only load_dotenv() in the
+# codebase. Without it `charts.py` reads an unloaded environment, finds no
+# rate, and renders "not priced" against a .env that sets one.
+import agentcore.llm  # noqa: F401
+
 # Defaults are DELIBERATELY absent. A plausible looking rate for a model nobody
 # checked is worse than no rate, because it produces a number that survives
 # into a slide unchallenged.

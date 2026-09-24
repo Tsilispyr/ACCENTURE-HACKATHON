@@ -330,7 +330,15 @@ def run_cost(domain: str = "sample_policy") -> Path | None:
     # The euro figure is a SUBTITLE, not a bar. It is derived from the tokens
     # already plotted, so drawing it again would say the same thing twice, and
     # it is absent whenever no rate is configured rather than shown as zero.
-    cost = row.get("cost_eur")
+    # Prefer a cost computed NOW over one frozen into the ledger. Token counts
+    # are a measurement and never change; a rate is a fact about the world that
+    # does. Recomputing at render time means updating .env re-prices every past
+    # run, instead of leaving old rows quoting a rate that has since moved.
+    from evaluation.usage import Usage
+
+    cost = Usage(input_tokens=tokens_in, output_tokens=tokens_out).cost()
+    if cost is None:
+        cost = row.get("cost_eur")
     seconds = row.get("seconds")
     caption = f"{tokens_in + tokens_out:,.0f} tokens"
     if seconds:
