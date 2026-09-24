@@ -1,0 +1,25 @@
+# The stack, from the repo root.
+#
+# The real definitions live in deployment/, which keeps the infra stack, the
+# app stack, the memory overlays and the database schema together. This file
+# exists because the handout's deliverables list names a docker-compose.yml at
+# the root, and because `docker compose up` from the root is what most people
+# type first.
+#
+# `include` is not a copy: Compose resolves each included file's relative paths
+# against that file's own directory, so the build contexts and bind mounts in
+# deployment/ keep working unchanged.
+#
+#   docker compose up -d                      everything, default sizes
+#   bash scripts/deploy.sh                    the same, with a health gate and
+#                                             a RAM profile chosen for you
+#
+# For the memory overlays, name them explicitly - Compose has no way to select
+# an overlay through `include`:
+#
+#   docker compose -f deployment/docker-compose-infra.yaml \
+#                  -f deployment/compose/infra.lean.yaml up -d
+
+include:
+  - deployment/docker-compose-infra.yaml
+  - deployment/docker-compose.yml

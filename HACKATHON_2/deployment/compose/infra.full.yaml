@@ -1,0 +1,10 @@
+# full - the headroom profile. Postgres gets the larger limit for a bigger
+# corpus and a heavier index build.
+#
+# Neo4j used to live here. It was removed with the container (DECISIONS D48):
+# vendor_risk's GRAPH_QUERIES is empty, so nothing ever queried it, and a JVM
+# sitting idle cost ~768MB of a 3.6GB WSL budget. The graph SEAM survives in
+# code, so a scenario that wants one points NEO4J_URI at its own instance.
+services:
+  postgres:
+    mem_limit: 512m

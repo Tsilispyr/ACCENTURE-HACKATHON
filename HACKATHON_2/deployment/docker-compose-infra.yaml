@@ -1,0 +1,51 @@
+# INFRA stack - the stateful services. Managed independently of the app so the
+# app can be rebuilt and redeployed without restarting these.
+#
+# Cross-stack ordering lives in scripts/deploy.sh, NOT here: compose's
+# depends_on only works within a single compose invocation, never across files.
+services:
+
+  postgres:
+    # pgvector's image is plain Postgres with the extension preinstalled, so
+    # one container serves BOTH the vector store and the LangGraph checkpoints.
+    # Running a second Postgres for checkpoints would cost ~250MB for nothing.
+    image: pgvector/pgvector:pg17
+    container_name: h2-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: h2
+      POSTGRES_PASSWORD: h2passQWqw12
+      POSTGRES_DB: hackathon2
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      # 5446 avoids 5432/5433 (hackathon1) and 5442/5444/5445 (course units).
+      #
+      # NOT bound to 127.0.0.1, deliberately. Docker runs inside WSL2 here, and
+      # a port published only on WSL's loopback depends on Windows' localhost
+      # forwarding, which was measured to register unreliably after a VM start
+      # - giving an intermittent ConnectionRefused against a database that is
+      # running and healthy. Publishing on all interfaces inside the VM makes
+      # the forwarding dependable.
+      #
+      # This is not a LAN exposure: WSL2 sits behind NAT, so "all interfaces"
+      # means the VM's own network, reachable from this host and nothing else.
+      - "5446:5432"
+    volumes:
+      - h2_postgres_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U h2 -d hackathon2"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  h2_postgres_data:
+
+# Named explicitly rather than relying on compose's implicit
+# "<project>_default", so the app stack can join it as external: true and
+# reach these services by their service DNS names.
+networks:
+  default:
+    name: h2-infra

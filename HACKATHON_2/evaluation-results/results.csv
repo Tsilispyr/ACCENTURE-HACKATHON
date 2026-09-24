@@ -1,0 +1,361 @@
+at,domain,experiment,arm,metric,value,n,note
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,vector,recall@1,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,vector,recall@3,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,vector,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,vector,mrr,0.9318,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,hybrid,recall@1,0.8182,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,hybrid,recall@3,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,hybrid,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,hybrid,mrr,0.8674,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,unfiltered,recall@1,0.5455,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,unfiltered,recall@3,0.8636,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,unfiltered,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:43:19+00:00,sample_policy,retrieval,unfiltered,mrr,0.7098,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:44:09+00:00,sample_policy,calibration,distances,worst_real,0.6577,22,
+2026-09-22T10:44:09+00:00,sample_policy,calibration,distances,best_nonsense,0.7802,22,
+2026-09-22T10:44:09+00:00,sample_policy,calibration,distances,suggested_ceiling,0.72,22,
+2026-09-22T10:44:09+00:00,sample_policy,calibration,distances,configured_ceiling,0.7,22,
+2026-09-22T10:44:09+00:00,sample_policy,calibration,distances,gap,0.1225,22,
+2026-09-22T10:44:18+00:00,sample_policy,chunking,corpus,chunks,459.0,459,size=1200 overlap=150
+2026-09-22T10:44:18+00:00,sample_policy,chunking,corpus,pages,87.0,459,size=1200 overlap=150
+2026-09-22T10:44:18+00:00,sample_policy,chunking,corpus,sections,272.0,459,size=1200 overlap=150
+2026-09-22T10:44:18+00:00,sample_policy,chunking,corpus,avg_chunk_chars,818.4423,459,size=1200 overlap=150
+2026-09-22T10:45:01+00:00,sample_policy,stage_timing,s1_intake,seconds,0.0189,,single request
+2026-09-22T10:45:01+00:00,sample_policy,stage_timing,s2_guard_in,seconds,0.003,,single request
+2026-09-22T10:45:01+00:00,sample_policy,stage_timing,s3_ground,seconds,7.5803,,single request
+2026-09-22T10:45:01+00:00,sample_policy,stage_timing,s4_plan,seconds,1.2486,,single request
+2026-09-22T10:45:01+00:00,sample_policy,stage_timing,s5_gate,seconds,0.0015,,single request
+2026-09-22T10:45:01+00:00,sample_policy,stage_timing,s6_act,seconds,7.0552,,single request
+2026-09-22T10:45:01+00:00,sample_policy,stage_timing,s7_replan,seconds,0.001,,single request
+2026-09-22T10:45:01+00:00,sample_policy,stage_timing,s8_compose,seconds,5.194,,single request
+2026-09-22T10:45:01+00:00,sample_policy,stage_timing,s9_guard_out,seconds,0.0045,,single request
+2026-09-22T10:49:21+00:00,sample_policy,chunking,corpus,chunks,459.0,459,size=1200 overlap=150
+2026-09-22T10:49:21+00:00,sample_policy,chunking,corpus,pages,87.0,459,size=1200 overlap=150
+2026-09-22T10:49:21+00:00,sample_policy,chunking,corpus,sections,272.0,459,size=1200 overlap=150
+2026-09-22T10:49:21+00:00,sample_policy,chunking,corpus,avg_chunk_chars,818.4423,459,size=1200 overlap=150
+2026-09-22T10:49:49+00:00,sample_policy,retrieval,vector,recall@1,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:49:49+00:00,sample_policy,retrieval,vector,recall@3,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:49:49+00:00,sample_policy,retrieval,vector,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:49:49+00:00,sample_policy,retrieval,vector,mrr,0.9318,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:49:49+00:00,sample_policy,retrieval,unfiltered,recall@1,0.5455,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:49:49+00:00,sample_policy,retrieval,unfiltered,recall@3,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:49:49+00:00,sample_policy,retrieval,unfiltered,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:49:49+00:00,sample_policy,retrieval,unfiltered,mrr,0.7212,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-22T10:50:06+00:00,sample_policy,backend,pgvector,recall@1,0.91,22,postgres container required
+2026-09-22T10:50:06+00:00,sample_policy,backend,pgvector,recall@3,0.95,22,postgres container required
+2026-09-22T10:50:06+00:00,sample_policy,backend,pgvector,recall@5,0.95,22,postgres container required
+2026-09-22T10:50:06+00:00,sample_policy,backend,pgvector,mrr,0.932,22,postgres container required
+2026-09-22T10:50:06+00:00,sample_policy,backend,chroma,recall@1,0.91,22,"in-process, no server"
+2026-09-22T10:50:06+00:00,sample_policy,backend,chroma,recall@3,0.95,22,"in-process, no server"
+2026-09-22T10:50:06+00:00,sample_policy,backend,chroma,recall@5,0.95,22,"in-process, no server"
+2026-09-22T10:50:06+00:00,sample_policy,backend,chroma,mrr,0.932,22,"in-process, no server"
+2026-09-22T15:22:48+00:00,vendor_risk,chunking,corpus,chunks,12.0,12,size=900 overlap=120
+2026-09-22T15:22:48+00:00,vendor_risk,chunking,corpus,pages,1.0,12,size=900 overlap=120
+2026-09-22T15:22:48+00:00,vendor_risk,chunking,corpus,sections,12.0,12,size=900 overlap=120
+2026-09-22T15:22:48+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,353.6667,12,size=900 overlap=120
+2026-09-22T15:24:27+00:00,vendor_risk,chunking,corpus,chunks,12.0,12,size=900 overlap=120
+2026-09-22T15:24:27+00:00,vendor_risk,chunking,corpus,pages,1.0,12,size=900 overlap=120
+2026-09-22T15:24:27+00:00,vendor_risk,chunking,corpus,sections,12.0,12,size=900 overlap=120
+2026-09-22T15:24:27+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,353.6667,12,size=900 overlap=120
+2026-09-22T15:29:45+00:00,vendor_risk,chunking,corpus,chunks,12.0,12,size=900 overlap=120
+2026-09-22T15:29:45+00:00,vendor_risk,chunking,corpus,pages,1.0,12,size=900 overlap=120
+2026-09-22T15:29:45+00:00,vendor_risk,chunking,corpus,sections,12.0,12,size=900 overlap=120
+2026-09-22T15:29:45+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,353.6667,12,size=900 overlap=120
+2026-09-22T15:30:09+00:00,vendor_risk,calibration,distances,worst_real,0.5575,8,
+2026-09-22T15:30:09+00:00,vendor_risk,calibration,distances,best_nonsense,0.8479,8,
+2026-09-22T15:30:09+00:00,vendor_risk,calibration,distances,suggested_ceiling,0.7,8,
+2026-09-22T15:30:09+00:00,vendor_risk,calibration,distances,configured_ceiling,0.7,8,
+2026-09-22T15:30:09+00:00,vendor_risk,calibration,distances,gap,0.2905,8,
+2026-09-22T15:57:32+00:00,vendor_risk,chunking,corpus,chunks,12.0,12,size=900 overlap=120
+2026-09-22T15:57:32+00:00,vendor_risk,chunking,corpus,pages,1.0,12,size=900 overlap=120
+2026-09-22T15:57:32+00:00,vendor_risk,chunking,corpus,sections,12.0,12,size=900 overlap=120
+2026-09-22T15:57:32+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,353.6667,12,size=900 overlap=120
+2026-09-22T15:58:05+00:00,vendor_risk,retrieval,vector,recall@1,1.0,5,filter=None hybrid=True
+2026-09-22T15:58:05+00:00,vendor_risk,retrieval,vector,recall@3,1.0,5,filter=None hybrid=True
+2026-09-22T15:58:05+00:00,vendor_risk,retrieval,vector,recall@5,1.0,5,filter=None hybrid=True
+2026-09-22T15:58:05+00:00,vendor_risk,retrieval,vector,mrr,1.0,5,filter=None hybrid=True
+2026-09-22T15:58:05+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@1,1.0,5,filter=None hybrid=True
+2026-09-22T15:58:05+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@3,1.0,5,filter=None hybrid=True
+2026-09-22T15:58:05+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@5,1.0,5,filter=None hybrid=True
+2026-09-22T15:58:05+00:00,vendor_risk,retrieval,hybrid (v+bm25),mrr,1.0,5,filter=None hybrid=True
+2026-09-22T16:32:19+00:00,vendor_risk,agent,pipeline,pass_rate,0.0,3,agent_eval
+2026-09-22T16:32:19+00:00,vendor_risk,agent,pipeline,citation_correctness,0.75,3,agent_eval
+2026-09-22T16:32:19+00:00,vendor_risk,agent,pipeline,task_completion,1.0,3,agent_eval
+2026-09-22T16:32:19+00:00,vendor_risk,agent,pipeline,tool_correctness,1.0,3,agent_eval
+2026-09-22T16:32:19+00:00,vendor_risk,agent,pipeline,agent_delegation,1.0,3,agent_eval
+2026-09-22T16:32:19+00:00,vendor_risk,agent,pipeline,decision_quality,0.222,3,agent_eval
+2026-09-22T16:35:46+00:00,vendor_risk,agent,pipeline,pass_rate,0.6667,3,agent_eval
+2026-09-22T16:35:46+00:00,vendor_risk,agent,pipeline,citation_correctness,0.75,3,agent_eval
+2026-09-22T16:35:46+00:00,vendor_risk,agent,pipeline,task_completion,1.0,3,agent_eval
+2026-09-22T16:35:46+00:00,vendor_risk,agent,pipeline,tool_correctness,1.0,3,agent_eval
+2026-09-22T16:35:46+00:00,vendor_risk,agent,pipeline,agent_delegation,1.0,3,agent_eval
+2026-09-22T16:35:46+00:00,vendor_risk,agent,pipeline,decision_quality,1.0,3,agent_eval
+2026-09-22T16:41:10+00:00,vendor_risk,agent,pipeline,pass_rate,0.6667,3,agent_eval
+2026-09-22T16:41:10+00:00,vendor_risk,agent,pipeline,citation_correctness,1.0,3,agent_eval
+2026-09-22T16:41:10+00:00,vendor_risk,agent,pipeline,task_completion,1.0,3,agent_eval
+2026-09-22T16:41:10+00:00,vendor_risk,agent,pipeline,tool_correctness,1.0,3,agent_eval
+2026-09-22T16:41:10+00:00,vendor_risk,agent,pipeline,agent_delegation,1.0,3,agent_eval
+2026-09-22T16:41:10+00:00,vendor_risk,agent,pipeline,decision_quality,1.0,3,agent_eval
+2026-09-22T16:42:29+00:00,deterministic,retrieval,vector,recall@1,0.8,5,filter=None hybrid=True
+2026-09-22T16:42:29+00:00,deterministic,retrieval,vector,recall@3,1.0,5,filter=None hybrid=True
+2026-09-22T16:42:29+00:00,deterministic,retrieval,vector,recall@5,1.0,5,filter=None hybrid=True
+2026-09-22T16:42:29+00:00,deterministic,retrieval,vector,mrr,0.9,5,filter=None hybrid=True
+2026-09-22T16:43:38+00:00,deterministic,agent,pipeline,pass_rate,0.5,6,agent_eval
+2026-09-22T16:43:38+00:00,deterministic,agent,pipeline,citation_correctness,1.0,6,agent_eval
+2026-09-22T16:43:38+00:00,deterministic,agent,pipeline,task_completion,1.0,6,agent_eval
+2026-09-22T16:43:38+00:00,deterministic,agent,pipeline,tool_correctness,1.0,6,agent_eval
+2026-09-22T16:43:38+00:00,deterministic,agent,pipeline,agent_delegation,1.0,6,agent_eval
+2026-09-22T16:43:38+00:00,deterministic,agent,pipeline,decision_quality,1.0,6,agent_eval
+2026-09-22T16:46:16+00:00,vendor_risk,agent,pipeline,pass_rate,0.5,12,agent_eval
+2026-09-22T16:46:16+00:00,vendor_risk,agent,pipeline,citation_correctness,1.0,12,agent_eval
+2026-09-22T16:46:16+00:00,vendor_risk,agent,pipeline,task_completion,0.917,12,agent_eval
+2026-09-22T16:46:16+00:00,vendor_risk,agent,pipeline,tool_correctness,0.917,12,agent_eval
+2026-09-22T16:46:16+00:00,vendor_risk,agent,pipeline,agent_delegation,1.0,12,agent_eval
+2026-09-22T16:46:16+00:00,vendor_risk,agent,pipeline,decision_quality,0.917,12,agent_eval
+2026-09-22T17:08:12+00:00,vendor_risk,agent,pipeline,pass_rate,0.1667,12,agent_eval
+2026-09-22T17:08:12+00:00,vendor_risk,agent,pipeline,citation_correctness,0.825,12,agent_eval
+2026-09-22T17:08:12+00:00,vendor_risk,agent,pipeline,task_completion,0.979,12,agent_eval
+2026-09-22T17:08:12+00:00,vendor_risk,agent,pipeline,tool_correctness,0.917,12,agent_eval
+2026-09-22T17:08:12+00:00,vendor_risk,agent,pipeline,agent_delegation,0.917,12,agent_eval
+2026-09-22T17:08:12+00:00,vendor_risk,agent,pipeline,decision_quality,1.0,12,agent_eval
+2026-09-22T17:08:23+00:00,vendor_risk,stage_timing,total,seconds,86.6092,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-22T17:08:23+00:00,vendor_risk,stage_timing,s6_act,seconds,51.3504,5,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-22T17:08:23+00:00,vendor_risk,stage_timing,s8_compose,seconds,22.9189,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-22T17:08:23+00:00,vendor_risk,stage_timing,s3_ground,seconds,9.6015,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-22T17:08:23+00:00,vendor_risk,stage_timing,s4_plan,seconds,2.7151,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-22T17:08:23+00:00,vendor_risk,stage_timing,s1_intake,seconds,0.0099,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-22T17:08:23+00:00,vendor_risk,stage_timing,s7_replan,seconds,0.0051,5,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-22T17:08:23+00:00,vendor_risk,stage_timing,s2_guard_in,seconds,0.0049,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-22T17:08:23+00:00,vendor_risk,stage_timing,s9_guard_out,seconds,0.0022,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-22T17:08:23+00:00,vendor_risk,stage_timing,s5_gate,seconds,0.0012,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-22T21:37:46+00:00,vendor_risk,agent,pipeline,pass_rate,0.5,12,agent_eval
+2026-09-22T21:37:46+00:00,vendor_risk,agent,pipeline,citation_correctness,0.708,12,agent_eval
+2026-09-22T21:37:46+00:00,vendor_risk,agent,pipeline,task_completion,0.979,12,agent_eval
+2026-09-22T21:37:46+00:00,vendor_risk,agent,pipeline,tool_correctness,0.917,12,agent_eval
+2026-09-22T21:37:46+00:00,vendor_risk,agent,pipeline,agent_delegation,0.917,12,agent_eval
+2026-09-22T21:37:46+00:00,vendor_risk,agent,pipeline,decision_quality,1.0,12,agent_eval
+2026-09-22T23:11:31+00:00,vendor_risk,agent,pipeline,pass_rate,0.5833,12,agent_eval
+2026-09-22T23:11:31+00:00,vendor_risk,agent,pipeline,citation_correctness,0.867,12,agent_eval
+2026-09-22T23:11:31+00:00,vendor_risk,agent,pipeline,task_completion,0.917,12,agent_eval
+2026-09-22T23:11:31+00:00,vendor_risk,agent,pipeline,tool_correctness,0.917,12,agent_eval
+2026-09-22T23:11:31+00:00,vendor_risk,agent,pipeline,agent_delegation,0.833,12,agent_eval
+2026-09-22T23:11:31+00:00,vendor_risk,agent,pipeline,decision_quality,0.917,12,agent_eval
+2026-09-23T11:08:12+00:00,vendor_risk,retrieval,vector,recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T11:08:12+00:00,vendor_risk,retrieval,vector,recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T11:08:12+00:00,vendor_risk,retrieval,vector,recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T11:08:12+00:00,vendor_risk,retrieval,vector,mrr,1.0,5,filter=None hybrid=True
+2026-09-23T11:08:12+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T11:08:12+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T11:08:12+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T11:08:12+00:00,vendor_risk,retrieval,hybrid (v+bm25),mrr,1.0,5,filter=None hybrid=True
+2026-09-23T11:08:42+00:00,sample_policy,retrieval,vector,recall@1,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:08:42+00:00,sample_policy,retrieval,vector,recall@3,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:08:42+00:00,sample_policy,retrieval,vector,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:08:42+00:00,sample_policy,retrieval,vector,mrr,0.9318,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:08:42+00:00,sample_policy,retrieval,unfiltered,recall@1,0.5455,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:08:42+00:00,sample_policy,retrieval,unfiltered,recall@3,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:08:42+00:00,sample_policy,retrieval,unfiltered,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:08:42+00:00,sample_policy,retrieval,unfiltered,mrr,0.7212,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:08:48+00:00,vendor_risk,stage_timing,total,seconds,112.3291,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T11:08:48+00:00,vendor_risk,stage_timing,s6_act,seconds,71.8887,6,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T11:08:48+00:00,vendor_risk,stage_timing,s8_compose,seconds,17.512,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T11:08:48+00:00,vendor_risk,stage_timing,s3_ground,seconds,13.7971,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T11:08:48+00:00,vendor_risk,stage_timing,s4_plan,seconds,9.0921,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T11:08:48+00:00,vendor_risk,stage_timing,s7_replan,seconds,0.0183,6,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T11:08:48+00:00,vendor_risk,stage_timing,s1_intake,seconds,0.0071,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T11:08:48+00:00,vendor_risk,stage_timing,s2_guard_in,seconds,0.0054,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T11:08:48+00:00,vendor_risk,stage_timing,s5_gate,seconds,0.0045,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T11:08:48+00:00,vendor_risk,stage_timing,s9_guard_out,seconds,0.0038,1,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T11:10:07+00:00,sample_policy,retrieval,vector,recall@1,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:10:07+00:00,sample_policy,retrieval,vector,recall@3,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:10:07+00:00,sample_policy,retrieval,vector,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:10:07+00:00,sample_policy,retrieval,vector,mrr,0.9318,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:10:33+00:00,sample_policy,retrieval,vector,recall@1,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:10:33+00:00,sample_policy,retrieval,vector,recall@3,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:10:33+00:00,sample_policy,retrieval,vector,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:10:33+00:00,sample_policy,retrieval,vector,mrr,0.9318,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:12:02+00:00,vendor_risk,calibration,distances,worst_real,1.1155,8,
+2026-09-23T11:12:02+00:00,vendor_risk,calibration,distances,best_nonsense,1.6963,8,
+2026-09-23T11:12:02+00:00,vendor_risk,calibration,distances,suggested_ceiling,1.41,8,
+2026-09-23T11:12:02+00:00,vendor_risk,calibration,distances,configured_ceiling,0.7,8,
+2026-09-23T11:12:02+00:00,vendor_risk,calibration,distances,gap,0.5808,8,
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,vector,recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,vector,recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,vector,recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,vector,mrr,1.0,5,filter=None hybrid=True
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,through the gate,recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,through the gate,recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,through the gate,recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,through the gate,mrr,1.0,5,filter=None hybrid=True
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T11:16:44+00:00,vendor_risk,retrieval,hybrid (v+bm25),mrr,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:06+00:00,vendor_risk,retrieval,vector,recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:06+00:00,vendor_risk,retrieval,vector,recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:06+00:00,vendor_risk,retrieval,vector,recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:06+00:00,vendor_risk,retrieval,vector,mrr,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:06+00:00,vendor_risk,retrieval,through the gate,recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:06+00:00,vendor_risk,retrieval,through the gate,recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:06+00:00,vendor_risk,retrieval,through the gate,recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:06+00:00,vendor_risk,retrieval,through the gate,mrr,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:18+00:00,vendor_risk,retrieval,vector,recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:18+00:00,vendor_risk,retrieval,vector,recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:18+00:00,vendor_risk,retrieval,vector,recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:18+00:00,vendor_risk,retrieval,vector,mrr,1.0,5,filter=None hybrid=True
+2026-09-23T11:18:18+00:00,vendor_risk,retrieval,through the gate,recall@1,0.0,5,filter=None hybrid=True
+2026-09-23T11:18:18+00:00,vendor_risk,retrieval,through the gate,recall@3,0.0,5,filter=None hybrid=True
+2026-09-23T11:18:18+00:00,vendor_risk,retrieval,through the gate,recall@5,0.0,5,filter=None hybrid=True
+2026-09-23T11:18:18+00:00,vendor_risk,retrieval,through the gate,mrr,0.0,5,filter=None hybrid=True
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,vector,recall@1,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,vector,recall@3,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,vector,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,vector,mrr,0.9318,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,through the gate,recall@1,0.3182,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,through the gate,recall@3,0.3182,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,through the gate,recall@5,0.3182,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,through the gate,mrr,0.3182,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,unfiltered,recall@1,0.5455,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,unfiltered,recall@3,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,unfiltered,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:19:03+00:00,sample_policy,retrieval,unfiltered,mrr,0.7212,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:20:10+00:00,vendor_risk,chunking,corpus,chunks,12.0,12,size=900 overlap=120
+2026-09-23T11:20:10+00:00,vendor_risk,chunking,corpus,pages,1.0,12,size=900 overlap=120
+2026-09-23T11:20:10+00:00,vendor_risk,chunking,corpus,sections,12.0,12,size=900 overlap=120
+2026-09-23T11:20:10+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,353.6667,12,size=900 overlap=120
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,vector,recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,vector,recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,vector,recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,vector,mrr,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,through the gate,recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,through the gate,recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,through the gate,recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,through the gate,mrr,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:31+00:00,vendor_risk,retrieval,hybrid (v+bm25),mrr,1.0,5,filter=None hybrid=True
+2026-09-23T11:20:42+00:00,vendor_risk,calibration,distances,worst_real,0.5575,8,
+2026-09-23T11:20:42+00:00,vendor_risk,calibration,distances,best_nonsense,0.8479,8,
+2026-09-23T11:20:42+00:00,vendor_risk,calibration,distances,suggested_ceiling,0.7,8,
+2026-09-23T11:20:42+00:00,vendor_risk,calibration,distances,configured_ceiling,0.7,8,
+2026-09-23T11:20:42+00:00,vendor_risk,calibration,distances,gap,0.2905,8,
+2026-09-23T11:21:00+00:00,sample_policy,chunking,corpus,chunks,459.0,459,size=1200 overlap=150
+2026-09-23T11:21:00+00:00,sample_policy,chunking,corpus,pages,87.0,459,size=1200 overlap=150
+2026-09-23T11:21:00+00:00,sample_policy,chunking,corpus,sections,272.0,459,size=1200 overlap=150
+2026-09-23T11:21:00+00:00,sample_policy,chunking,corpus,avg_chunk_chars,818.4423,459,size=1200 overlap=150
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,vector,recall@1,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,vector,recall@3,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,vector,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,vector,mrr,0.9318,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,through the gate,recall@1,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,through the gate,recall@3,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,through the gate,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,through the gate,mrr,0.9318,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,unfiltered,recall@1,0.5455,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,unfiltered,recall@3,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,unfiltered,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T11:21:43+00:00,sample_policy,retrieval,unfiltered,mrr,0.7136,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:34:57+00:00,vendor_risk,chunking,corpus,chunks,12.0,12,size=900 overlap=120
+2026-09-23T14:34:57+00:00,vendor_risk,chunking,corpus,pages,1.0,12,size=900 overlap=120
+2026-09-23T14:34:57+00:00,vendor_risk,chunking,corpus,sections,12.0,12,size=900 overlap=120
+2026-09-23T14:34:57+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,353.6667,12,size=900 overlap=120
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,vector,recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,vector,recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,vector,recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,vector,mrr,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,through the gate,recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,through the gate,recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,through the gate,recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,through the gate,mrr,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@1,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@3,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@5,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:31+00:00,vendor_risk,retrieval,hybrid (v+bm25),mrr,1.0,5,filter=None hybrid=True
+2026-09-23T14:35:44+00:00,sample_policy,chunking,corpus,chunks,459.0,459,size=1200 overlap=150
+2026-09-23T14:35:44+00:00,sample_policy,chunking,corpus,pages,87.0,459,size=1200 overlap=150
+2026-09-23T14:35:44+00:00,sample_policy,chunking,corpus,sections,272.0,459,size=1200 overlap=150
+2026-09-23T14:35:44+00:00,sample_policy,chunking,corpus,avg_chunk_chars,818.4423,459,size=1200 overlap=150
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,vector,recall@1,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,vector,recall@3,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,vector,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,vector,mrr,0.9318,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,through the gate,recall@1,0.9091,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,through the gate,recall@3,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,through the gate,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,through the gate,mrr,0.9318,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,unfiltered,recall@1,0.5455,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,unfiltered,recall@3,0.8636,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,unfiltered,recall@5,0.9545,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:36:34+00:00,sample_policy,retrieval,unfiltered,mrr,0.7098,22,filter={'kind': {'$eq': 'article'}} hybrid=False
+2026-09-23T14:46:26+00:00,vendor_risk,agent,pipeline,pass_rate,0.3333,12,agent_eval
+2026-09-23T14:46:26+00:00,vendor_risk,agent,pipeline,citation_correctness,0.829,12,agent_eval
+2026-09-23T14:46:26+00:00,vendor_risk,agent,pipeline,task_completion,0.938,12,agent_eval
+2026-09-23T14:46:26+00:00,vendor_risk,agent,pipeline,tool_correctness,1.0,12,agent_eval
+2026-09-23T14:46:26+00:00,vendor_risk,agent,pipeline,agent_delegation,0.917,12,agent_eval
+2026-09-23T14:46:26+00:00,vendor_risk,agent,pipeline,decision_quality,1.0,12,agent_eval
+2026-09-23T15:22:35+00:00,vendor_risk,reliability,A-merged-perfile-chunking,runs,10.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:22:35+00:00,vendor_risk,reliability,A-merged-perfile-chunking,clean_rate,0.5,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:22:35+00:00,vendor_risk,reliability,A-merged-perfile-chunking,assessed_mean,2.1,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:22:35+00:00,vendor_risk,reliability,A-merged-perfile-chunking,assessed_min,0.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:22:35+00:00,vendor_risk,reliability,A-merged-perfile-chunking,assessed_max,4.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:22:35+00:00,vendor_risk,reliability,A-merged-perfile-chunking,delegations_mean,4.8,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:22:35+00:00,vendor_risk,reliability,A-merged-perfile-chunking,compose_failures,3.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:22:35+00:00,vendor_risk,reliability,A-merged-perfile-chunking,seconds_mean,115.0239,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:44:09+00:00,vendor_risk,reliability,C-level-salvage,runs,10.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:44:09+00:00,vendor_risk,reliability,C-level-salvage,clean_rate,0.6,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:44:09+00:00,vendor_risk,reliability,C-level-salvage,assessed_mean,3.4,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:44:09+00:00,vendor_risk,reliability,C-level-salvage,assessed_min,2.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:44:09+00:00,vendor_risk,reliability,C-level-salvage,assessed_max,4.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:44:09+00:00,vendor_risk,reliability,C-level-salvage,delegations_mean,4.3,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:44:09+00:00,vendor_risk,reliability,C-level-salvage,compose_failures,0.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T15:44:09+00:00,vendor_risk,reliability,C-level-salvage,seconds_mean,91.6692,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T16:04:28+00:00,vendor_risk,reliability,D-level-salvage-plus-domain-match,runs,10.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T16:04:28+00:00,vendor_risk,reliability,D-level-salvage-plus-domain-match,clean_rate,0.9,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T16:04:28+00:00,vendor_risk,reliability,D-level-salvage-plus-domain-match,assessed_mean,3.7,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T16:04:28+00:00,vendor_risk,reliability,D-level-salvage-plus-domain-match,assessed_min,1.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T16:04:28+00:00,vendor_risk,reliability,D-level-salvage-plus-domain-match,assessed_max,4.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T16:04:28+00:00,vendor_risk,reliability,D-level-salvage-plus-domain-match,delegations_mean,4.1,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T16:04:28+00:00,vendor_risk,reliability,D-level-salvage-plus-domain-match,compose_failures,0.0,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-23T16:04:28+00:00,vendor_risk,reliability,D-level-salvage-plus-domain-match,seconds_mean,90.2792,10,"Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,"
+2026-09-24T07:59:06+00:00,vendor_risk,chunking,corpus,chunks,84.0,84,size=900 overlap=120
+2026-09-24T07:59:06+00:00,vendor_risk,chunking,corpus,pages,1.0,84,size=900 overlap=120
+2026-09-24T07:59:06+00:00,vendor_risk,chunking,corpus,sections,84.0,84,size=900 overlap=120
+2026-09-24T07:59:06+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,229.0595,84,size=900 overlap=120
+2026-09-24T08:02:15+00:00,vendor_risk,calibration,distances,worst_real,0.4293,12,
+2026-09-24T08:02:15+00:00,vendor_risk,calibration,distances,best_nonsense,0.799,12,
+2026-09-24T08:02:15+00:00,vendor_risk,calibration,distances,suggested_ceiling,0.61,12,
+2026-09-24T08:02:15+00:00,vendor_risk,calibration,distances,configured_ceiling,0.7,12,
+2026-09-24T08:02:15+00:00,vendor_risk,calibration,distances,gap,0.3697,12,
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,vector,recall@1,0.75,12,filter=None hybrid=True
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,vector,recall@3,1.0,12,filter=None hybrid=True
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,vector,recall@5,1.0,12,filter=None hybrid=True
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,vector,mrr,0.8472,12,filter=None hybrid=True
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,through the gate,recall@1,0.75,12,filter=None hybrid=True
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,through the gate,recall@3,1.0,12,filter=None hybrid=True
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,through the gate,recall@5,1.0,12,filter=None hybrid=True
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,through the gate,mrr,0.8472,12,filter=None hybrid=True
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@1,0.75,12,filter=None hybrid=True
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@3,1.0,12,filter=None hybrid=True
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@5,1.0,12,filter=None hybrid=True
+2026-09-24T08:02:53+00:00,vendor_risk,retrieval,hybrid (v+bm25),mrr,0.8611,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,vector,recall@1,0.9167,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,vector,recall@3,1.0,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,vector,recall@5,1.0,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,vector,mrr,0.9444,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,through the gate,recall@1,0.9167,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,through the gate,recall@3,1.0,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,through the gate,recall@5,1.0,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,through the gate,mrr,0.9444,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@1,0.8333,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@3,1.0,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@5,1.0,12,filter=None hybrid=True
+2026-09-24T08:03:30+00:00,vendor_risk,retrieval,hybrid (v+bm25),mrr,0.9167,12,filter=None hybrid=True
+2026-09-24T08:04:05+00:00,vendor_risk,retrieval,vector,recall@1,0.9167,12,filter=None hybrid=False
+2026-09-24T08:04:05+00:00,vendor_risk,retrieval,vector,recall@3,1.0,12,filter=None hybrid=False
+2026-09-24T08:04:05+00:00,vendor_risk,retrieval,vector,recall@5,1.0,12,filter=None hybrid=False
+2026-09-24T08:04:05+00:00,vendor_risk,retrieval,vector,mrr,0.9444,12,filter=None hybrid=False
+2026-09-24T08:04:05+00:00,vendor_risk,retrieval,through the gate,recall@1,0.9167,12,filter=None hybrid=False
+2026-09-24T08:04:05+00:00,vendor_risk,retrieval,through the gate,recall@3,1.0,12,filter=None hybrid=False
+2026-09-24T08:04:05+00:00,vendor_risk,retrieval,through the gate,recall@5,1.0,12,filter=None hybrid=False
+2026-09-24T08:04:05+00:00,vendor_risk,retrieval,through the gate,mrr,0.9444,12,filter=None hybrid=False

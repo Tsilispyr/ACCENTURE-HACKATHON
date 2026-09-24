@@ -1,0 +1,37 @@
+# Secrets - never commit real values.
+.env
+*.env
+.env.*
+!.env.example
+
+# Per-run deploy logs - numbered, kept locally
+logs/
+
+# Build artefacts of the RAG pipeline: all of these regenerate from the corpus.
+.cache/
+build/
+# The local vector store: 8.7 MB of binary index, rebuilt by scripts/index.sh.
+.chroma/
+
+# Chainlit writes its own config and ~30 translation files on first run.
+.chainlit/
+
+# Evaluation OUTPUT is kept - the ledger and the charts are the evidence, and
+# a number on a slide should be traceable to a committed file. Gate reports are
+# one JSON per run and would bury the ledger, so those are not.
+evaluation-results/reports/
+
+# Python
+__pycache__/
+*.py[oc]
+dist/
+wheels/
+*.egg-info
+.venv/
+.pytest_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

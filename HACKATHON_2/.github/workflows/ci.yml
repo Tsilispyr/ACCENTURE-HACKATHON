@@ -1,0 +1,65 @@
+name: ci
+
+# Everything here runs WITHOUT credentials. That is deliberate: a pipeline that
+# needs secrets does not run on a fork, and a pipeline that does not run is not
+# a gate.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --frozen --dev
+
+      - name: Offline tests - no network, no API keys
+        run: uv run pytest -m "workflow or api_contract" -q
+
+      - name: The seam still holds
+        # These two are what protect the hidden-scenario swap: every domain
+        # satisfies the contract, and no scenario vocabulary leaked into core.
+        run: uv run pytest tests/test_domain_contract.py tests/test_no_domain_leakage.py -q
+
+      - name: Eval gate (deterministic domain, no LLM)
+        env:
+          DOMAIN: deterministic
+        # --skip-agent keeps this free of API calls. The full gate, with the
+        # judge and the agent loop, runs locally against a real domain.
+        run: uv run python -m evaluation.gate --skip-agent
+
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scripts parse under bash
+        run: for f in scripts/*.sh; do bash -n "$f"; done
+
+      - name: Preflight fails closed without a TTY
+        # It must name the missing keys and exit 1, never hang on stdin.
+        run: |
+          set +e
+          output="$(bash scripts/preflight.sh < /dev/null 2>&1)"
+          code=$?
+          echo "$output"
+          [ $code -eq 1 ] || { echo "expected exit 1, got $code"; exit 1; }
+          echo "$output" | grep -q "AZURE_OPENAI_API_KEY" || { echo "did not name the missing key"; exit 1; }
+
+      - name: Compose files are valid
+        run: |
+          docker compose -f deployment/docker-compose-infra.yaml -f deployment/compose/infra.lean.yaml config --quiet
+          docker compose -f deployment/docker-compose-infra.yaml -f deployment/compose/infra.full.yaml config --quiet
+
+      - name: No secrets committed
+        run: |
+          ! git ls-files | grep -E '^\.env$' || { echo ".env is tracked"; exit 1; }
+          echo "ok"

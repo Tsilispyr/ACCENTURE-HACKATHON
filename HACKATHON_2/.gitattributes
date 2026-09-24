@@ -1,0 +1,28 @@
+# Normalise line endings so a clean clone actually runs.
+#
+# Developed on Windows, but every script here executes inside WSL/Linux
+# containers. Without these rules a fresh clone checks scripts out with CRLF
+# and they fail immediately with:
+#     bash: /usr/bin/env: 'bash\r': No such file or directory
+# which is a confusing way to discover a line-ending problem.
+
+* text=auto eol=lf
+
+# Executed by Linux - must be LF regardless of platform.
+*.sh            text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.env           text eol=lf
+.env.example    text eol=lf
+Dockerfile      text eol=lf
+.dockerignore   text eol=lf
+*.py            text eol=lf
+*.sql           text eol=lf
+
+# PowerShell is Windows-only here; CRLF is its native convention.
+*.ps1           text eol=crlf
+
+# Binary - never touch.
+*.pdf           binary
+*.png           binary
+*.jpg           binary

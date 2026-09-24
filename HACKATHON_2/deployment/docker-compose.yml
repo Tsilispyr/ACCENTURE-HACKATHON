@@ -1,0 +1,94 @@
+# APP stack - rebuilt and redeployed constantly, so it is kept separate from
+# the stateful infra stack. It joins the infra network as `external`.
+services:
+
+  api:
+    build:
+      # The context stays the REPO ROOT - the image needs src/ and
+      # pyproject.toml. Only the compose file moved.
+      context: ..
+      dockerfile: Dockerfile
+    image: h2-api:0.1.0        # explicit version, never :latest
+    container_name: h2-api
+    restart: unless-stopped
+    ports:
+      # 8020 avoids hackathon1's 8010 and the course units' 8000.
+      - "8020:8000"
+    depends_on:
+      app-db-init:
+        condition: service_completed_successfully
+    env_file: ../.env
+    environment:
+      # .env carries localhost values, which are correct for running uvicorn
+      # outside Docker. These override them with in-network DNS names, so one
+      # .env serves both deployment modes.
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      # NEO4J_URI is deliberately NOT overridden. No neo4j service exists on
+      # this network any more (DECISIONS D48), so an in-network name here
+      # would never resolve. .env's localhost value is left to stand: the
+      # graph tool catches the connection failure and tells the agent to use
+      # search_corpus instead.
+      - MCP_MODE=http
+      - MCP_URL=http://mcp-systems:8100/mcp
+    networks:
+      - h2-infra
+    healthcheck:
+      # python:3.12-slim ships no curl or wget. Reuse the python already on
+      # PATH rather than adding a package purely for a healthcheck.
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz').read()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  mcp-systems:
+    # The MCP server runs as its own deployed service, not a subprocess, so the
+    # process boundary between the agent and the systems it MUTATES is real.
+    build:
+      # The context stays the REPO ROOT - the image needs src/ and
+      # pyproject.toml. Only the compose file moved.
+      context: ..
+      dockerfile: Dockerfile
+    image: h2-api:0.1.0
+    container_name: h2-mcp-systems
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      - MCP_TRANSPORT=streamable-http
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+    command: ["python", "-m", "mcp_servers", "--server", "systems"]
+    networks:
+      - h2-infra
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8100/mcp').read()\" || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  app-db-init:
+    # One-shot: wait for Postgres, then ensure the pgvector extension exists.
+    # `condition: service_completed_successfully` is the only legal depends_on
+    # here, because it is WITHIN this compose file.
+    image: pgvector/pgvector:pg17
+    container_name: h2-db-init
+    restart: "no"
+    networks:
+      - h2-infra
+    environment:
+      PGPASSWORD: "h2passQWqw12"
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        until pg_isready -h postgres -U h2; do
+          echo "waiting for postgres..."
+          sleep 2
+        done
+        psql -h postgres -U h2 -d hackathon2 -c "CREATE EXTENSION IF NOT EXISTS vector"
+        echo "pgvector extension ready."
+
+networks:
+  h2-infra:
+    external: true

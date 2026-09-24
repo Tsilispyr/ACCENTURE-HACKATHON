@@ -1,0 +1,9 @@
+# lean - the demo profile. One stateful container, held to 384m.
+#
+# The difference between lean and full used to be Neo4j, scaled to zero here.
+# With Neo4j gone (DECISIONS D48) the profiles differ only in the Postgres
+# memory limit. Both are kept: the four combinations are wired into deploy.sh
+# and validated in CI, and collapsing them would be churn for no saving.
+services:
+  postgres:
+    mem_limit: 384m

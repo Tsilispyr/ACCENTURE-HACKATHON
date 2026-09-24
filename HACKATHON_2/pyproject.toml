@@ -1,0 +1,81 @@
+[project]
+name = "hackathon2"
+version = "0.1.0"
+description = "Domain-agnostic agentic scaffold: planning, RAG, MCP, guardrails, evaluation"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    # --- core ---
+    "python-dotenv>=1.2.3",
+    "pydantic>=2.13.5",
+    # --- LLM / agents ---
+    "langchain>=1.4.0",
+    "langchain-core>=1.6.2",
+    "langchain-openai>=1.6.2",
+    "langgraph>=1.2.11",
+    "langgraph-checkpoint-postgres>=3.1.2",
+    "deepagents>=0.7.13",
+    # --- retrieval ---
+    "langchain-text-splitters>=1.1.2",
+    "langchain-postgres>=0.0.18",
+    # The graph seam is kept while the container is not (DECISIONS D48), so
+    # a scenario that brings its own Neo4j still works. Import is lazy, in
+    # rag/graphstore.py, so nothing loads it on a run that has no graph arm.
+    "langchain-neo4j>=0.10.0",
+    "pymupdf4llm>=1.28.2",
+    "pypdf>=6.19.0",
+    # --- MCP ---
+    # PINNED <2 DELIBERATELY. langchain-mcp-adapters 0.3.2 requires
+    # "mcp<2.0.0,>=1.24.0". mcp 2.x also renamed FastMCP -> MCPServer and moved
+    # it to mcp.server.mcpserver, which would invalidate every reference
+    # implementation in the course material (units 56-59). See DECISIONS.md.
+    "mcp>=1.24,<2",
+    "langchain-mcp-adapters>=0.3.2",
+    # --- observability ---
+    # Langfuse is the hosted view, per the course's guide 04 and the team's
+    # choice. Optional at runtime: no keys, no handler, no network. The
+    # always-on layer needs nothing installed at all, because it is the
+    # LangGraph audit trail - ordinary application state. DECISIONS D49.
+    "langfuse>=2.60.0",
+    # --- service ---
+    "fastapi>=0.141.1",
+    "uvicorn[standard]>=0.52.4",
+    "psycopg[binary,pool]>=3.3.5",
+    "passlib[bcrypt]>=1.7.4",
+    "rank-bm25>=0.2.2",
+    "matplotlib>=3.11.2",
+    "chainlit>=2.12.0",
+    "chromadb>=1.5.9",
+    "langchain-chroma>=1.1.0",
+    "azure-monitor-opentelemetry>=1.8.10",
+    "opentelemetry-instrumentation-fastapi>=0.65b0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "httpx>=0.28.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+# Four top-level packages under src/, not one named after the project. Without
+# this, uv_build looks for src/hackathon2/__init__.py and fails the build --
+# the same mismatch documented in the course repo's DEPENDENCIES.md.
+[tool.uv.build-backend]
+module-root = "src"
+module-name = ["agentcore", "domains", "evaluation", "mcp_servers"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "workflow: offline pipeline tests - no network, no API keys",
+    "api_contract: HTTP surface and auth",
+    "acceptance: real graph, real tools, scripted LLM",
+    "live: needs a running stack and real credentials",
+]

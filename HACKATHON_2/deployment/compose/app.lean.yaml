@@ -1,0 +1,5 @@
+services:
+  api:
+    mem_limit: 512m
+  mcp-systems:
+    mem_limit: 256m

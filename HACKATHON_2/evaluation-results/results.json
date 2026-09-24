@@ -1,0 +1,1598 @@
+[
+  {
+    "at": "2026-09-22T10:43:19+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.9091,
+      "recall@3": 0.9545,
+      "recall@5": 0.9545,
+      "mrr": 0.9318
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:43:19+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "hybrid",
+    "metrics": {
+      "recall@1": 0.8182,
+      "recall@3": 0.9091,
+      "recall@5": 0.9545,
+      "mrr": 0.8674
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:43:19+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "unfiltered",
+    "metrics": {
+      "recall@1": 0.5455,
+      "recall@3": 0.8636,
+      "recall@5": 0.9545,
+      "mrr": 0.7098
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:44:09+00:00",
+    "domain": "sample_policy",
+    "experiment": "calibration",
+    "arm": "distances",
+    "metrics": {
+      "worst_real": 0.6577,
+      "best_nonsense": 0.7802,
+      "suggested_ceiling": 0.72,
+      "configured_ceiling": 0.7,
+      "gap": 0.1225
+    },
+    "n": 22,
+    "note": "",
+    "detail": {
+      "real": [
+        0.373,
+        0.336,
+        0.384,
+        0.338,
+        0.452,
+        0.352,
+        0.349,
+        0.658,
+        0.427,
+        0.314,
+        0.299,
+        0.262,
+        0.269,
+        0.488,
+        0.53,
+        0.351,
+        0.411,
+        0.362,
+        0.443,
+        0.484,
+        0.509,
+        0.353
+      ],
+      "nonsense": [
+        0.918,
+        0.78,
+        0.859,
+        0.909
+      ]
+    }
+  },
+  {
+    "at": "2026-09-22T10:44:18+00:00",
+    "domain": "sample_policy",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 459.0,
+      "pages": 87.0,
+      "sections": 272.0,
+      "avg_chunk_chars": 818.4423
+    },
+    "n": 459,
+    "note": "size=1200 overlap=150",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:45:01+00:00",
+    "domain": "sample_policy",
+    "experiment": "stage_timing",
+    "arm": "s1_intake",
+    "metrics": {
+      "seconds": 0.0189
+    },
+    "n": null,
+    "note": "single request",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:45:01+00:00",
+    "domain": "sample_policy",
+    "experiment": "stage_timing",
+    "arm": "s2_guard_in",
+    "metrics": {
+      "seconds": 0.003
+    },
+    "n": null,
+    "note": "single request",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:45:01+00:00",
+    "domain": "sample_policy",
+    "experiment": "stage_timing",
+    "arm": "s3_ground",
+    "metrics": {
+      "seconds": 7.5803
+    },
+    "n": null,
+    "note": "single request",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:45:01+00:00",
+    "domain": "sample_policy",
+    "experiment": "stage_timing",
+    "arm": "s4_plan",
+    "metrics": {
+      "seconds": 1.2486
+    },
+    "n": null,
+    "note": "single request",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:45:01+00:00",
+    "domain": "sample_policy",
+    "experiment": "stage_timing",
+    "arm": "s5_gate",
+    "metrics": {
+      "seconds": 0.0015
+    },
+    "n": null,
+    "note": "single request",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:45:01+00:00",
+    "domain": "sample_policy",
+    "experiment": "stage_timing",
+    "arm": "s6_act",
+    "metrics": {
+      "seconds": 7.0552
+    },
+    "n": null,
+    "note": "single request",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:45:01+00:00",
+    "domain": "sample_policy",
+    "experiment": "stage_timing",
+    "arm": "s7_replan",
+    "metrics": {
+      "seconds": 0.001
+    },
+    "n": null,
+    "note": "single request",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:45:01+00:00",
+    "domain": "sample_policy",
+    "experiment": "stage_timing",
+    "arm": "s8_compose",
+    "metrics": {
+      "seconds": 5.194
+    },
+    "n": null,
+    "note": "single request",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:45:01+00:00",
+    "domain": "sample_policy",
+    "experiment": "stage_timing",
+    "arm": "s9_guard_out",
+    "metrics": {
+      "seconds": 0.0045
+    },
+    "n": null,
+    "note": "single request",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:49:21+00:00",
+    "domain": "sample_policy",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 459.0,
+      "pages": 87.0,
+      "sections": 272.0,
+      "avg_chunk_chars": 818.4423
+    },
+    "n": 459,
+    "note": "size=1200 overlap=150",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:49:49+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.9091,
+      "recall@3": 0.9545,
+      "recall@5": 0.9545,
+      "mrr": 0.9318
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:49:49+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "unfiltered",
+    "metrics": {
+      "recall@1": 0.5455,
+      "recall@3": 0.9091,
+      "recall@5": 0.9545,
+      "mrr": 0.7212
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:50:06+00:00",
+    "domain": "sample_policy",
+    "experiment": "backend",
+    "arm": "pgvector",
+    "metrics": {
+      "recall@1": 0.91,
+      "recall@3": 0.95,
+      "recall@5": 0.95,
+      "mrr": 0.932
+    },
+    "n": 22,
+    "note": "postgres container required",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T10:50:06+00:00",
+    "domain": "sample_policy",
+    "experiment": "backend",
+    "arm": "chroma",
+    "metrics": {
+      "recall@1": 0.91,
+      "recall@3": 0.95,
+      "recall@5": 0.95,
+      "mrr": 0.932
+    },
+    "n": 22,
+    "note": "in-process, no server",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T15:22:48+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 12.0,
+      "pages": 1.0,
+      "sections": 12.0,
+      "avg_chunk_chars": 353.6667
+    },
+    "n": 12,
+    "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T15:24:27+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 12.0,
+      "pages": 1.0,
+      "sections": 12.0,
+      "avg_chunk_chars": 353.6667
+    },
+    "n": 12,
+    "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T15:29:45+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 12.0,
+      "pages": 1.0,
+      "sections": 12.0,
+      "avg_chunk_chars": 353.6667
+    },
+    "n": 12,
+    "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T15:30:09+00:00",
+    "domain": "vendor_risk",
+    "experiment": "calibration",
+    "arm": "distances",
+    "metrics": {
+      "worst_real": 0.5575,
+      "best_nonsense": 0.8479,
+      "suggested_ceiling": 0.7,
+      "configured_ceiling": 0.7,
+      "gap": 0.2905
+    },
+    "n": 8,
+    "note": "",
+    "detail": {
+      "real": [
+        0.35,
+        0.401,
+        0.412,
+        0.399,
+        0.362,
+        0.518,
+        0.557,
+        0.439
+      ],
+      "nonsense": [
+        0.978,
+        0.848,
+        0.935,
+        0.919
+      ]
+    }
+  },
+  {
+    "at": "2026-09-22T15:57:32+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 12.0,
+      "pages": 1.0,
+      "sections": 12.0,
+      "avg_chunk_chars": 353.6667
+    },
+    "n": 12,
+    "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T15:58:05+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T15:58:05+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "hybrid (v+bm25)",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T16:32:19+00:00",
+    "domain": "vendor_risk",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 0.0,
+      "citation_correctness": 0.75,
+      "task_completion": 1.0,
+      "tool_correctness": 1.0,
+      "agent_delegation": 1.0,
+      "decision_quality": 0.222
+    },
+    "n": 3,
+    "note": "agent_eval",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T16:35:46+00:00",
+    "domain": "vendor_risk",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 0.6667,
+      "citation_correctness": 0.75,
+      "task_completion": 1.0,
+      "tool_correctness": 1.0,
+      "agent_delegation": 1.0,
+      "decision_quality": 1.0
+    },
+    "n": 3,
+    "note": "agent_eval",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T16:41:10+00:00",
+    "domain": "vendor_risk",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 0.6667,
+      "citation_correctness": 1.0,
+      "task_completion": 1.0,
+      "tool_correctness": 1.0,
+      "agent_delegation": 1.0,
+      "decision_quality": 1.0
+    },
+    "n": 3,
+    "note": "agent_eval",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T16:42:29+00:00",
+    "domain": "deterministic",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.8,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.9
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T16:43:38+00:00",
+    "domain": "deterministic",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 0.5,
+      "citation_correctness": 1.0,
+      "task_completion": 1.0,
+      "tool_correctness": 1.0,
+      "agent_delegation": 1.0,
+      "decision_quality": 1.0
+    },
+    "n": 6,
+    "note": "agent_eval",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T16:46:16+00:00",
+    "domain": "vendor_risk",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 0.5,
+      "citation_correctness": 1.0,
+      "task_completion": 0.917,
+      "tool_correctness": 0.917,
+      "agent_delegation": 1.0,
+      "decision_quality": 0.917
+    },
+    "n": 12,
+    "note": "agent_eval",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T17:08:12+00:00",
+    "domain": "vendor_risk",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 0.1667,
+      "citation_correctness": 0.825,
+      "task_completion": 0.979,
+      "tool_correctness": 0.917,
+      "agent_delegation": 0.917,
+      "decision_quality": 1.0
+    },
+    "n": 12,
+    "note": "agent_eval",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T17:08:23+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "total",
+    "metrics": {
+      "seconds": 86.6092
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T17:08:23+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s6_act",
+    "metrics": {
+      "seconds": 51.3504
+    },
+    "n": 5,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T17:08:23+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s8_compose",
+    "metrics": {
+      "seconds": 22.9189
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T17:08:23+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s3_ground",
+    "metrics": {
+      "seconds": 9.6015
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T17:08:23+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s4_plan",
+    "metrics": {
+      "seconds": 2.7151
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T17:08:23+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s1_intake",
+    "metrics": {
+      "seconds": 0.0099
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T17:08:23+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s7_replan",
+    "metrics": {
+      "seconds": 0.0051
+    },
+    "n": 5,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T17:08:23+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s2_guard_in",
+    "metrics": {
+      "seconds": 0.0049
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T17:08:23+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s9_guard_out",
+    "metrics": {
+      "seconds": 0.0022
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T17:08:23+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s5_gate",
+    "metrics": {
+      "seconds": 0.0012
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T21:37:46+00:00",
+    "domain": "vendor_risk",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 0.5,
+      "citation_correctness": 0.708,
+      "task_completion": 0.979,
+      "tool_correctness": 0.917,
+      "agent_delegation": 0.917,
+      "decision_quality": 1.0
+    },
+    "n": 12,
+    "note": "agent_eval",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-22T23:11:31+00:00",
+    "domain": "vendor_risk",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 0.5833,
+      "citation_correctness": 0.867,
+      "task_completion": 0.917,
+      "tool_correctness": 0.917,
+      "agent_delegation": 0.833,
+      "decision_quality": 0.917
+    },
+    "n": 12,
+    "note": "agent_eval",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:12+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:12+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "hybrid (v+bm25)",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:42+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.9091,
+      "recall@3": 0.9545,
+      "recall@5": 0.9545,
+      "mrr": 0.9318
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:42+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "unfiltered",
+    "metrics": {
+      "recall@1": 0.5455,
+      "recall@3": 0.9091,
+      "recall@5": 0.9545,
+      "mrr": 0.7212
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:48+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "total",
+    "metrics": {
+      "seconds": 112.3291
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:48+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s6_act",
+    "metrics": {
+      "seconds": 71.8887
+    },
+    "n": 6,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:48+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s8_compose",
+    "metrics": {
+      "seconds": 17.512
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:48+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s3_ground",
+    "metrics": {
+      "seconds": 13.7971
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:48+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s4_plan",
+    "metrics": {
+      "seconds": 9.0921
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:48+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s7_replan",
+    "metrics": {
+      "seconds": 0.0183
+    },
+    "n": 6,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:48+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s1_intake",
+    "metrics": {
+      "seconds": 0.0071
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:48+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s2_guard_in",
+    "metrics": {
+      "seconds": 0.0054
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:48+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s5_gate",
+    "metrics": {
+      "seconds": 0.0045
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:08:48+00:00",
+    "domain": "vendor_risk",
+    "experiment": "stage_timing",
+    "arm": "s9_guard_out",
+    "metrics": {
+      "seconds": 0.0038
+    },
+    "n": 1,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:10:07+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.9091,
+      "recall@3": 0.9545,
+      "recall@5": 0.9545,
+      "mrr": 0.9318
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:10:33+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.9091,
+      "recall@3": 0.9545,
+      "recall@5": 0.9545,
+      "mrr": 0.9318
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:12:02+00:00",
+    "domain": "vendor_risk",
+    "experiment": "calibration",
+    "arm": "distances",
+    "metrics": {
+      "worst_real": 1.1155,
+      "best_nonsense": 1.6963,
+      "suggested_ceiling": 1.41,
+      "configured_ceiling": 0.7,
+      "gap": 0.5808
+    },
+    "n": 8,
+    "note": "",
+    "detail": {
+      "real": [
+        0.701,
+        0.801,
+        0.824,
+        0.799,
+        0.724,
+        1.036,
+        1.116,
+        0.878
+      ],
+      "nonsense": [
+        1.955,
+        1.696,
+        1.869,
+        1.839
+      ]
+    }
+  },
+  {
+    "at": "2026-09-23T11:16:44+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:16:44+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:16:44+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "hybrid (v+bm25)",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:18:06+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:18:06+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:18:18+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:18:18+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.0,
+      "recall@3": 0.0,
+      "recall@5": 0.0,
+      "mrr": 0.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:19:03+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.9091,
+      "recall@3": 0.9545,
+      "recall@5": 0.9545,
+      "mrr": 0.9318
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:19:03+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.3182,
+      "recall@3": 0.3182,
+      "recall@5": 0.3182,
+      "mrr": 0.3182
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:19:03+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "unfiltered",
+    "metrics": {
+      "recall@1": 0.5455,
+      "recall@3": 0.9091,
+      "recall@5": 0.9545,
+      "mrr": 0.7212
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:20:10+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 12.0,
+      "pages": 1.0,
+      "sections": 12.0,
+      "avg_chunk_chars": 353.6667
+    },
+    "n": 12,
+    "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:20:31+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:20:31+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:20:31+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "hybrid (v+bm25)",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:20:42+00:00",
+    "domain": "vendor_risk",
+    "experiment": "calibration",
+    "arm": "distances",
+    "metrics": {
+      "worst_real": 0.5575,
+      "best_nonsense": 0.8479,
+      "suggested_ceiling": 0.7,
+      "configured_ceiling": 0.7,
+      "gap": 0.2905
+    },
+    "n": 8,
+    "note": "",
+    "detail": {
+      "real": [
+        0.35,
+        0.401,
+        0.412,
+        0.399,
+        0.362,
+        0.518,
+        0.557,
+        0.439
+      ],
+      "nonsense": [
+        0.978,
+        0.848,
+        0.935,
+        0.919
+      ]
+    }
+  },
+  {
+    "at": "2026-09-23T11:21:00+00:00",
+    "domain": "sample_policy",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 459.0,
+      "pages": 87.0,
+      "sections": 272.0,
+      "avg_chunk_chars": 818.4423
+    },
+    "n": 459,
+    "note": "size=1200 overlap=150",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:21:43+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.9091,
+      "recall@3": 0.9545,
+      "recall@5": 0.9545,
+      "mrr": 0.9318
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:21:43+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.9091,
+      "recall@3": 0.9545,
+      "recall@5": 0.9545,
+      "mrr": 0.9318
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T11:21:43+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "unfiltered",
+    "metrics": {
+      "recall@1": 0.5455,
+      "recall@3": 0.9091,
+      "recall@5": 0.9545,
+      "mrr": 0.7136
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T14:34:57+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 12.0,
+      "pages": 1.0,
+      "sections": 12.0,
+      "avg_chunk_chars": 353.6667
+    },
+    "n": 12,
+    "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T14:35:31+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T14:35:31+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T14:35:31+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "hybrid (v+bm25)",
+    "metrics": {
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 1.0
+    },
+    "n": 5,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T14:35:44+00:00",
+    "domain": "sample_policy",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 459.0,
+      "pages": 87.0,
+      "sections": 272.0,
+      "avg_chunk_chars": 818.4423
+    },
+    "n": 459,
+    "note": "size=1200 overlap=150",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T14:36:34+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.9091,
+      "recall@3": 0.9545,
+      "recall@5": 0.9545,
+      "mrr": 0.9318
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T14:36:34+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.9091,
+      "recall@3": 0.9545,
+      "recall@5": 0.9545,
+      "mrr": 0.9318
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T14:36:34+00:00",
+    "domain": "sample_policy",
+    "experiment": "retrieval",
+    "arm": "unfiltered",
+    "metrics": {
+      "recall@1": 0.5455,
+      "recall@3": 0.8636,
+      "recall@5": 0.9545,
+      "mrr": 0.7098
+    },
+    "n": 22,
+    "note": "filter={'kind': {'$eq': 'article'}} hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T14:46:26+00:00",
+    "domain": "vendor_risk",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 0.3333,
+      "citation_correctness": 0.829,
+      "task_completion": 0.938,
+      "tool_correctness": 1.0,
+      "agent_delegation": 0.917,
+      "decision_quality": 1.0
+    },
+    "n": 12,
+    "note": "agent_eval",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T15:22:35+00:00",
+    "domain": "vendor_risk",
+    "experiment": "reliability",
+    "arm": "A-merged-perfile-chunking",
+    "metrics": {
+      "runs": 10.0,
+      "clean_rate": 0.5,
+      "assessed_mean": 2.1,
+      "assessed_min": 0.0,
+      "assessed_max": 4.0,
+      "delegations_mean": 4.8,
+      "compose_failures": 3.0,
+      "seconds_mean": 115.0239
+    },
+    "n": 10,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T15:44:09+00:00",
+    "domain": "vendor_risk",
+    "experiment": "reliability",
+    "arm": "C-level-salvage",
+    "metrics": {
+      "runs": 10.0,
+      "clean_rate": 0.6,
+      "assessed_mean": 3.4,
+      "assessed_min": 2.0,
+      "assessed_max": 4.0,
+      "delegations_mean": 4.3,
+      "compose_failures": 0.0,
+      "seconds_mean": 91.6692
+    },
+    "n": 10,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-23T16:04:28+00:00",
+    "domain": "vendor_risk",
+    "experiment": "reliability",
+    "arm": "D-level-salvage-plus-domain-match",
+    "metrics": {
+      "runs": 10.0,
+      "clean_rate": 0.9,
+      "assessed_mean": 3.7,
+      "assessed_min": 1.0,
+      "assessed_max": 4.0,
+      "delegations_mean": 4.1,
+      "compose_failures": 0.0,
+      "seconds_mean": 90.2792
+    },
+    "n": 10,
+    "note": "Assess Asteria AI Systems for renewal. Tier 1, AI platform, proposed at EUR 180,",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T07:59:06+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 84.0,
+      "pages": 1.0,
+      "sections": 84.0,
+      "avg_chunk_chars": 229.0595
+    },
+    "n": 84,
+    "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T08:02:15+00:00",
+    "domain": "vendor_risk",
+    "experiment": "calibration",
+    "arm": "distances",
+    "metrics": {
+      "worst_real": 0.4293,
+      "best_nonsense": 0.799,
+      "suggested_ceiling": 0.61,
+      "configured_ceiling": 0.7,
+      "gap": 0.3697
+    },
+    "n": 12,
+    "note": "",
+    "detail": {
+      "real": [
+        0.349,
+        0.355,
+        0.243,
+        0.306,
+        0.422,
+        0.332,
+        0.295,
+        0.348,
+        0.291,
+        0.38,
+        0.429,
+        0.313
+      ],
+      "nonsense": [
+        0.979,
+        0.824,
+        0.799,
+        0.869
+      ]
+    }
+  },
+  {
+    "at": "2026-09-24T08:02:53+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.75,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.8472
+    },
+    "n": 12,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T08:02:53+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.75,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.8472
+    },
+    "n": 12,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T08:02:53+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "hybrid (v+bm25)",
+    "metrics": {
+      "recall@1": 0.75,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.8611
+    },
+    "n": 12,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T08:03:30+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.9167,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.9444
+    },
+    "n": 12,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T08:03:30+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.9167,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.9444
+    },
+    "n": 12,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T08:03:30+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "hybrid (v+bm25)",
+    "metrics": {
+      "recall@1": 0.8333,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.9167
+    },
+    "n": 12,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T08:04:05+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.9167,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.9444
+    },
+    "n": 12,
+    "note": "filter=None hybrid=False",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T08:04:05+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.9167,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.9444
+    },
+    "n": 12,
+    "note": "filter=None hybrid=False",
+    "detail": {}
+  }
+]

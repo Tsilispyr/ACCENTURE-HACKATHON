@@ -1,0 +1,25 @@
+# Without this, "COPY . ." bakes the whole folder into the image.
+#
+# .env is the important one: baking secrets into a layer means anyone who can
+# pull the image can read them, and deleting the file in a later layer does
+# NOT remove it from history. Credentials arrive at runtime via compose's
+# env_file:/environment: block instead.
+.env
+*.env
+!.env.example
+
+.venv/
+__pycache__/
+*.py[oc]
+.pytest_cache/
+
+.git/
+.gitignore
+.vscode/
+logs/
+.cache/
+build/
+
+# NOTE: README.md must NOT be excluded - pyproject.toml declares
+# readme = "README.md", so the build fails with "failed to open file
+# /app/README.md" if it is missing from the context.
