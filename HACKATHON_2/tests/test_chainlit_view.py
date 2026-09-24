@@ -23,7 +23,7 @@ from agentcore.contracts import Answer, Claim, Contradiction, RiskFinding
 pytestmark = pytest.mark.workflow
 
 
-# ------------------------------------------------------------- the stub ----
+# - the stub -
 
 
 class _Message:
@@ -69,7 +69,7 @@ def render(view, answer: Answer) -> tuple[str, dict[str, str]]:
     return message.content, {e.name: e.content for e in message.elements}
 
 
-# ------------------------------------------------------------- the cases ---
+# - the cases -
 
 
 def full_assessment() -> Answer:
@@ -172,3 +172,34 @@ def test_a_plain_answer_renders_without_assessment_panels(view):
 def test_a_partial_answer_says_so(view):
     body, _ = render(view, Answer(summary="Half of it.", partial=True))
     assert "partial" in body.lower()
+
+
+def test_chat_history_lifecycle(view, tmp_path, monkeypatch):
+    test_hist_file = tmp_path / 'chat_history.json'
+    monkeypatch.setattr(view, 'HISTORY_FILE', test_hist_file)
+
+    view._clear_chat_history()
+    assert view._load_chat_history() == []
+
+    view._append_chat_turn('user', 'Hello Asteria', 'Assessment summary')
+    loaded = view._load_chat_history()
+    assert len(loaded) == 1
+    assert loaded[0]['user'] == 'Hello Asteria'
+    assert loaded[0]['assistant'] == 'Assessment summary'
+
+    view._clear_chat_history()
+    assert view._load_chat_history() == []
+
+
+def test_chat_history_replays_on_start(view, tmp_path, monkeypatch):
+    test_hist_file = tmp_path / 'chat_history.json'
+    monkeypatch.setattr(view, 'HISTORY_FILE', test_hist_file)
+
+    view._append_chat_turn('user', 'Initial query', 'Initial answer')
+    _Message.sent = []
+
+    asyncio.run(view.start())
+    contents = [m.content for m in _Message.sent]
+    assert any('Initial query' in c for c in contents)
+    assert any('Initial answer' in c for c in contents)
+    assert any('Session Active for user' in c for c in contents)

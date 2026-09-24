@@ -116,3 +116,9 @@ Every execution in Chainlit automatically logs a full, human-readable trace:
 * Location: `logs/agent_runs/<TIMESTAMP>_<REQ_ID>.md`
 * Summary Index: `logs/agent_runs/index.log`
 * UI Indicator: The "Run Trace Log" side panel in Chainlit provides the direct path to the generated trace log.
+
+### 8. Conversation History and Account Persistence
+
+* **Cross-Role History Retention**: Conversation history is persisted across turns, page refreshes, and account profile switching (user <-> dmin).
+* **Seamless Role Handoff**: When switching between user and dmin, the full chat history and prior assessment context are replayed, allowing seamless handoff (for example: user initiates an assessment, and dmin inspects the findings and authorizes write actions).
+* **Resetting State**: Type :reset or :clear anytime in the chat box to reset the shared thread history and start a fresh session.

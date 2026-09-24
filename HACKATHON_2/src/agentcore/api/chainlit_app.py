@@ -8,12 +8,15 @@ transparent, evidence-grounded vendor risk assessments.
 
 State and History Retention:
 - Uses persistent SQLite checkpointer (.cache/checkpoints.sqlite).
-- Retains evidence, findings, citations, and conversation context across turns and page refreshes.
+- Uses persistent conversation history (.cache/chat_history.json).
+- Retains full conversation history, evidence, findings, and context across turns, page refreshes, and account role changes.
 - Type :reset or :clear to start a fresh thread session.
 """
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 import time
 from typing import Any
 
@@ -56,6 +59,53 @@ ROLE_PROFILES = {
     "admin": "Every tool, including the ones that write. High risk work still pauses for approval.",
 }
 
+SHARED_THREAD_ID = "ui-shared-thread"
+HISTORY_FILE = Path(".cache/chat_history.json")
+
+
+def _load_chat_history() -> list[dict[str, Any]]:
+    """Load persistent chat history from cache file."""
+    if not HISTORY_FILE.exists():
+        return []
+    try:
+        data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+        if isinstance(data, list):
+            return data
+    except Exception as e:
+        print(f"[history] load error: {e}")
+    return []
+
+
+def _append_chat_turn(
+    role: str,
+    user_text: str,
+    assistant_text: str,
+    details: dict[str, Any] | None = None,
+) -> None:
+    """Append a completed turn to persistent chat history."""
+    try:
+        HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        history = _load_chat_history()
+        history.append({
+            "role": role,
+            "user": user_text,
+            "assistant": assistant_text,
+            "timestamp": time.time(),
+            "details": details or {},
+        })
+        HISTORY_FILE.write_text(json.dumps(history, indent=2), encoding="utf-8")
+    except Exception as e:
+        print(f"[history] save error: {e}")
+
+
+def _clear_chat_history() -> None:
+    """Clear persistent chat history file."""
+    try:
+        if HISTORY_FILE.exists():
+            HISTORY_FILE.unlink()
+    except Exception as e:
+        print(f"[history] clear error: {e}")
+
 
 @cl.set_chat_profiles
 async def role_profiles() -> list[cl.ChatProfile]:
@@ -80,28 +130,31 @@ async def start() -> None:
 
     actor = Actor(id=f"ui-{role}", role=role, scope="public")
     cl.user_session.set("actor", actor)
+    cl.user_session.set("thread_id", SHARED_THREAD_ID)
 
-    thread_id = f"ui-thread-{role}"
-    cl.user_session.set("thread_id", thread_id)
+    # Replay existing conversation history across refreshes and account changes
+    history = _load_chat_history()
+    if history:
+        for turn in history:
+            user_role = turn.get("role", "user")
+            user_content = turn.get("user", "")
+            asst_content = turn.get("assistant", "")
+            if user_content:
+                await cl.Message(
+                    content=user_content,
+                    author=f"User ({user_role})",
+                ).send()
+            if asst_content:
+                await cl.Message(
+                    content=asst_content,
+                    author="assistant",
+                ).send()
 
-    # Check for existing checkpoint state on this thread to restore across refreshes
-    prior_state = None
-    try:
-        prior_state = graph.get_state({"configurable": {"thread_id": thread_id}})
-    except Exception:
-        prior_state = None
-
-    if prior_state and getattr(prior_state, "values", None) and prior_state.values.get("answer"):
-        ans = prior_state.values.get("answer")
-        ev_count = len(prior_state.values.get("evidence", []))
-        verdict = getattr(ans, "decision", getattr(ans, "recommendation", "N/A")).replace("_", " ").upper()
         await cl.Message(
             content=(
-                f"**Session Restored for {role}** (Thread `{thread_id}`)\n\n"
-                f"- **Retained Evidence**: `{ev_count}` passage(s)\n"
-                f"- **Prior Verdict**: `{verdict}`\n"
-                f"- **Prior Summary**: {getattr(ans, 'summary', '')[:160]}...\n\n"
-                "You can ask follow-up questions building upon prior assessment state, or type `:reset` to clear."
+                f"**Session Active for {role}** ({ROLE_PROFILES[role]}).\n\n"
+                f"Restored **{len(history)}** prior conversation turn(s) across accounts. "
+                "You can continue the conversation or type `:reset` to clear."
             )
         ).send()
     else:
@@ -109,7 +162,7 @@ async def start() -> None:
             content=(
                 f"**Domain `{domain.name}` loaded.** Acting as **{role}** ({ROLE_PROFILES[role]}).\n\n"
                 f"{domain.persona().splitlines()[0]}\n\n"
-                "Ask a vendor assessment or compliance question. State and history are preserved across turns and page refreshes."
+                "Ask a vendor assessment or compliance question. Conversation history and state are preserved across accounts and page refreshes."
             )
         ).send()
 
@@ -118,17 +171,17 @@ LEVEL_MARK = {"high": "HIGH", "medium": "MEDIUM", "low": "LOW", "none": "-"}
 BASIS_MARK = {"evidence": "evidence", "inference": "inferred", "missing": "MISSING"}
 
 
-async def _show_answer(state: dict, log_path: str | None = None) -> None:
+async def _show_answer(state: dict, log_path: str | None = None) -> str:
     answer = state.get("answer")
     if not answer:
-        await cl.Message(content="No answer was produced.").send()
-        return
+        msg = "No answer was produced."
+        await cl.Message(content=msg).send()
+        return msg
 
     if answer.refused:
-        await cl.Message(
-            content=f"**Refused.** {answer.summary}", author="guardrails"
-        ).send()
-        return
+        msg = f"**Refused.** {answer.summary}"
+        await cl.Message(content=msg, author="guardrails").send()
+        return msg
 
     body = answer.summary or "(no summary)"
     if answer.partial:
@@ -146,7 +199,7 @@ async def _show_answer(state: dict, log_path: str | None = None) -> None:
 
     # 1. Risk findings
     if answer.findings:
-        rows = ["| Domain | Risk | Assessed | Summary |", "|---|---|---|---|"]
+        rows = ["| Domain | Risk | Assessed | Summary |", "| - | - | - | - |"]
         for finding in answer.findings:
             mark = LEVEL_MARK.get(finding.level, finding.level)
             seen = "yes" if finding.assessed else "**no**"
@@ -227,6 +280,7 @@ async def _show_answer(state: dict, log_path: str | None = None) -> None:
         )
 
     await cl.Message(content=body, elements=elements).send()
+    return body
 
 
 async def _ask_approval(payload: dict) -> dict:
@@ -340,16 +394,17 @@ async def on_message(message: cl.Message) -> None:
     graph = cl.user_session.get("graph")
     domain = cl.user_session.get("domain")
     actor = cl.user_session.get("actor")
-    thread_id = cl.user_session.get("thread_id") or f"ui-thread-{actor.role}"
+    thread_id = cl.user_session.get("thread_id") or SHARED_THREAD_ID
     checkpointer = cl.user_session.get("checkpointer")
 
     text = message.content.strip()
 
     if text in (":reset", ":clear", "reset", "clear"):
+        _clear_chat_history()
         if checkpointer:
             checkpointer.delete_thread(thread_id)
         cl.user_session.set("graph", build_app(checkpointer=checkpointer))
-        await cl.Message(content=f"Session state for thread `{thread_id}` has been cleared.").send()
+        await cl.Message(content="All conversation history and session state have been reset across accounts.").send()
         return
 
     request = domain.parse_request(text, actor)
@@ -408,4 +463,13 @@ async def on_message(message: cl.Message) -> None:
     except Exception as e:
         print(f"[log] failed to save trace log: {e}")
 
-    await _show_answer(accumulated_state, log_path=log_path)
+    assistant_body = await _show_answer(accumulated_state, log_path=log_path)
+    _append_chat_turn(
+        role=actor.role,
+        user_text=text,
+        assistant_text=assistant_body,
+        details={
+            "request_id": getattr(request, "id", None),
+            "log_path": log_path,
+        },
+    )
