@@ -225,6 +225,10 @@ def _assessment(domain, request, evidence, findings_text: str) -> dict[str, Any]
                 claim.basis = "inference"
                 claim.reasoning = claim.reasoning or specialist_refs[0]
                 claim.citations = []
+            else:
+                claim.basis = "inference"
+                claim.reasoning = claim.reasoning or "Stated in policy extracts"
+                claim.citations = []
 
     return {
         "summary": draft.summary,

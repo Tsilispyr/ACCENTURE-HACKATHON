@@ -2053,5 +2053,39 @@
     "n": 1,
     "note": "Evaluate Asteria AI Systems as an enterprise Generative AI platform for 2,000 em",
     "detail": {}
+  },
+  {
+    "at": "2026-09-24T12:22:51+00:00",
+    "domain": "vendor_risk",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 0.0,
+      "citation_correctness": 1.0,
+      "task_completion": 1.0,
+      "tool_correctness": 1.0,
+      "agent_delegation": 1.0,
+      "decision_quality": 1.0
+    },
+    "n": 2,
+    "note": "agent_eval",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T12:23:50+00:00",
+    "domain": "vendor_risk",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 1.0,
+      "citation_correctness": 1.0,
+      "task_completion": 1.0,
+      "tool_correctness": 1.0,
+      "agent_delegation": 1.0,
+      "decision_quality": 1.0
+    },
+    "n": 1,
+    "note": "agent_eval",
+    "detail": {}
   }
 ]

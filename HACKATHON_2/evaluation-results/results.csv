@@ -454,3 +454,15 @@ at,domain,experiment,arm,metric,value,n,note
 2026-09-24T11:26:15+00:00,vendor_risk,stage_timing,s7_replan,seconds,0.0133,6,"Evaluate Asteria AI Systems as an enterprise Generative AI platform for 2,000 em"
 2026-09-24T11:26:15+00:00,vendor_risk,stage_timing,s5_gate,seconds,0.0093,1,"Evaluate Asteria AI Systems as an enterprise Generative AI platform for 2,000 em"
 2026-09-24T11:26:15+00:00,vendor_risk,stage_timing,s1_intake,seconds,0.007,1,"Evaluate Asteria AI Systems as an enterprise Generative AI platform for 2,000 em"
+2026-09-24T12:22:51+00:00,vendor_risk,agent,pipeline,pass_rate,0.0,2,agent_eval
+2026-09-24T12:22:51+00:00,vendor_risk,agent,pipeline,citation_correctness,1.0,2,agent_eval
+2026-09-24T12:22:51+00:00,vendor_risk,agent,pipeline,task_completion,1.0,2,agent_eval
+2026-09-24T12:22:51+00:00,vendor_risk,agent,pipeline,tool_correctness,1.0,2,agent_eval
+2026-09-24T12:22:51+00:00,vendor_risk,agent,pipeline,agent_delegation,1.0,2,agent_eval
+2026-09-24T12:22:51+00:00,vendor_risk,agent,pipeline,decision_quality,1.0,2,agent_eval
+2026-09-24T12:23:50+00:00,vendor_risk,agent,pipeline,pass_rate,1.0,1,agent_eval
+2026-09-24T12:23:50+00:00,vendor_risk,agent,pipeline,citation_correctness,1.0,1,agent_eval
+2026-09-24T12:23:50+00:00,vendor_risk,agent,pipeline,task_completion,1.0,1,agent_eval
+2026-09-24T12:23:50+00:00,vendor_risk,agent,pipeline,tool_correctness,1.0,1,agent_eval
+2026-09-24T12:23:50+00:00,vendor_risk,agent,pipeline,agent_delegation,1.0,1,agent_eval
+2026-09-24T12:23:50+00:00,vendor_risk,agent,pipeline,decision_quality,1.0,1,agent_eval
