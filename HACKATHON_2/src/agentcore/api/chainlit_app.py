@@ -42,18 +42,40 @@ STAGE_LABELS = {
 }
 
 
+ROLE_PROFILES = {
+    "user": "Read-only tools. Anything above low risk is denied.",
+    "admin": "Every tool. High risk work still pauses for your approval.",
+}
+
+
+@cl.set_chat_profiles
+async def role_profiles() -> list[cl.ChatProfile]:
+    """The role is chosen per chat and does not change inside one.
+
+    A demo device, not authentication: the API takes the role from the account
+    that logged in. Least privilege comes first in the list, so forgetting to
+    choose fails closed rather than open.
+    """
+    return [cl.ChatProfile(name=role, markdown_description=text)
+            for role, text in ROLE_PROFILES.items()]
+
+
 @cl.on_chat_start
 async def start() -> None:
     domain = load_domain()
     cl.user_session.set("graph", build_app())
     cl.user_session.set("domain", domain)
     # A demo identity. The scope is real: it is ANDed into every retrieval
-    # filter, so switching it here genuinely changes what can be retrieved.
-    cl.user_session.set("actor", Actor(id="ui-user", role="engineer", scope="public"))
+    # filter, so switching it here genuinely changes what can be retrieved. The
+    # role is real too: tools above its ceiling are swapped for a denial.
+    role = cl.user_session.get("chat_profile") or "user"
+    if role not in ROLE_PROFILES:
+        role = "user"
+    cl.user_session.set("actor", Actor(id=f"ui-{role}", role=role, scope="public"))
 
     await cl.Message(
         content=(
-            f"**{domain.name}** is loaded.\n\n"
+            f"**{domain.name}** is loaded. You are acting as **{role}**: {ROLE_PROFILES[role]}\n\n"
             f"{domain.persona().splitlines()[0]}\n\n"
             "Ask a question. High risk work will pause for your approval."
         )
