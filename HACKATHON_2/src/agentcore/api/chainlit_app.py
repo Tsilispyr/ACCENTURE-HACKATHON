@@ -1,139 +1,101 @@
-"""Chainlit frontend with real-time streaming, persistent history, and state retention across page refreshes.
+"""Chainlit frontend.
 
-    DOMAIN=vendor_risk uv run chainlit run src/agentcore/api/chainlit_app.py -w
+    DOMAIN=sample_policy uv run chainlit run src/agentcore/api/chainlit_app.py -w
 
-Why Chainlit: the pipeline PAUSES for human approval, streams multi-step agent
-execution, shows specialist delegation, tool invocations, and generates
-transparent, evidence-grounded vendor risk assessments.
+Why Chainlit rather than the FastAPI endpoints alone: the pipeline PAUSES for
+human approval, and an approval gate is only convincing when someone can see
+the plan and press the button. A curl command proves the mechanism; a UI proves
+the product.
 
-State and History Retention:
-- Uses persistent SQLite checkpointer (.cache/checkpoints.sqlite).
-- Retains evidence, findings, citations, and conversation context across turns and page refreshes.
-- Type :reset or :clear to start a fresh thread session.
+What it shows, deliberately, is the WORKING rather than just the answer: which
+stages ran, the plan with its risk levels, the approval prompt when one is
+needed, and - for a domain that declares risk domains - the risk findings,
+the claims split by what each one rests on, any contradictions, and the
+conditions attached to the decision. A chat box that emits a paragraph would
+hide exactly the parts worth grading.
+
+The decision line names WHO decided. A model recommendation and a human
+sign-off look identical once flattened into prose, and that is precisely the
+distinction an approval workflow exists to preserve.
 """
 
 from __future__ import annotations
 
-import time
-from typing import Any
-
 import chainlit as cl
 from langgraph.types import Command
 
-from agentcore.checkpointer import SqliteCheckpointer
 from agentcore.contracts import Actor
 from agentcore.pipeline.graph import build_app
 from agentcore.registry import load_domain
-from agentcore.tracing import save_agent_log
 from agentcore.world import bound
 
 STAGE_LABELS = {
-    "s1_intake": "1. Intake and Request Parsing",
-    "s2_guard_in": "2. Input Security Guardrails",
-    "s3_ground": "3. Hybrid RAG Evidence Retrieval",
-    "s4_plan": "4. Deep Agent Assessment Planning",
-    "s5_gate": "5. Risk Assessment and Authorization Gate",
-    "s6_act": "6. Specialist Agent Execution and Tool Calls",
-    "s7_replan": "7. Progress Review and Replanning",
-    "s8_compose": "8. Risk Synthesis and Recommendation",
-    "s9_guard_out": "9. Output Verification and Guardrails",
+    "s1_intake": "Parsed the request",
+    "s2_guard_in": "Input guardrails",
+    "s3_ground": "Retrieved evidence",
+    "s4_plan": "Planned the work",
+    "s5_gate": "Assessed risk",
+    "s6_act": "Executed a step",
+    "s7_replan": "Reviewed progress",
+    "s8_compose": "Composed the answer",
+    "s9_guard_out": "Output guardrails",
 }
-
-STAGE_TYPES = {
-    "s1_intake": "run",
-    "s2_guard_in": "run",
-    "s3_ground": "tool",
-    "s4_plan": "run",
-    "s5_gate": "run",
-    "s6_act": "tool",
-    "s7_replan": "run",
-    "s8_compose": "llm",
-    "s9_guard_out": "run",
-}
-
-ROLE_PROFILES = {
-    "user": "Ask and assess. Retrieval, history and totals; cannot record or file anything.",
-    "admin": "Every tool, including the ones that write. High risk work still pauses for approval.",
-}
-
-
-@cl.set_chat_profiles
-async def role_profiles() -> list[cl.ChatProfile]:
-    return [
-        cl.ChatProfile(name=role, markdown_description=text)
-        for role, text in ROLE_PROFILES.items()
-    ]
 
 
 @cl.on_chat_start
 async def start() -> None:
     domain = load_domain()
-    checkpointer = SqliteCheckpointer()
-    graph = build_app(checkpointer=checkpointer)
-    cl.user_session.set("graph", graph)
+    cl.user_session.set("graph", build_app())
     cl.user_session.set("domain", domain)
-    cl.user_session.set("checkpointer", checkpointer)
+    # A demo identity. The scope is real: it is ANDed into every retrieval
+    # filter, so switching it here genuinely changes what can be retrieved.
+    cl.user_session.set("actor", Actor(id="ui-user", role="engineer", scope="public"))
 
-    role = cl.user_session.get("chat_profile") or "user"
-    if role not in ROLE_PROFILES:
-        role = "user"
+    await cl.Message(
+        content=(
+            f"**{domain.name}** is loaded.\n\n"
+            f"{domain.persona().splitlines()[0]}\n\n"
+            "Ask a question. High risk work will pause for your approval."
+        )
+    ).send()
 
-    actor = Actor(id=f"ui-{role}", role=role, scope="public")
-    cl.user_session.set("actor", actor)
 
-    thread_id = f"ui-thread-{role}"
-    cl.user_session.set("thread_id", thread_id)
-
-    # Check for existing checkpoint state on this thread to restore across refreshes
-    prior_state = None
-    try:
-        prior_state = graph.get_state({"configurable": {"thread_id": thread_id}})
-    except Exception:
-        prior_state = None
-
-    if prior_state and getattr(prior_state, "values", None) and prior_state.values.get("answer"):
-        ans = prior_state.values.get("answer")
-        ev_count = len(prior_state.values.get("evidence", []))
-        verdict = getattr(ans, "decision", getattr(ans, "recommendation", "N/A")).replace("_", " ").upper()
-        await cl.Message(
-            content=(
-                f"**Session Restored for {role}** (Thread `{thread_id}`)\n\n"
-                f"- **Retained Evidence**: `{ev_count}` passage(s)\n"
-                f"- **Prior Verdict**: `{verdict}`\n"
-                f"- **Prior Summary**: {getattr(ans, 'summary', '')[:160]}...\n\n"
-                "You can ask follow-up questions building upon prior assessment state, or type `:reset` to clear."
-            )
-        ).send()
-    else:
-        await cl.Message(
-            content=(
-                f"**Domain `{domain.name}` loaded.** Acting as **{role}** ({ROLE_PROFILES[role]}).\n\n"
-                f"{domain.persona().splitlines()[0]}\n\n"
-                "Ask a vendor assessment or compliance question. State and history are preserved across turns and page refreshes."
-            )
-        ).send()
+async def _show_progress(audit: list[dict]) -> None:
+    """The stages that ran, in order, once each."""
+    seen, lines = set(), []
+    for event in audit:
+        stage = event["stage"]
+        if stage in seen:
+            continue
+        seen.add(stage)
+        lines.append(f"- {STAGE_LABELS.get(stage, stage)}")
+    if lines:
+        await cl.Message(content="**Steps taken**\n" + "\n".join(lines),
+                         author="pipeline").send()
 
 
 LEVEL_MARK = {"high": "HIGH", "medium": "MEDIUM", "low": "LOW", "none": "-"}
 BASIS_MARK = {"evidence": "evidence", "inference": "inferred", "missing": "MISSING"}
 
 
-async def _show_answer(state: dict, log_path: str | None = None) -> None:
+async def _show_answer(state: dict) -> None:
     answer = state.get("answer")
     if not answer:
         await cl.Message(content="No answer was produced.").send()
         return
 
     if answer.refused:
-        await cl.Message(
-            content=f"**Refused.** {answer.summary}", author="guardrails"
-        ).send()
+        await cl.Message(content=f"**Refused.** {answer.summary}", author="guardrails").send()
         return
 
     body = answer.summary or "(no summary)"
     if answer.partial:
         body += "\n\n*This answer is partial. Check the citations.*"
 
+    # The decision line comes FIRST and says who decided. A reader who sees
+    # only one line must still be able to tell a model's recommendation from a
+    # human's sign-off - conflating them is how an assessment acquires an
+    # authority nobody granted it.
     if answer.decision and answer.decision != "pending":
         who = "you" if answer.decided_by == "human" else "the model (not yet reviewed)"
         verdict = answer.decision.replace("_", " ")
@@ -144,7 +106,8 @@ async def _show_answer(state: dict, log_path: str | None = None) -> None:
 
     elements = []
 
-    # 1. Risk findings
+    # Risk findings, one row per domain, including the ones with nothing in
+    # them. An unassessed domain is a result and has to be visible as one.
     if answer.findings:
         rows = ["| Domain | Risk | Assessed | Summary |", "|---|---|---|---|"]
         for finding in answer.findings:
@@ -160,7 +123,9 @@ async def _show_answer(state: dict, log_path: str | None = None) -> None:
             cl.Text(name="Risk findings", display="side", content="\n".join(rows))
         )
 
-    # 2. Claims split by basis
+    # Claims, grouped by basis. The grouping IS the point: a reader should be
+    # able to see at a glance how much of this rests on a document and how
+    # much on the model's reasoning.
     if answer.claims:
         grouped: dict[str, list] = {}
         for claim in answer.claims:
@@ -172,6 +137,10 @@ async def _show_answer(state: dict, log_path: str | None = None) -> None:
                 continue
             parts.append(f"### {BASIS_MARK[basis]} ({len(claims)})")
             for claim in claims:
+                # A 'missing' claim has nothing to support it BY DEFINITION --
+                # that is what it is reporting. Labelling it unsupported would
+                # read as a defect in the assessment rather than a gap in the
+                # evidence, which is the opposite of what it says.
                 if claim.basis == "missing":
                     support = claim.reasoning[:120] if claim.reasoning else "not in the corpus"
                 else:
@@ -185,51 +154,43 @@ async def _show_answer(state: dict, log_path: str | None = None) -> None:
             cl.Text(name="Claims", display="side", content="\n".join(parts))
         )
 
-    # 3. Contradictions
     if answer.contradictions:
         parts = [
             f"- {c.statement_a}"
-            f"\n  _{c.source_a or 'source not named'}_\n\n  versus\n\n"
+            f"\n  _{c.source_a or 'source not named'}_"
+            f"\n\n  versus\n\n"
             f"- {c.statement_b}"
-            f"\n  _{c.source_b or 'source not named'}_\n"
-            + (f"\n  {c.note}" if c.note else "")
+            f"\n  _{c.source_b or 'source not named'}_"
+            + (f"\n\n  {c.note}" if c.note else "")
             for c in answer.contradictions
         ]
         elements.append(
             cl.Text(name="Contradictions", display="side", content="\n".join(parts))
         )
 
-    # 4. Conditions
     if answer.conditions:
         parts = [f"{i}. {c}" for i, c in enumerate(answer.conditions, 1)]
         elements.append(
             cl.Text(name="Conditions", display="side", content="\n".join(parts))
         )
 
-    # 5. Citations / Sources
     if answer.citations:
         elements.append(
-            cl.Text(
-                name="Sources",
-                display="side",
-                content="\n".join(f"- {c}" for c in answer.citations),
-            )
-        )
-
-    # 6. Saved Run Log
-    if log_path:
-        elements.append(
-            cl.Text(
-                name="Run Trace Log",
-                display="side",
-                content=f"Detailed execution trace saved to:\n`{log_path}`",
-            )
+            cl.Text(name="Sources", display="side",
+                    content="\n".join(f"- {c}" for c in answer.citations))
         )
 
     await cl.Message(content=body, elements=elements).send()
 
 
 async def _ask_approval(payload: dict) -> dict:
+    """Render the plan and wait for a decision. This is the HITL gate.
+
+    Returns the resume payload the gate reads, not a bare word, so a reviewer
+    can approve WITH conditions - which the gate has always supported and this
+    UI previously could not express. An approval flow that offers only yes and
+    no forces a reviewer to say yes to things they meant to qualify.
+    """
     steps = "\n".join(
         f"- **{s['id']}** risk `{s['risk']}` "
         f"{('via `' + s['tool'] + '`') if s.get('tool') else ''}\n"
@@ -240,16 +201,15 @@ async def _ask_approval(payload: dict) -> dict:
         content=f"**Approval needed**\n\n{payload.get('reason','')}\n\n{steps}",
         actions=[
             cl.Action(name="approve", label="Approve", payload={"decision": "approve"}),
-            cl.Action(
-                name="conditional",
-                label="Approve with conditions",
-                payload={"decision": "approve_with_conditions"},
-            ),
+            cl.Action(name="conditional", label="Approve with conditions",
+                      payload={"decision": "approve_with_conditions"}),
             cl.Action(name="reject", label="Reject", payload={"decision": "reject"}),
         ],
         timeout=300,
     ).send()
 
+    # Fail closed: a timeout or a dismissed dialog is a rejection, never an
+    # approval. Same rule as the CLI and the API.
     if not action:
         return {"decision": "reject", "by": "ui-user"}
 
@@ -262,6 +222,9 @@ async def _ask_approval(payload: dict) -> dict:
         ).send()
         text = (reply or {}).get("output", "") if isinstance(reply, dict) else ""
         conditions = [line.strip(" -") for line in text.splitlines() if line.strip()]
+        # The gate degrades a conditional approval with no conditions to a
+        # plain one. Say so here rather than letting the reviewer believe they
+        # attached something they did not.
         if not conditions:
             await cl.Message(
                 content="No conditions given, so this is recorded as a plain approval.",
@@ -271,141 +234,25 @@ async def _ask_approval(payload: dict) -> dict:
     return {"decision": decision, "conditions": conditions, "by": "ui-user"}
 
 
-def _format_stage_summary(stage: str, delta: dict[str, Any]) -> str:
-    """Format concise, informative output for a pipeline step with zero risk of attribute exceptions."""
-    try:
-        lines: list[str] = []
-        if stage == "s1_intake":
-            req = delta.get("request") if isinstance(delta, dict) else None
-            if req:
-                actor = getattr(req, "actor", None)
-                scope = getattr(actor, "scope", "public")
-                req_id = getattr(req, "id", "N/A")
-                lines.append(f"**Request ID**: `{req_id}` | **Scope**: `{scope}`")
-                raw_text = getattr(req, "raw_text", "")
-                if raw_text:
-                    lines.append(f"**Query**: {raw_text[:120]}")
-        elif stage == "s2_guard_in":
-            lines.append("Input query scanned by regex patterns and LLM safety classifier. **Clean.**")
-        elif stage == "s3_ground":
-            evidence = delta.get("evidence", []) if isinstance(delta, dict) else []
-            lines.append(f"Retrieved **{len(evidence)}** evidence passage(s) across policies and proposals.")
-            sources = sorted({getattr(e, "source", "") for e in evidence if getattr(e, "source", None)})
-            if sources:
-                lines.append("**Sources**: " + ", ".join(f"`{s}`" for s in sources[:4]))
-        elif stage == "s4_plan":
-            plan = delta.get("plan") if isinstance(delta, dict) else None
-            if plan and getattr(plan, "steps", None):
-                lines.append(f"Generated **{len(plan.steps)}** assessment step(s) (Revision {getattr(plan, 'revision', 1)}):")
-                for s in plan.steps:
-                    owner_str = f" [{s.owner}]" if getattr(s, "owner", None) else ""
-                    lines.append(f"- **{getattr(s, 'id', '')}** ({getattr(s, 'risk', 'low')} risk){owner_str}: {getattr(s, 'description', '')}")
-        elif stage == "s5_gate":
-            audit = delta.get("audit", []) if isinstance(delta, dict) else []
-            level = "none"
-            for a in audit:
-                if isinstance(a, dict) and a.get("event") == "risk_assessed":
-                    level = a.get("level", "none")
-            lines.append(f"Plan risk evaluated at **{str(level).upper()}**.")
-            for a in audit:
-                if isinstance(a, dict) and a.get("event") == "role_skipped":
-                    lines.append(f"*Least privilege notice*: Skipped write step(s) {a.get('steps')} for non-admin role.")
-        elif stage == "s6_act":
-            past = delta.get("past_steps", []) if isinstance(delta, dict) else []
-            for p in past:
-                tool_calls = getattr(p, "tool_calls", []) or []
-                tool_str = f" via `{', '.join(tool_calls)}`" if tool_calls else ""
-                owner_str = f" by **{p.owner}**" if getattr(p, "owner", None) else ""
-                lines.append(f"- Step **{getattr(p, 'step_id', '')}** completed{owner_str}{tool_str}")
-                output_str = getattr(p, "output", "")
-                if output_str:
-                    lines.append(f"  _{str(output_str)[:160]}..._")
-        elif stage == "s7_replan":
-            lines.append("Review completed. Evidence evaluated across requested domains.")
-        elif stage == "s8_compose":
-            ans = delta.get("answer") if isinstance(delta, dict) else None
-            if ans:
-                rec = getattr(ans, "recommendation", None) or getattr(ans, "decision", "N/A")
-                lines.append(f"Synthesized assessment. Recommendation: **{str(rec).upper()}**")
-        elif stage == "s9_guard_out":
-            lines.append("Output citations and claims verified against ground truth evidence.")
-
-        return "\n".join(lines) if lines else "Stage completed successfully."
-    except Exception:
-        return "Stage completed successfully."
-
 
 @cl.on_message
 async def on_message(message: cl.Message) -> None:
     graph = cl.user_session.get("graph")
     domain = cl.user_session.get("domain")
     actor = cl.user_session.get("actor")
-    thread_id = cl.user_session.get("thread_id") or f"ui-thread-{actor.role}"
-    checkpointer = cl.user_session.get("checkpointer")
 
-    text = message.content.strip()
+    request = domain.parse_request(message.content, actor)
+    config = {"configurable": {"thread_id": request.id}}
 
-    if text in (":reset", ":clear", "reset", "clear"):
-        if checkpointer:
-            checkpointer.delete_thread(thread_id)
-        cl.user_session.set("graph", build_app(checkpointer=checkpointer))
-        await cl.Message(content=f"Session state for thread `{thread_id}` has been cleared.").send()
-        return
+    async with cl.Step(name="Running the pipeline", type="run"):
+        with bound(actor, request.id):
+            state = graph.invoke({"request": request, "actor": actor}, config)
 
-    request = domain.parse_request(text, actor)
-    config = {"configurable": {"thread_id": thread_id}}
+            rounds = 0
+            while "__interrupt__" in state and rounds < 5:
+                resume = await _ask_approval(state["__interrupt__"][0].value)
+                state = graph.invoke(Command(resume=resume), config)
+                rounds += 1
 
-    accumulated_state: dict[str, Any] = {"request": request, "actor": actor}
-    audit_trail: list[dict[str, Any]] = []
-    timings: dict[str, float] = {}
-
-    with bound(actor, request.id):
-        payload: object = {"request": request, "actor": actor}
-        rounds = 0
-
-        while rounds < 5:
-            mark = time.perf_counter()
-            interrupted = False
-            interrupt_payload: dict[str, Any] = {}
-
-            for update in graph.stream(payload, config, stream_mode="updates"):
-                now = time.perf_counter()
-                for stage, delta in update.items():
-                    if stage == "__interrupt__":
-                        interrupted = True
-                        if isinstance(delta, (list, tuple)) and delta:
-                            interrupt_payload = delta[0].value
-                        continue
-
-                    timings[stage] = timings.get(stage, 0.0) + (now - mark)
-                    if isinstance(delta, dict):
-                        accumulated_state.update(delta)
-                        new_audit = delta.get("audit") or []
-                        audit_trail.extend(new_audit)
-
-                    step_title = STAGE_LABELS.get(stage, stage)
-                    step_type = STAGE_TYPES.get(stage, "run")
-                    async with cl.Step(name=step_title, type=step_type) as step:
-                        step.output = _format_stage_summary(stage, delta if isinstance(delta, dict) else {})
-
-                mark = now
-
-            if not interrupted:
-                break
-
-            rounds += 1
-            resume_data = await _ask_approval(interrupt_payload)
-            payload = Command(resume=resume_data)
-
-    log_path = None
-    try:
-        log_path = save_agent_log(
-            message.content,
-            accumulated_state.get("audit", audit_trail),
-            timings=timings,
-            answer=accumulated_state.get("answer"),
-        )
-    except Exception as e:
-        print(f"[log] failed to save trace log: {e}")
-
-    await _show_answer(accumulated_state, log_path=log_path)
+    await _show_progress(state.get("audit", []))
+    await _show_answer(state)

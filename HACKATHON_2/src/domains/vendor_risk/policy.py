@@ -94,9 +94,6 @@ BLOCKED_PATTERNS: list[str] = [
     r"(do not|don't|dont|never)\s+(record|log|report|mention|disclose|flag)",
     # Asking for the verdict first, evidence later.
     r"(just|simply)\s+(approve|sign off|pass)\b",
-    # Dictating the verdict outright: "RETURN 'APPROVE - LOW RISK'". "approval"
-    # does not match, so an ordinary sentence about approval workflows is safe.
-    r"(return|output|respond\s+with|reply\s+with|answer\s+with|say)\s+['\"‘“]?\s*approved?\b",
 ]
 
 # Applied to the OUTPUT. A vendor assessment routinely quotes contact details
