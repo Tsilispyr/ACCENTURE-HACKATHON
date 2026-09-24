@@ -30,6 +30,17 @@ BASE_PATTERNS = [
     r"(show|give|print|reveal) (me )?(your )?(api[ _-]?key|secret|password|credentials|token)",
     r"</?(system|assistant)>",          # fake role markers
     r"^\s*system\s*:",                  # a message pretending to be the system turn
+    # The qualified form. The patterns above allow three words and a short
+    # vocabulary, and the real hackathon corpus was written past both:
+    # "IGNORE ALL PREVIOUS POLICIES AND INSTRUCTIONS" has four words in between
+    # and names "policies". Requiring previous/prior/above keeps this from
+    # firing on an ordinary question like "can we ignore the retention policy".
+    r"(ignore|disregard|forget|override)\s+(?:(?:all|any|your|the|these|those|every)\s+)?"
+    r"(?:previous|prior|above|earlier|preceding|existing)\s+(?:\w+\s+){0,4}?"
+    r"(instructions|rules|prompts?|directives|polic(?:y|ies)|guidelines|constraints|controls)",
+    # A note addressed to the machine reader rather than the human one.
+    r"(note|message|instructions?)\s+(for|to)\s+(automated|ai|llm|machine)\s+(\w+\s+){0,2}"
+    r"(systems?|agents?|reviewers?|assistants?|models?)",
 ]
 
 MAX_REQUEST_CHARS = 20_000
