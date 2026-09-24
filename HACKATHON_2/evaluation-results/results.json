@@ -1594,5 +1594,20 @@
     "n": 12,
     "note": "filter=None hybrid=False",
     "detail": {}
+  },
+  {
+    "at": "2026-09-24T08:41:17+00:00",
+    "domain": "vendor_risk",
+    "experiment": "usage",
+    "arm": "per_run",
+    "metrics": {
+      "input_tokens": 96295.0,
+      "output_tokens": 7618.0,
+      "total_tokens": 103913.0,
+      "seconds": 138.1416
+    },
+    "n": 1,
+    "note": "Evaluate Asteria AI Systems as an enterprise Generative AI platform for 2,000 em",
+    "detail": {}
   }
 ]

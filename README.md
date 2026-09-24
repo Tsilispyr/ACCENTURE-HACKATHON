@@ -12,15 +12,9 @@ and run without the other.
 Start with the README inside whichever folder you want. Each is the entry point for that project
 and carries the handout it was built against.
 
-## Why they share nothing
-
-They cannot run at the same time on one machine. WSL 2 has about 3.6 GB here and the hackathon 1
-stack alone uses roughly 2.4 GB of it, so hackathon 2's `scripts/deploy.sh` checks for hackathon 1's
-containers and refuses to start rather than letting both die of OOM halfway through. Container
-names, ports and compose project names are deliberately distinct on both sides for the same reason.
-
-Sharing code would also mean either project could break the other, which is the opposite of what a
-folder per hackathon is for.
+They share no code, no dependencies and no running services. Container names, ports and compose
+project names are distinct on both sides, so neither project can break or collide with the other.
+Each folder's `scripts/deploy.sh` explains the operational constraints that shaped its own setup.
 
 ## Layout
 

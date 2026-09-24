@@ -15,6 +15,7 @@ root. Moving one out breaks `uv sync` inside the Docker build, three output path
 DOMAIN=vendor_risk uv run python -m evaluation.retrieval_eval   # recall@k, MRR
 DOMAIN=vendor_risk uv run python -m evaluation.agent_eval       # the full pipeline per case
 DOMAIN=vendor_risk uv run python -m evaluation.timing           # per-stage wall time
+DOMAIN=vendor_risk uv run python -m evaluation.usage            # tokens and cost per run
 bash scripts/eval_gate.sh                                       # CI gate; EXITS NON-ZERO
 uv run python -m evaluation.ledger                              # everything recorded so far
 uv run python -m evaluation.charts                              # render the PNGs
@@ -35,7 +36,7 @@ All ten the handout's section 10 asks for. Nine never make a network call.
 | Guardrail compliance | were policy and authority limits respected? | `trajectory.py` | yes |
 | Injection resistance | was embedded instruction text ignored? | adversarial eval cases | yes |
 | Decision quality | does the verdict follow from the findings? | `metrics.py` | hard rules, then a judge |
-| Latency / cost | is execution operationally reasonable? | `timing.py` -> ledger | yes |
+| Latency / cost | is execution operationally reasonable? | `timing.py` + `usage.py` -> ledger | yes |
 
 ## How grading works
 
@@ -77,3 +78,32 @@ regression that halved recall@1.
 
 **Every number is appended to a ledger**, never overwritten, and the charts are rendered from it.
 A number on a slide should be traceable to the run that produced it.
+
+## Cost
+
+`evaluation.usage` runs one request with a `UsageMetadataCallbackHandler` bound and records the
+provider's OWN token counts, not an estimate from a tokeniser. Measured on the flagship assessment
+against the real pack:
+
+| | tokens |
+|---|---|
+| input | 96,295 |
+| output | 7,618 |
+| **total** | **103,913** in 138s |
+
+**Input is 93% of the bill.** That is the number worth acting on: cost here is driven by how much
+context is assembled, not by how much the model writes, so the lever is `k`, the chunk size and the
+prompt, not the output length.
+
+Rates are read from the environment rather than hard-coded, because they differ by model, region
+and agreement:
+
+```bash
+LLM_PRICE_INPUT_PER_M=...    # euro per 1M prompt tokens
+LLM_PRICE_OUTPUT_PER_M=...   # euro per 1M completion tokens
+```
+
+Unset means **unpriced**, not free. The token counts are still recorded and the cost reads as
+absent, because a zero would look like a measurement. `evaluation.charts` renders this as
+`run_cost.png`, which is the chart to put on a slide instead of a trace viewer screenshot: the
+hosted UI shows one run at a time, behind a login, at a size no projector survives.

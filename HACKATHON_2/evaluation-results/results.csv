@@ -359,3 +359,7 @@ at,domain,experiment,arm,metric,value,n,note
 2026-09-24T08:04:05+00:00,vendor_risk,retrieval,through the gate,recall@3,1.0,12,filter=None hybrid=False
 2026-09-24T08:04:05+00:00,vendor_risk,retrieval,through the gate,recall@5,1.0,12,filter=None hybrid=False
 2026-09-24T08:04:05+00:00,vendor_risk,retrieval,through the gate,mrr,0.9444,12,filter=None hybrid=False
+2026-09-24T08:41:17+00:00,vendor_risk,usage,per_run,input_tokens,96295.0,1,"Evaluate Asteria AI Systems as an enterprise Generative AI platform for 2,000 em"
+2026-09-24T08:41:17+00:00,vendor_risk,usage,per_run,output_tokens,7618.0,1,"Evaluate Asteria AI Systems as an enterprise Generative AI platform for 2,000 em"
+2026-09-24T08:41:17+00:00,vendor_risk,usage,per_run,total_tokens,103913.0,1,"Evaluate Asteria AI Systems as an enterprise Generative AI platform for 2,000 em"
+2026-09-24T08:41:17+00:00,vendor_risk,usage,per_run,seconds,138.1416,1,"Evaluate Asteria AI Systems as an enterprise Generative AI platform for 2,000 em"

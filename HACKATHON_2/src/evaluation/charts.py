@@ -41,7 +41,12 @@ plt.rcParams.update(
         "figure.facecolor": SURFACE,
         "axes.facecolor": SURFACE,
         "savefig.facecolor": SURFACE,
-        "font.family": "DejaVu Sans",
+        # A FALLBACK CHAIN, not one name. Matplotlib walks it and takes the
+        # first font present, so a light face is used where one exists and
+        # DejaVu Sans - which matplotlib always ships - keeps CI and Linux
+        # containers rendering identically shaped charts.
+        "font.family": ["Segoe UI Light", "Segoe UI", "Corbel", "Candara",
+                        "Gill Sans MT", "DejaVu Sans"],
         "font.size": 11,
         "axes.labelcolor": INK_SOFT,
         "text.color": INK,
@@ -52,9 +57,24 @@ plt.rcParams.update(
 )
 
 
+# Titles are set in ONE place so all seven charts agree. A title earns
+# attention by sitting alone above the plot, not by being heavy: at projector
+# size a 600 weight title competes with the bars it is labelling.
+#
+# The thinness comes from the FAMILY, not from a weight. "Segoe UI Light" is
+# its own family; asking for fontweight="light" instead makes matplotlib hunt
+# for a light face in families that have none and print a findfont warning per
+# chart while falling back to normal anyway.
+TITLE = {"fontsize": 15, "color": INK, "pad": 16, "loc": "left"}
+
+
+def _title(ax, text: str) -> None:
+    ax.set_title(text, **TITLE)
+
+
 def _style(ax, *, title: str, ylabel: str = "", ymax: float | None = None) -> None:
     """The recessive frame every chart here shares."""
-    ax.set_title(title, fontsize=13, color=INK, pad=14, loc="left", fontweight="600")
+    _title(ax, title)
     if ylabel:
         ax.set_ylabel(ylabel, fontsize=10)
     for side in ("top", "right", "left"):
@@ -180,8 +200,7 @@ def calibration(domain: str = "sample_policy") -> Path | None:
     ax.xaxis.grid(True, color=GRID, linewidth=0.8)
     ax.set_axisbelow(True)
     ax.tick_params(length=0)
-    ax.set_title("Where the relevance threshold goes", fontsize=13, color=INK,
-                 pad=14, loc="left", fontweight="600")
+    _title(ax, "Where the relevance threshold goes")
     ax.legend(frameon=False, ncol=2, loc="upper left",
               bbox_to_anchor=(0, -0.28), fontsize=10)
     return _save(fig, "calibration.png")
@@ -217,8 +236,7 @@ def pipeline_costs(domain: str = "sample_policy") -> Path | None:
     ax.xaxis.grid(True, color=GRID, linewidth=0.8)
     ax.set_axisbelow(True)
     ax.tick_params(length=0)
-    ax.set_title("Time spent per pipeline stage", fontsize=13, color=INK,
-                 pad=14, loc="left", fontweight="600")
+    _title(ax, "Time spent per pipeline stage")
     return _save(fig, "pipeline_costs.png")
 
 
@@ -273,12 +291,70 @@ def store_backends(domain: str = "sample_policy") -> Path | None:
     return _save(fig, "store_backends.png")
 
 
+def run_cost(domain: str = "sample_policy") -> Path | None:
+    """What one request costs, split into the tokens that were paid for.
+
+    THE CHART THAT REPLACES SQUINTING AT A TRACE VIEWER. Token counts exist in
+    the hosted trace UI, one run at a time, behind a login, at a font size no
+    projector survives. Section 10 asks whether execution is operationally
+    reasonable, and that question is answered by a number on a slide.
+
+    Input and output are separated because they are priced differently and
+    behave differently: input grows with the corpus and the prompt, output with
+    how much the model chooses to write. A single "total tokens" bar hides
+    which of those to go after when the bill is too high.
+    """
+    data = latest("usage", domain)
+    if "per_run" not in data:
+        return None
+    row = data["per_run"]
+
+    tokens_in = row.get("input_tokens", 0)
+    tokens_out = row.get("output_tokens", 0)
+    if not (tokens_in or tokens_out):
+        return None
+
+    # Wide and short: two bars in a tall frame read as slabs. A slide wants
+    # the shape of the comparison, which is horizontal.
+    fig, ax = plt.subplots(figsize=(6.6, 3.2))
+    bars = ax.barh(["Output", "Input"], [tokens_out, tokens_in], 0.38,
+                   color=[ORANGE, BLUE], zorder=3)
+    for bar, value in zip(bars, (tokens_out, tokens_in)):
+        ax.text(bar.get_width() * 1.01, bar.get_y() + bar.get_height() / 2,
+                f"{value:,.0f}", va="center", fontsize=10, color=INK)
+
+    ax.xaxis.set_major_formatter(lambda v, _: f"{v / 1000:.0f}k" if v else "0")
+    ax.set_xlim(0, max(tokens_in, tokens_out) * 1.18)
+    _title(ax, "Tokens in one full assessment")
+
+    # The euro figure is a SUBTITLE, not a bar. It is derived from the tokens
+    # already plotted, so drawing it again would say the same thing twice, and
+    # it is absent whenever no rate is configured rather than shown as zero.
+    cost = row.get("cost_eur")
+    seconds = row.get("seconds")
+    caption = f"{tokens_in + tokens_out:,.0f} tokens"
+    if seconds:
+        caption += f" in {seconds:.0f}s"
+    if cost:
+        caption += f"   EUR {cost:.4f} per run, EUR {cost * 1000:.2f} per 1,000"
+    else:
+        caption += "   not priced: set LLM_PRICE_INPUT_PER_M and LLM_PRICE_OUTPUT_PER_M"
+    ax.text(0, -0.30, caption, transform=ax.transAxes, fontsize=10, color=INK_SOFT)
+
+    for side in ("top", "right", "left"):
+        ax.spines[side].set_visible(False)
+    ax.xaxis.grid(True, color=GRID, zorder=0)
+    ax.set_axisbelow(True)
+    return _save(fig, "run_cost.png")
+
+
 def render_all(domain: str = "sample_policy") -> list[Path]:
     print(f"Rendering charts for '{domain}'")
     made = [
         chart(domain)
         for chart in (retrieval_arms, metadata_filter_effect, calibration,
-                      chunking_shape, pipeline_costs, store_backends)
+                      chunking_shape, pipeline_costs, store_backends,
+                      run_cost)
     ]
     made = [p for p in made if p]
     if not made:
