@@ -466,3 +466,11 @@ at,domain,experiment,arm,metric,value,n,note
 2026-09-24T12:23:50+00:00,vendor_risk,agent,pipeline,tool_correctness,1.0,1,agent_eval
 2026-09-24T12:23:50+00:00,vendor_risk,agent,pipeline,agent_delegation,1.0,1,agent_eval
 2026-09-24T12:23:50+00:00,vendor_risk,agent,pipeline,decision_quality,1.0,1,agent_eval
+2026-09-24T12:42:38+00:00,vendor_risk,chunking,corpus,chunks,81.0,81,size=900 overlap=120
+2026-09-24T12:42:38+00:00,vendor_risk,chunking,corpus,pages,11.0,81,size=900 overlap=120
+2026-09-24T12:42:38+00:00,vendor_risk,chunking,corpus,sections,81.0,81,size=900 overlap=120
+2026-09-24T12:42:38+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,201.7901,81,size=900 overlap=120
+2026-09-24T13:00:41+00:00,vendor_risk,chunking,corpus,chunks,81.0,81,size=900 overlap=120
+2026-09-24T13:00:41+00:00,vendor_risk,chunking,corpus,pages,11.0,81,size=900 overlap=120
+2026-09-24T13:00:41+00:00,vendor_risk,chunking,corpus,sections,81.0,81,size=900 overlap=120
+2026-09-24T13:00:41+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,201.7901,81,size=900 overlap=120

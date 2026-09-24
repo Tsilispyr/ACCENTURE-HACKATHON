@@ -61,6 +61,23 @@ def test_a_footer_on_every_one_page_file_is_stripped(tmp_path):
     assert {c.metadata["source"] for c in chunks} == {"a.md", "b.md", "c.md", "d.md"}
 
 
+def test_every_chunk_is_public_so_a_scoped_actor_can_retrieve_it(two_files):
+    """scoped_filter keeps scope == actor OR scope == public. A chunk with no
+    scope key matches neither, and alice (scope "payments") retrieved nothing."""
+    from agentcore.contracts import Actor
+    from agentcore.contracts import RetrievalPolicy
+    from agentcore.rag.vector import scoped_filter
+    from agentcore.world import bound
+
+    chunks = chunk_corpus(two_files, source="some_domain")
+    assert {c.metadata.get("scope") for c in chunks} == {"public"}
+
+    with bound(Actor(id="alice", role="engineer", scope="payments")):
+        where = scoped_filter(RetrievalPolicy())
+    allowed = {term["scope"]["$eq"] for term in where["$or"]}
+    assert all(c.metadata["scope"] in allowed for c in chunks)
+
+
 def test_positional_section_numbers_and_order_stay_corpus_wide(two_files):
     """'section 3' must still be ONE place, or eval labels and locators break."""
     chunks = chunk_corpus(two_files, source="some_domain")

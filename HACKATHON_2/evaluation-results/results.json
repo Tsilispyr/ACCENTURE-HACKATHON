@@ -2087,5 +2087,35 @@
     "n": 1,
     "note": "agent_eval",
     "detail": {}
+  },
+  {
+    "at": "2026-09-24T12:42:38+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 81.0,
+      "pages": 11.0,
+      "sections": 81.0,
+      "avg_chunk_chars": 201.7901
+    },
+    "n": 81,
+    "note": "size=900 overlap=120",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T13:00:41+00:00",
+    "domain": "vendor_risk",
+    "experiment": "chunking",
+    "arm": "corpus",
+    "metrics": {
+      "chunks": 81.0,
+      "pages": 11.0,
+      "sections": 81.0,
+      "avg_chunk_chars": 201.7901
+    },
+    "n": 81,
+    "note": "size=900 overlap=120",
+    "detail": {}
   }
 ]
