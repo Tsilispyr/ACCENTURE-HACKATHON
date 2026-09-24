@@ -322,6 +322,25 @@ class Session:
         self.turns: list[tuple[str, str]] = []
 
     def remember(self, question: str, answer) -> None:
+        """Record a turn, unless it was REFUSED.
+
+        A refused turn is dropped, and that is a guardrail fix rather than a
+        tidiness one. `compose()` puts each remembered QUESTION back into the
+        next request, so remembering a refused injection replayed the attack
+        text into the guard on the following turn - which matched it again and
+        refused a perfectly safe question. With HISTORY_TURNS at 3, one attempt
+        disabled the next three questions.
+
+        Found by a teammate testing the UI, and reproduced exactly: ask for a
+        system prompt, get refused, then ask an ordinary policy question and
+        get refused for the FIRST question's words.
+
+        There is nothing to carry anyway. A refusal produced no answer, so it
+        resolves no pronoun and supplies no context - the only thing it could
+        contribute to the next prompt is the attack.
+        """
+        if getattr(answer, "refused", False):
+            return
         summary = (getattr(answer, "summary", "") or "").strip()
         if summary:
             self.turns.append((question, summary[:HISTORY_CHARS]))

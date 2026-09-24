@@ -58,7 +58,7 @@ def run(state: AgentState) -> dict[str, Any]:
         for step, risk in blocked:
             step.status = "skipped"
             skipped.append(StepResult(
-                step_id=step.id, ok=False, owner=step.owner or "",
+                step_id=step.id, ok=False, skipped=True, owner=step.owner or "",
                 error=f"skipped: role '{role}' may not use {step.tool_hint} ({risk} risk)",
             ))
 

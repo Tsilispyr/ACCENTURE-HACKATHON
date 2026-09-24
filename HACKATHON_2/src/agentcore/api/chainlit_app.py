@@ -59,16 +59,44 @@ ROLE_PROFILES = {
     "admin": "Every tool, including the ones that write. High risk work still pauses for approval.",
 }
 
-SHARED_THREAD_ID = "ui-shared-thread"
-HISTORY_FILE = Path(".cache/chat_history.json")
+# HISTORY AND THREAD ARE KEYED BY ROLE, and that is a confidentiality
+# boundary rather than a convenience.
+#
+# The first version used one file and one thread id for everyone. A page
+# refresh kept the conversation, which is what was wanted - but switching
+# profile from admin to user replayed the ADMIN's conversation into a user
+# session, including output from tools a user may not call. The role ceilings
+# in tools/registry.py exist to stop a user reaching record_assessment; there
+# is no point enforcing that on the way in if the transcript hands the results
+# back on the way out.
+#
+# The shared thread id had the same shape: a run paused at the approval gate
+# under one role could be resumed from a session running as another.
+#
+# Keyed by role because the profile picker is what sets identity here. If this
+# ever grows real authentication, key it by the actor id instead and nothing
+# else in this file changes.
+CACHE_DIR = Path(".cache")
 
 
-def _load_chat_history() -> list[dict[str, Any]]:
-    """Load persistent chat history from cache file."""
-    if not HISTORY_FILE.exists():
+def _thread_id(role: str) -> str:
+    """One LangGraph thread per role, so a paused run resumes only in its own."""
+    return f"ui-thread-{role}"
+
+
+def _history_file(role: str) -> Path:
+    """One transcript per role. Sanitised because it becomes a filename."""
+    safe = "".join(c for c in role if c.isalnum() or c in "-_") or "unknown"
+    return CACHE_DIR / f"chat_history_{safe}.json"
+
+
+def _load_chat_history(role: str) -> list[dict[str, Any]]:
+    """This role's transcript, and only this role's."""
+    path = _history_file(role)
+    if not path.exists():
         return []
     try:
-        data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(data, list):
             return data
     except Exception as e:
@@ -82,10 +110,10 @@ def _append_chat_turn(
     assistant_text: str,
     details: dict[str, Any] | None = None,
 ) -> None:
-    """Append a completed turn to persistent chat history."""
+    """Append a completed turn to this role's transcript."""
     try:
-        HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
-        history = _load_chat_history()
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        history = _load_chat_history(role)
         history.append({
             "role": role,
             "user": user_text,
@@ -93,16 +121,17 @@ def _append_chat_turn(
             "timestamp": time.time(),
             "details": details or {},
         })
-        HISTORY_FILE.write_text(json.dumps(history, indent=2), encoding="utf-8")
+        _history_file(role).write_text(json.dumps(history, indent=2), encoding="utf-8")
     except Exception as e:
         print(f"[history] save error: {e}")
 
 
-def _clear_chat_history() -> None:
-    """Clear persistent chat history file."""
+def _clear_chat_history(role: str) -> None:
+    """Clear this role's transcript. Never another's."""
     try:
-        if HISTORY_FILE.exists():
-            HISTORY_FILE.unlink()
+        path = _history_file(role)
+        if path.exists():
+            path.unlink()
     except Exception as e:
         print(f"[history] clear error: {e}")
 
@@ -130,10 +159,10 @@ async def start() -> None:
 
     actor = Actor(id=f"ui-{role}", role=role, scope="public")
     cl.user_session.set("actor", actor)
-    cl.user_session.set("thread_id", SHARED_THREAD_ID)
+    cl.user_session.set("thread_id", _thread_id(role))
 
-    # Replay existing conversation history across refreshes and account changes
-    history = _load_chat_history()
+    # Replay THIS ROLE's conversation, across refreshes but never across roles.
+    history = _load_chat_history(role)
     if history:
         for turn in history:
             user_role = turn.get("role", "user")
@@ -394,13 +423,14 @@ async def on_message(message: cl.Message) -> None:
     graph = cl.user_session.get("graph")
     domain = cl.user_session.get("domain")
     actor = cl.user_session.get("actor")
-    thread_id = cl.user_session.get("thread_id") or SHARED_THREAD_ID
+    role = getattr(cl.user_session.get("actor"), "role", "user")
+    thread_id = cl.user_session.get("thread_id") or _thread_id(role)
     checkpointer = cl.user_session.get("checkpointer")
 
     text = message.content.strip()
 
     if text in (":reset", ":clear", "reset", "clear"):
-        _clear_chat_history()
+        _clear_chat_history(role)
         if checkpointer:
             checkpointer.delete_thread(thread_id)
         cl.user_session.set("graph", build_app(checkpointer=checkpointer))

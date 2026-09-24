@@ -4,7 +4,7 @@
 **From:** the RAG & MCP Engineer. **Branch:** `mcp-rag`. **Date:** 2026-09-24.
 
 **Status:** MERGED. Written against branch `69d9d9c`; the numbers and the corpus path below were
-updated on merge, where they are marked. **445 tests pass offline**, and the pipeline has since
+updated on merge, where they are marked. **451 tests pass offline**, and the pipeline has since
 been run against the live LLM and embedding model.
 
 ---

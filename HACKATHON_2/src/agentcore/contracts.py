@@ -298,6 +298,12 @@ class StepResult(BaseModel):
     tool_calls: list[str] = Field(default_factory=list)
     ok: bool = True
     error: str | None = None
+    # DID NOT RUN, as opposed to RAN AND FAILED. Both carry ok=False, and
+    # collapsing them marked an answer `partial` whenever a step was skipped
+    # for the caller's role - so a user asking something entirely within their
+    # authority got a result labelled provisional, with citations, for a step
+    # that was never meant to run. A deliberate omission is not a failure.
+    skipped: bool = False
     # Carried into s8_compose's "WHAT WAS DONE" block, so a finding can be
     # attributed to the specialist that reached it. This is what makes
     # delegation improve the ANSWER rather than only a metric.

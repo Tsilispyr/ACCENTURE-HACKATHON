@@ -59,9 +59,12 @@ The whole request is refused only when no runnable step is left.
 - an unconditional `approve` may not coexist with a missing-evidence claim or an unresolved gap;
 - PII is redacted according to the domain's rules: email, phone, address, IBAN, IP address, credit card;
 - groundedness is scored and a low score downgrades the answer;
-- human authority (FR12): an unconditional `approve` on a plan with any High finding becomes `pending`, and a
-  conditional approval nobody reviewed is labelled as a recommendation. This follows AI-004 section 6 and
-  PR-001 section 4;
+- human authority (FR12): an unconditional `approve` on a plan with any High finding is **downgraded to
+  `approve_with_conditions`**, and the unresolved High findings become the conditions attached to it. The rule
+  it enforces says a High risk vendor cannot receive an *unconditional* approval - not that no decision may be
+  reached - and the corpus agrees: vendor-alpha had this exact shape and was recorded as a conditional
+  approval, not a decision deferred. A conditional approval nobody reviewed is labelled as a recommendation
+  rather than a final approval. This follows AI-004 section 6 and PR-001 section 4;
 - when a step was skipped for the caller's role, the summary ends with a "[Skipped for your role ...]" note.
 
 ## 6. Testing

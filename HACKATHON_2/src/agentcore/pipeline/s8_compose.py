@@ -245,7 +245,12 @@ def run(state: AgentState) -> dict[str, Any]:
     request = state["request"]
     evidence = state.get("evidence", [])
     results = state.get("past_steps", [])
-    partial = state.get("replan_count", 0) > 3 or any(not r.ok for r in results)
+    # A step that FAILED makes the answer partial. A step deliberately SKIPPED
+    # for the caller's role does not: nothing went wrong, and the answer is
+    # complete for what that caller was entitled to ask. Marking it provisional
+    # told a user their correct, cited answer was unreliable.
+    failed = [r for r in results if not r.ok and not getattr(r, "skipped", False)]
+    partial = state.get("replan_count", 0) > 3 or bool(failed)
 
     if state.get("rejected"):
         return {

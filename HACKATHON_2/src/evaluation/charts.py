@@ -192,7 +192,18 @@ def calibration(domain: str = "sample_policy") -> Path | None:
     ax.scatter(junk, [0.55] * len(junk), s=90, color=ORANGE, zorder=3,
                label="Nonsense questions", edgecolor=SURFACE, linewidth=1.5)
 
-    threshold = rows[-1]["metrics"].get("configured_ceiling")
+    # THE LIVE CEILING, not the recorded one. The ledger stores
+    # `configured_ceiling` as it was WHEN CALIBRATE RAN, so the moment anyone
+    # acts on the suggestion the recorded value is one behind - and the chart
+    # drew a threshold nobody was using. It showed 0.7 while the system ran on
+    # 0.64, which is worse than drawing no line at all, because the whole point
+    # of this chart is where the line sits relative to the two clouds.
+    try:
+        from agentcore.registry import load_domain
+
+        threshold = load_domain(domain).retrieval_policy().max_distance
+    except Exception:  # noqa: BLE001 - a chart must not need a loadable domain
+        threshold = rows[-1]["metrics"].get("configured_ceiling")
     if threshold:
         ax.axvline(threshold, color=INK_SOFT, linewidth=1.5, linestyle="--", zorder=2)
         ax.annotate(f"Threshold {threshold}", (threshold, 1.32), ha="center",

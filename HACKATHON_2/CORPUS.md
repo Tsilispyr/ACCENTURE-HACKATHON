@@ -1,6 +1,7 @@
 # CORPUS
 
-What to do when the real knowledge pack arrives. Follow it in order.
+What to do when a knowledge pack arrives. Follow it in order. Done once for the supplied pack;
+do it again for the hidden vendor in Session D.
 
 Everything downstream of the corpus is **derived** from it: the distance ceiling, the eval labels,
 the retrieval numbers, the charts, the reliability baseline. A new corpus invalidates all of them
@@ -11,18 +12,28 @@ Budget about **40 minutes**, most of it waiting.
 
 ---
 
-## What we have now, and what changes
+## DONE for the supplied pack. Still the procedure for the hidden one
 
-| | stand in (now) | the real pack |
+This was written before the knowledge pack arrived. It has since been **executed in full**, so the
+table below is what actually happened rather than what was expected. Session D supplies a vendor
+nobody has seen, and every step here applies again the moment those files land.
+
+| | predicted | what actually happened |
 |---|---|---|
-| files | 2 markdown | **11 PDFs**, 5 policies + 3 `vendor-x-*` + 3 under `historical-vendor-assessments/` |
-| chunks | 12 | unknown, expect a few hundred |
-| eval labels | `Section 3` to `Section 11`, positional | **will all be wrong** |
-| distance ceiling | 0.70, calibrated on this corpus | **will be wrong** |
-| every retrieval number | provisional | the real ones |
+| files | 11 PDFs | 11 PDFs, as described |
+| chunks | "expect a few hundred" | **81.** One-page PDFs, not long documents |
+| eval labels | "will all be wrong" | correct, all rewritten. Then **shifted by 3 again** when boilerplate stripping landed |
+| distance ceiling | "will be wrong" | 0.70 -> 0.61 -> **0.64** after the chunking changed |
+| hybrid retrieval | off, measured worse | **on**, and the reversal came from the chunking, not the corpus |
+| every retrieval number | provisional | vector 79%/0.881, hybrid **86%/0.911**, recall@5 100% both |
 
-**Nothing about the stand in numbers survives.** Treat them as proof the pipeline works, never as
-results.
+**The lesson the execution added, and it is not in the steps below.** The labels broke TWICE: once
+when the corpus arrived, and once more when a chunking change removed three sections and renumbered
+everything after them. Reindexing is not the only thing that invalidates labels - **any change to
+how chunks are built does too**, and nothing fails loudly. Retrieval simply returns less.
+
+So step 2 is not "run once when the pack lands". It is "run after anything that touches
+`chunking.py`, `corpus.py` or `docs/`".
 
 ---
 

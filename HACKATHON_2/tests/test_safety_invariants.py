@@ -803,16 +803,30 @@ def test_an_unconditional_approval_of_a_high_risk_vendor_is_blocked():
     answer = _answer("approve")
     records = enforce_authority(answer, reviewed=False)
 
-    assert answer.decision == "pending"
+    # CHANGED CONTRACT: degrades to conditional, not to pending. The rule says
+    # a high risk vendor cannot receive an UNCONDITIONAL approval; it does not
+    # say no decision may be reached. `pending` claimed none was, which was
+    # false and scored the correct guardrail as "no decision reached".
+    assert answer.decision == "approve_with_conditions"
     assert answer.recommendation == "approve"          # the model's view stays visible
     assert [r["kind"] for r in records] == ["high_risk_approval_blocked"]
+    # A conditional approval with no conditions is an approval wearing a hedge.
+    assert answer.conditions, "the unmet high finding must become a condition"
+    assert any("security" in c.lower() for c in answer.conditions)
 
 
 def test_it_is_blocked_even_when_a_human_answered_the_gate():
-    """No human can grant what the policy does not offer."""
+    """No human can grant what the policy does not offer.
+
+    A human may approve the PLAN at the gate. Nobody may grant a high risk
+    vendor an UNCONDITIONAL approval, so their answer downgrades rather than
+    lifts. CHANGED: this asserted `pending`, which claimed no decision was
+    reached when one was reached and overruled.
+    """
     answer = _answer("approve")
     enforce_authority(answer, reviewed=True)
-    assert answer.decision == "pending"
+    assert answer.decision == "approve_with_conditions"
+    assert answer.conditions
 
 
 def test_a_conditional_approval_with_no_human_is_labelled_not_forced_to_pending():
@@ -851,12 +865,14 @@ def test_a_plain_human_approval_counts_as_review_even_without_conditions():
     assert human_reviewed({"approval_conditions": ["by 2026-12-01"]}) is True
 
 
-def test_run_withholds_the_decision_and_says_so(domain):
+def test_run_downgrades_the_decision_and_says_so(domain):
     result = s9_guard_out.run({"answer": _answer("approve"), "evidence": [], "audit": []})
 
-    assert result["answer"].decision == "pending"
+    answer = result["answer"]
+    assert answer.decision == "approve_with_conditions"
+    assert answer.conditions, "a conditional approval with no conditions is a hedge"
     assert "high_risk_approval_blocked" in [e["event"] for e in result["audit"]]
-    assert "Decision withheld" in result["answer"].summary
+    assert "CONDITIONAL APPROVAL" in answer.summary
 
 
 def test_run_labels_an_unreviewed_high_risk_recommendation(domain):

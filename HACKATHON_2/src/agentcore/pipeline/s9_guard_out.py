@@ -212,6 +212,33 @@ def human_reviewed(state: AgentState) -> bool:
     )
 
 
+def _conditions_from_high_findings(answer) -> list[str]:
+    """Turn each unresolved high finding into a condition, without inventing one.
+
+    A conditional approval with no conditions is not a decision, it is an
+    approval wearing a hedge. Every high finding names what is wrong, so the
+    condition is built from the finding's own words rather than from a template
+    that would have to guess at the remedy.
+
+    Existing conditions are kept and not duplicated: the model may already have
+    proposed the right remedy, and that wording is better than anything derived
+    here.
+    """
+    existing = {c.strip().lower() for c in answer.conditions}
+    for finding in answer.findings:
+        if finding.level != "high":
+            continue
+        detail = (finding.summary or "").strip().rstrip(".")
+        condition = (
+            f"Resolve the {finding.domain} finding before go-live"
+            + (f": {detail}" if detail else "")
+        )
+        if condition.strip().lower() not in existing:
+            answer.conditions.append(condition)
+            existing.add(condition.strip().lower())
+    return answer.conditions
+
+
 def enforce_authority(answer, reviewed: bool) -> list[dict[str, Any]]:
     """A HIGH risk vendor is not approved by the model alone.
 
@@ -225,8 +252,9 @@ def enforce_authority(answer, reviewed: bool) -> list[dict[str, Any]]:
     Two tiers, because they are different failures:
 
       BLOCKED   `approve` with a high risk finding. Never a valid outcome, with
-                or without a human. Recorded as `pending`; the model's own
-                recommendation stays visible beside it.
+                or without a human. Degraded to `approve_with_conditions`,
+                carrying the unresolved high findings as the conditions; the
+                model's own recommendation stays visible beside it.
       AWAITING  `approve_with_conditions` with a high risk finding and no human
                 answer at the gate. The decision stands - conditional approval is
                 a legitimate recommendation - but it is labelled as not final.
@@ -240,8 +268,26 @@ def enforce_authority(answer, reviewed: bool) -> list[dict[str, Any]]:
         return []
 
     if answer.decision == "approve":
-        answer.decision = "pending"
-        return [{"kind": "high_risk_approval_blocked", "recommendation": answer.recommendation}]
+        # DEGRADE TO CONDITIONAL, NOT TO PENDING. The rule being enforced says
+        # a high risk vendor "cannot receive UNCONDITIONAL production
+        # approval" - it does not say no decision may be reached. Recording
+        # `pending` claimed none was, which was false: one was reached and
+        # overruled, and the evaluation scored the correct guardrail as "an
+        # assessment case reached no decision".
+        #
+        # The corpus supplies the right outcome. Vendor Alpha had this exact
+        # shape - a notification commitment short of the requirement - and the
+        # record is CONDITIONAL APPROVAL after the contract was amended, not a
+        # decision deferred.
+        #
+        # Unconditional approval is still impossible, which is the whole point:
+        # the verdict now carries the unmet controls as conditions, so a reader
+        # sees what must be true rather than a blank.
+        answer.decision = "approve_with_conditions"
+        added = _conditions_from_high_findings(answer)
+        return [{"kind": "high_risk_approval_blocked",
+                 "recommendation": answer.recommendation,
+                 "conditions_added": added}]
 
     if answer.decision == "approve_with_conditions" and not reviewed:
         return [{"kind": "high_risk_awaiting_human", "recommendation": answer.recommendation}]
@@ -251,9 +297,10 @@ def enforce_authority(answer, reviewed: bool) -> list[dict[str, Any]]:
 
 AUTHORITY_NOTES = {
     "high_risk_approval_blocked": (
-        "[Decision withheld: overall risk is HIGH, and a High risk vendor cannot receive an "
-        "unconditional approval. Recorded as pending. The recommendation above is the model's "
-        "view, not a decision.]"
+        "[Downgraded to CONDITIONAL APPROVAL: overall risk is HIGH, and a High risk vendor "
+        "cannot receive an UNCONDITIONAL approval. The conditions below are the unresolved "
+        "high findings; each must be met before go-live. The recommendation above is the "
+        "model's own view, kept on the record beside the decision.]"
     ),
     "high_risk_awaiting_human": (
         "[High risk: this is a recommendation, not a final approval. An authorised human "

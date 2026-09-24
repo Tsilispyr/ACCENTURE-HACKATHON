@@ -13,6 +13,7 @@ no server and no event loop of Chainlit's own.
 from __future__ import annotations
 
 import asyncio
+import json
 import sys
 import types
 
@@ -175,25 +176,64 @@ def test_a_partial_answer_says_so(view):
 
 
 def test_chat_history_lifecycle(view, tmp_path, monkeypatch):
-    test_hist_file = tmp_path / 'chat_history.json'
-    monkeypatch.setattr(view, 'HISTORY_FILE', test_hist_file)
+    monkeypatch.setattr(view, 'CACHE_DIR', tmp_path)
 
-    view._clear_chat_history()
-    assert view._load_chat_history() == []
+    view._clear_chat_history('user')
+    assert view._load_chat_history('user') == []
 
     view._append_chat_turn('user', 'Hello Asteria', 'Assessment summary')
-    loaded = view._load_chat_history()
+    loaded = view._load_chat_history('user')
     assert len(loaded) == 1
     assert loaded[0]['user'] == 'Hello Asteria'
     assert loaded[0]['assistant'] == 'Assessment summary'
 
-    view._clear_chat_history()
-    assert view._load_chat_history() == []
+    view._clear_chat_history('user')
+    assert view._load_chat_history('user') == []
+
+
+def test_one_role_never_sees_another_roles_transcript(view, tmp_path, monkeypatch):
+    """The confidentiality boundary, and the reason this is keyed at all.
+
+    One shared file meant switching profile from admin to user replayed the
+    ADMIN's conversation into a user session, including output from tools a
+    user may not call. Enforcing the tool ceiling on the way in is pointless
+    if the transcript hands the results back on the way out.
+    """
+    monkeypatch.setattr(view, 'CACHE_DIR', tmp_path)
+
+    view._append_chat_turn('admin', 'File the assessment', 'Recorded under REF-9001')
+    view._append_chat_turn('user', 'What is the retention limit?', 'Seven days')
+
+    admin = view._load_chat_history('admin')
+    user = view._load_chat_history('user')
+
+    assert [t['user'] for t in admin] == ['File the assessment']
+    assert [t['user'] for t in user] == ['What is the retention limit?']
+    assert 'REF-9001' not in json.dumps(user)
+
+    # Clearing one leaves the other alone.
+    view._clear_chat_history('user')
+    assert view._load_chat_history('user') == []
+    assert len(view._load_chat_history('admin')) == 1
+
+
+def test_each_role_gets_its_own_graph_thread(view):
+    """A run paused at the approval gate must not be resumable from another role."""
+    assert view._thread_id('user') != view._thread_id('admin')
+
+
+def test_a_role_name_cannot_escape_the_cache_directory(view, tmp_path, monkeypatch):
+    """The role becomes a FILENAME, and it arrives from the chat profile."""
+    monkeypatch.setattr(view, 'CACHE_DIR', tmp_path)
+
+    path = view._history_file('../../etc/passwd')
+
+    assert path.parent == tmp_path
+    assert '..' not in path.name
 
 
 def test_chat_history_replays_on_start(view, tmp_path, monkeypatch):
-    test_hist_file = tmp_path / 'chat_history.json'
-    monkeypatch.setattr(view, 'HISTORY_FILE', test_hist_file)
+    monkeypatch.setattr(view, 'CACHE_DIR', tmp_path)
 
     view._append_chat_turn('user', 'Initial query', 'Initial answer')
     _Message.sent = []

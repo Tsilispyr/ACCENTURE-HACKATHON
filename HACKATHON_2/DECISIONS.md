@@ -1178,8 +1178,15 @@ for the executor, both on the tool's own floor, and a test asserts they agree.
 and only then met "Denied" - a real click that changed nothing.
 
 **Human authority is the companion rule, in `s9`.** An unconditional `approve` on a plan with any
-`high` finding becomes `pending`; a conditional approval with no human review is labelled as awaiting
-one. This follows AI-004 s6 and PR-001 s4: a High risk AI vendor is not approved by an automated
+`high` finding is downgraded to `approve_with_conditions`, with the unresolved high findings attached
+as its conditions; a conditional approval with no human review is labelled as awaiting one.
+
+*Corrected 2026-09-24.* It recorded `pending` first. The rule says a High risk vendor cannot receive
+an **unconditional** approval - not that no decision may be reached - so `pending` asserted something
+false, and the evaluation duly scored the working guardrail as "an assessment case reached no
+decision". The corpus settles it: vendor-alpha had the same shape and was recorded as a conditional
+approval after a contract amendment. Unconditional approval remains impossible either way; the
+difference is that the verdict now names the unmet controls instead of leaving a blank. This follows AI-004 s6 and PR-001 s4: a High risk AI vendor is not approved by an automated
 recommendation alone.
 
 **Alternatives:** an admin-only rule (clear in a demo, but the default user could then do nothing);

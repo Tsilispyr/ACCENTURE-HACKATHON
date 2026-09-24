@@ -421,3 +421,47 @@ def test_every_role_the_code_issues_is_in_the_table():
         f"They fall to '{LOWEST_CEILING}' and lose every tool above it. Add them or change "
         f"the caller."
     )
+
+
+# ------------------- a skipped step is not a failed one --------------------
+
+
+def test_a_role_skipped_step_does_not_make_the_answer_partial():
+    """A user's complete, cited answer must not be labelled provisional.
+
+    Both a failure and a role skip carry ok=False, and s8_compose marked the
+    answer `partial` on `any(not r.ok)`. So a user asking something entirely
+    within their authority got "treat this as provisional" for a step that was
+    never meant to run for them. A deliberate omission is not a failure.
+    """
+    from agentcore.contracts import StepResult
+
+    skipped = StepResult(step_id="s2", ok=False, skipped=True, error="skipped: role 'user'")
+    failed = StepResult(step_id="s3", ok=False, error="tool raised ConnectionError")
+
+    def is_partial(results):
+        return bool([r for r in results if not r.ok and not r.skipped])
+
+    assert is_partial([skipped]) is False
+    assert is_partial([failed]) is True
+    assert is_partial([skipped, failed]) is True
+
+
+def test_the_gate_marks_what_it_skips(monkeypatch, llm, store, domain):
+    """The flag has to be SET where the skip happens, or the distinction is lost."""
+    from agentcore.contracts import Plan, PlanStep
+    from agentcore.pipeline import s5_gate
+    from agentcore.world import bound
+
+    floors = {**domain.action_risk(), "write_thing": "high", "read_thing": "low"}
+    monkeypatch.setattr(type(domain), "action_risk", lambda self: floors)
+    plan = Plan(steps=[
+        PlanStep(id="s1", description="read", tool_hint="read_thing"),
+        PlanStep(id="s2", description="write", tool_hint="write_thing"),
+    ])
+    with bound(Actor(id="u", role="user", scope="public"), "r1"):
+        out = s5_gate.run({"plan": plan})
+
+    results = out.get("past_steps", [])
+    assert [r.step_id for r in results] == ["s2"], "only the write step is above a user"
+    assert all(r.skipped and not r.ok for r in results)
