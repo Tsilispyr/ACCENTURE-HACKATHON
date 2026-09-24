@@ -149,7 +149,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
 fi
 
 echo
-echo "git status in $REPO_ROOT (hackathon2/ only):"
+echo "git status in $REPO_ROOT (HACKATHON_2/ only):"
 git -C "$REPO_ROOT" status --short hackathon2/ | head -30
 echo
-echo "next:  git -C '$REPO_ROOT' add hackathon2/ && git -C '$REPO_ROOT' commit"
+echo "next:  git -C '$REPO_ROOT' add HACKATHON_2/ && git -C '$REPO_ROOT' commit"
