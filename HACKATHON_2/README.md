@@ -24,12 +24,17 @@ You supply four values: your Azure OpenAI key and endpoint, and the *separate* e
 endpoint. `preflight.sh` asks once and writes them to `.env`. Langfuse keys are optional and nothing
 depends on them. Everything else ships pre-filled.
 
-Then open **http://localhost:8020/docs**.
+That brings up everything and prints every address at the end. Start here:
+
+**http://localhost:8030** - the chat UI, which is where a reviewer works.
 
 | Service | URL | Credentials |
 |---|---|---|
-| API | http://localhost:8020 | `GET /healthz` |
+| **Chat UI** | **http://localhost:8030** | none |
+| API docs | http://localhost:8020/docs | none |
+| API | http://localhost:8020/healthz | none |
 | Postgres + pgvector | `localhost:5446`, db `hackathon2` | `h2` / `h2passQWqw12` |
+| MCP | in-network only | not published to the host, on purpose |
 | Traces *(optional)* | https://cloud.langfuse.com | set `LANGFUSE_*` in `.env` |
 
 No account is needed to see what a run did. The audit trail is always on:
@@ -143,8 +148,17 @@ things rather than assumed.
 
 ## Interfaces
 
-| | Command | For |
+| | Where | For |
 |---|---|---|
+| **Chat UI** | **http://localhost:8030** | **the user view.** Ask, read the assessment, answer the approval gate, and see what a document claimed versus what was trusted. Deployed by `deploy.sh`, nothing to start by hand |
+| **Terminal** | `uv run python -m agentcore.console` | **the developer view.** No port, no browser, works over ssh. [CONSOLE.md](CONSOLE.md) |
+| Trace | `uv run python -m agentcore.tracing "question"` | all nine stages with timings, no account needed |
+| API | http://localhost:8020/docs | what a grader scripts against |
+| Evals | `uv run python -m evaluation.agent_eval` | the numbers |
+
+`deploy.sh` prints every address at the end, so none of this needs looking up.
+
+---|---|---|
 | **Chat UI** | `uv run chainlit run src/agentcore/api/chainlit_app.py` | **the user view.** Ask, read the assessment, answer the approval gate, and see what a document claimed versus what was trusted |
 | **Terminal** | `uv run python -m agentcore.console` | **the developer view.** No port, no browser, works over ssh. [CONSOLE.md](CONSOLE.md) |
 | Trace | `uv run python -m agentcore.tracing "question"` | all nine stages with timings, no account needed |

@@ -62,10 +62,19 @@ INTERNAL_DOCS=(
     PROBLEMS.md      # the defect log
 )
 
+# Whole directories that stay behind. Same reasoning as INTERNAL_DOCS, but a
+# prefix match, because these are trees rather than single files.
+INTERNAL_DIRS=(
+    course-material/   # the provider's course content: reference, not ours to ship
+)
+
 is_internal() {
-    local candidate="$1" name
+    local candidate="$1" name prefix
     for name in "${INTERNAL_DOCS[@]}"; do
         [ "$candidate" = "$name" ] && return 0
+    done
+    for prefix in "${INTERNAL_DIRS[@]}"; do
+        case "$candidate" in "$prefix"*) return 0 ;; esac
     done
     return 1
 }

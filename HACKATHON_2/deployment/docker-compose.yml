@@ -85,6 +85,50 @@ services:
       retries: 3
       start_period: 10s
 
+  chainlit:
+    # THE USER FACING VIEW, deployed rather than left as a command to type.
+    # A front end nobody can reach without reading a README is a front end
+    # nobody uses, and this is the surface a reviewer actually works in: ask a
+    # question, read the assessment, answer the approval gate.
+    #
+    # Same image as the api, different command. Chainlit is already a
+    # dependency, so this costs a container and no extra build.
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: h2-api:0.1.0
+    container_name: h2-chainlit
+    restart: unless-stopped
+    ports:
+      # 8030 leaves 8020 to the API, and stays clear of hackathon1's 8010 and
+      # the course units' 8000.
+      - "8030:8000"
+    depends_on:
+      app-db-init:
+        condition: service_completed_successfully
+    env_file: ../.env
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - MCP_MODE=http
+      - MCP_URL=http://mcp-systems:8100/mcp
+      - VECTOR_BACKEND=pgvector
+      # Chainlit writes a session cache next to the app. The image runs as uid
+      # 10001, whose home is writable; without this it falls back to the
+      # working directory and fails there.
+      - HOME=/home/appuser
+    command:
+      ["chainlit", "run", "src/agentcore/api/chainlit_app.py",
+       "--host", "0.0.0.0", "--port", "8000", "--headless"]
+    networks:
+      - h2-infra
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/').read()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
   app-db-init:
     # One-shot: wait for Postgres, then ensure the pgvector extension exists.
     # `condition: service_completed_successfully` is the only legal depends_on
