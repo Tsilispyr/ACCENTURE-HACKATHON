@@ -6,10 +6,10 @@ Why Chainlit: the pipeline PAUSES for human approval, streams multi-step agent
 execution, shows specialist delegation, tool invocations, and generates
 transparent, evidence-grounded vendor risk assessments.
 
-State & History Retention:
-- Uses persistent SQLite checkpointer (`.cache/checkpoints.sqlite`).
+State and History Retention:
+- Uses persistent SQLite checkpointer (.cache/checkpoints.sqlite).
 - Retains evidence, findings, citations, and conversation context across turns and page refreshes.
-- Type `:reset` or `:clear` to start a fresh thread session.
+- Type :reset or :clear to start a fresh thread session.
 """
 
 from __future__ import annotations
@@ -28,15 +28,15 @@ from agentcore.tracing import save_agent_log
 from agentcore.world import bound
 
 STAGE_LABELS = {
-    "s1_intake": "1. Intake & Request Parsing",
+    "s1_intake": "1. Intake and Request Parsing",
     "s2_guard_in": "2. Input Security Guardrails",
     "s3_ground": "3. Hybrid RAG Evidence Retrieval",
     "s4_plan": "4. Deep Agent Assessment Planning",
-    "s5_gate": "5. Risk Assessment & Authorization Gate",
-    "s6_act": "6. Specialist Agent Execution & Tool Calls",
-    "s7_replan": "7. Progress Review & Replanning",
-    "s8_compose": "8. Risk Synthesis & Recommendation",
-    "s9_guard_out": "9. Output Verification & Guardrails",
+    "s5_gate": "5. Risk Assessment and Authorization Gate",
+    "s6_act": "6. Specialist Agent Execution and Tool Calls",
+    "s7_replan": "7. Progress Review and Replanning",
+    "s8_compose": "8. Risk Synthesis and Recommendation",
+    "s9_guard_out": "9. Output Verification and Guardrails",
 }
 
 STAGE_TYPES = {
@@ -77,7 +77,7 @@ async def start() -> None:
     role = cl.user_session.get("chat_profile") or "user"
     if role not in ROLE_PROFILES:
         role = "user"
-    
+
     actor = Actor(id=f"ui-{role}", role=role, scope="public")
     cl.user_session.set("actor", actor)
 
@@ -97,7 +97,7 @@ async def start() -> None:
         verdict = getattr(ans, "decision", getattr(ans, "recommendation", "N/A")).replace("_", " ").upper()
         await cl.Message(
             content=(
-                f"🔄 **Session Restored for {role}** (Thread `{thread_id}`)\n\n"
+                f"**Session Restored for {role}** (Thread `{thread_id}`)\n\n"
                 f"- **Retained Evidence**: `{ev_count}` passage(s)\n"
                 f"- **Prior Verdict**: `{verdict}`\n"
                 f"- **Prior Summary**: {getattr(ans, 'summary', '')[:160]}...\n\n"
@@ -109,7 +109,7 @@ async def start() -> None:
             content=(
                 f"**Domain `{domain.name}` loaded.** Acting as **{role}** ({ROLE_PROFILES[role]}).\n\n"
                 f"{domain.persona().splitlines()[0]}\n\n"
-                "Ask a vendor assessment or compliance question. State & history are preserved across turns and page refreshes."
+                "Ask a vendor assessment or compliance question. State and history are preserved across turns and page refreshes."
             )
         ).send()
 
@@ -338,7 +338,7 @@ async def on_message(message: cl.Message) -> None:
         if checkpointer:
             checkpointer.delete_thread(thread_id)
         cl.user_session.set("graph", build_app(checkpointer=checkpointer))
-        await cl.Message(content=f"🧹 Session state for thread `{thread_id}` has been cleared.").send()
+        await cl.Message(content=f"Session state for thread `{thread_id}` has been cleared.").send()
         return
 
     request = domain.parse_request(text, actor)
