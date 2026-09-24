@@ -2087,5 +2087,50 @@
     "n": 1,
     "note": "agent_eval",
     "detail": {}
+  },
+  {
+    "at": "2026-09-24T12:28:55+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "vector",
+    "metrics": {
+      "recall@1": 0.7857,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.881
+    },
+    "n": 14,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T12:28:55+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "through the gate",
+    "metrics": {
+      "recall@1": 0.7857,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "mrr": 0.881
+    },
+    "n": 14,
+    "note": "filter=None hybrid=True",
+    "detail": {}
+  },
+  {
+    "at": "2026-09-24T12:28:55+00:00",
+    "domain": "vendor_risk",
+    "experiment": "retrieval",
+    "arm": "hybrid (v+bm25)",
+    "metrics": {
+      "recall@1": 0.8571,
+      "recall@3": 0.9286,
+      "recall@5": 1.0,
+      "mrr": 0.9107
+    },
+    "n": 14,
+    "note": "filter=None hybrid=True",
+    "detail": {}
   }
 ]
