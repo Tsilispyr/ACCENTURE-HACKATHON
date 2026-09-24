@@ -105,14 +105,18 @@ def run(state: AgentState) -> dict[str, Any]:
                                      query=query[:80], got=len(found), arms=trace.arms,
                                      vector_top=trace.vector[:1], lexical_top=trace.lexical[:1]))
 
-            if attempt == RETRIEVAL_RETRIES:
-                break
             verdict = _grade(request.raw_text, collected)
             if verdict.enough:
                 audit.append(audit_event("s3_ground", "sufficient", attempt=attempt + 1))
                 break
             audit.append(audit_event("s3_ground", "insufficient", missing=verdict.missing[:120]))
-            query = _rewrite(request.raw_text, verdict.missing)
+            if attempt < RETRIEVAL_RETRIES:
+                query = _rewrite(request.raw_text, verdict.missing)
+            else:
+                # If after all retries the self-grader says insufficient and no vector hit passed the distance gate, discard false lexical hits
+                no_vector = all(not e.get("vector_top") for e in audit if e.get("event") == "retrieved")
+                if no_vector:
+                    collected = []
 
     # 3. Screen what came back. A document telling us to ignore our rules is
     #    recorded, never obeyed - and never fatal, or any document could shut
@@ -128,3 +132,4 @@ def run(state: AgentState) -> dict[str, Any]:
         audit.append(audit_event("s3_ground", "no_evidence"))
 
     return {"evidence": collected, "retrieval_attempts": len(audit), "audit": audit}
+

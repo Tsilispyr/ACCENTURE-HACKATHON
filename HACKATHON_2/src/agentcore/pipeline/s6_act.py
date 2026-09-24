@@ -199,6 +199,40 @@ def _run_agent(agent, message: str) -> dict[str, Any]:
     return aio.run(agent.ainvoke(payload))
 
 
+
+def _extract_evidence(result: Any) -> list[Evidence]:
+    """Extract any Evidence passages returned by retrieval tools during the agent run."""
+    import re
+    from agentcore.contracts import Evidence
+
+    extracted: list[Evidence] = []
+    seen: set[tuple[str, str]] = set()
+    messages = (result or {}).get("messages", [])
+    for msg in messages:
+        content = getattr(msg, "content", "")
+        if not isinstance(content, str) or "[" not in content:
+            continue
+        matches = re.finditer(r"\[([^\]\r\n]+)\]\r?\n([\s\S]+?)(?=\n\[|\Z)", content)
+        for match in matches:
+            cite_str = match.group(1).strip()
+            passage = match.group(2).strip()
+            if not cite_str or not passage or "UNTRUSTED" in cite_str or (cite_str, passage) in seen:
+                continue
+            seen.add((cite_str, passage))
+            if " > " in cite_str:
+                source, _, locator = cite_str.partition(" > ")
+            else:
+                source, locator = cite_str, ""
+            extracted.append(
+                Evidence(
+                    source=source.strip(),
+                    locator=locator.strip(),
+                    text=passage,
+                    trusted=False,
+                )
+            )
+    return extracted
+
 def run(state: AgentState) -> dict[str, Any]:
     domain = load_domain()
     plan = state["plan"]
@@ -283,10 +317,12 @@ def run(state: AgentState) -> dict[str, Any]:
         audit.append(audit_event("s6_act", "step_done", step=step.id,
                                  tool_calls=called, delegated=len(delegated_to),
                                  delegated_to=delegated_to))
+        new_evidence = _extract_evidence(result)
         return {
             "plan": plan,
             "past_steps": [StepResult(step_id=step.id, output=str(output),
                                       tool_calls=called, ok=True, owner=step.owner or "")],
+            "evidence": new_evidence,
             "audit": audit,
         }
 

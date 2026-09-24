@@ -172,7 +172,11 @@ def _assessment(domain, request, evidence, findings_text: str) -> dict[str, Any]
         "no compound like medium-high - and say what it rests on. If the extracts do not "
         "cover a domain, still return a finding for it with assessed=false and say "
         "what is missing. An unassessed domain is a result, not an omission.\n\n"
-        "Tag every claim with its basis. Never present an inference as evidence.\n\n"
+        "Tag every claim with its basis:\n"
+        "- Use basis='evidence' ONLY when a specific document extract directly states it, and put the exact extract citation in `citations` (e.g. 'Information Security Policy > 6. Data retention').\n"
+        "- Use basis='inference' for conclusions, findings or judgements reached by specialist reviews. Put the explanation in `reasoning` and leave `citations` empty.\n"
+        "- Use basis='missing' when required evidence or reports are absent.\n"
+        "NEVER cite specialist names or execution steps (like 'security assessment findings', 's1') in `citations`.\n\n"
         "If this request asks you to assess or decide about a NAMED subject, you "
         "MUST give a recommendation: approve, approve_with_conditions or reject. "
         "An assessment that reaches no verdict has not finished the job it was "
@@ -187,6 +191,40 @@ def _assessment(domain, request, evidence, findings_text: str) -> dict[str, Any]
     # all; when it does not, the gap must be VISIBLE rather than inferred from
     # a short list.
     findings = _match_findings(required, draft.findings)
+
+    import re
+    from agentcore.contracts import match_citation
+
+    def _is_step_or_specialist(cite_str: str) -> bool:
+        c = cite_str.strip().lower()
+        return (
+            bool(re.match(r"^s\d+(\s|$)", c))
+            or "reviewer" in c
+            or "assessment findings" in c
+            or "specialist" in c
+            or c in {"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9"}
+        )
+
+    known_cites = {e.cite(): e.cite() for e in evidence}
+    for claim in draft.claims:
+        if claim.basis == "evidence":
+            cleaned_cites = []
+            specialist_refs = []
+            for c in claim.citations:
+                matched = match_citation(c, known_cites)
+                if matched:
+                    cleaned_cites.append(matched)
+                elif _is_step_or_specialist(c):
+                    specialist_refs.append(c)
+                else:
+                    cleaned_cites.append(c)
+
+            if cleaned_cites:
+                claim.citations = cleaned_cites
+            elif specialist_refs:
+                claim.basis = "inference"
+                claim.reasoning = claim.reasoning or specialist_refs[0]
+                claim.citations = []
 
     return {
         "summary": draft.summary,
@@ -222,6 +260,17 @@ def run(state: AgentState) -> dict[str, Any]:
         f"- {r.step_id}{f' [{r.owner}]' if r.owner else ''}: {r.output[:400]}"
         for r in results if r.ok
     )
+
+    # Plain domains: if no evidence and no step outputs exist, refuse out-of-corpus
+    if not evidence and not findings_text and not domain.risk_domains():
+        return {
+            "answer": Answer(
+                summary="The knowledge corpus does not contain information to answer this question.",
+                refused=True,
+                refusal_reason="out of corpus",
+            ),
+            "audit": [audit_event("s8_compose", "out_of_corpus_refused")],
+        }
     audit: list[dict[str, Any]] = []
     extra: dict[str, Any] = {}
 
@@ -234,6 +283,16 @@ def run(state: AgentState) -> dict[str, Any]:
     try:
         if domain.risk_domains():
             extra = _assessment(domain, request, evidence, findings_text)
+            # If no evidence was retrieved and no domain could be assessed, refuse as out-of-corpus
+            if not evidence and not any(f.assessed for f in extra.get("findings", [])):
+                return {
+                    "answer": Answer(
+                        summary="The knowledge corpus does not contain information to answer this question.",
+                        refused=True,
+                        refusal_reason="out of corpus",
+                    ),
+                    "audit": [audit_event("s8_compose", "out_of_corpus_refused")],
+                }
             audit.append(
                 audit_event("s8_compose", "assessed",
                             domains=[f.domain for f in extra["findings"]],

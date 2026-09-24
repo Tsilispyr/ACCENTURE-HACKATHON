@@ -296,9 +296,14 @@ def run(state: AgentState) -> dict[str, Any]:
     audit: list[dict[str, Any]] = []
 
     if state.get("refusal"):
+        refusal_reason = (
+            "input guardrail"
+            if any(e.get("stage") == "s2_guard_in" for e in state.get("audit", []))
+            else "out of corpus"
+        )
         return {
             "answer": Answer(summary=state["refusal"], refused=True,
-                             refusal_reason="input guardrail"),
+                             refusal_reason=refusal_reason),
             "audit": [audit_event("s9_guard_out", "refusal_returned")],
         }
 
@@ -319,6 +324,9 @@ def run(state: AgentState) -> dict[str, Any]:
         }
 
     answer = state.get("answer") or Answer(summary="No answer was produced.", partial=True)
+
+    if answer.refused:
+        return {"answer": answer, "audit": audit}
 
     scrubbed, hits = _scrub(answer.summary, domain.pii_rules())
     if hits:
