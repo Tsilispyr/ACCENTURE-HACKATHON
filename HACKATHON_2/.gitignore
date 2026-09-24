@@ -11,7 +11,18 @@ logs/
 .cache/
 build/
 # The local vector store: 8.7 MB of binary index, rebuilt by scripts/index.sh.
-.chroma/
+# .chroma/ IS COMMITTED, deliberately. It is the built index for the supplied
+# knowledge pack, 9.4MB, and committing it means a clone runs immediately:
+#
+#     DOMAIN=vendor_risk VECTOR_BACKEND=chroma uv run python -m agentcore.console
+#
+# with no Postgres, no container and no embedding calls. That matters more here
+# than repository hygiene: the infra has proven flaky on a 3GB WSL, and the one
+# thing nobody should be debugging on the day is why retrieval is empty.
+#
+# Rebuild it with `python -m agentcore.rag.index --reset` after any change to
+# docs/. If it is stale, every number measured from it is stale too, which is
+# why CORPUS.md makes reindexing step 2 rather than an afterthought.
 
 # Chainlit writes its own config and ~30 translation files on first run.
 .chainlit/

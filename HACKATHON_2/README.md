@@ -37,6 +37,20 @@ That brings up everything and prints every address at the end. Start here:
 | MCP | in-network only | not published to the host, on purpose |
 | Traces *(optional)* | https://cloud.langfuse.com | set `LANGFUSE_*` in `.env` |
 
+### Or run it with nothing at all
+
+The built index is **committed**, so a fresh clone answers questions immediately: no Postgres, no
+container, no embedding calls.
+
+```bash
+DOMAIN=vendor_risk VECTOR_BACKEND=chroma uv run python -m agentcore.console
+```
+
+That is the fastest way to see the system work, and the one path that cannot be broken by Docker,
+WSL or a network. Rebuild the index with `python -m agentcore.rag.index --reset` after changing
+anything in `docs/` - and if you change the corpus, follow [CORPUS.md](CORPUS.md), because every
+number is derived from it.
+
 No account is needed to see what a run did. The audit trail is always on:
 
 ```bash
