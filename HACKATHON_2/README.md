@@ -17,11 +17,8 @@ documents. The requirements are in
 ## Quick start
 
 ```bash
-bash scripts/deploy.sh          # WSL, Linux, or Git Bash (re-execs into WSL)
+bash scripts/deploy.sh          # WSL, Linux, macOS, or Git Bash (re-execs into WSL)
 ```
-
-On **macOS**, use [Run it end to end, step by step](#run-it-end-to-end-step-by-step) below:
-`preflight.sh` reads `/proc/meminfo` and calls `nproc`, which macOS does not have.
 
 You supply four values: your Azure OpenAI key and endpoint, and the *separate* embedding key and
 endpoint. `preflight.sh` asks once and writes them to `.env`. Langfuse keys are optional and nothing
@@ -62,117 +59,6 @@ DOMAIN=vendor_risk uv run python -m agentcore.tracing "your question"
 
 ---
 
-## Run it end to end, step by step
-
-The same steps `deploy.sh` runs, plus one it does not: **loading the knowledge pack into pgvector**.
-Works on macOS, Linux and WSL. Run everything from this folder (`HACKATHON_2/`).
-
-**0. Prerequisites.** Docker running, with at least 4 GB of memory for its VM, and
-[uv](https://docs.astral.sh/uv/) installed. Then:
-
-```bash
-uv sync
-```
-
-**1. Configure `.env`.** Copy the template if you have no `.env` yet (`cp .env.example .env`), then set:
-
-```bash
-AZURE_OPENAI_API_KEY="..."          # chat model
-AZURE_OPENAI_ENDPOINT="https://<chat-resource>.openai.azure.com/"
-AZURE_EMBEDDING_ENDPOINT="https://<embedding-resource>.openai.azure.com/"   # a SEPARATE resource
-AZURE_EMBEDDING_API_KEY="..."
-DOMAIN="vendor_risk"                # the template says sample_policy, which is the GDPR demo
-APP_SECRET="..."                    # any random string: python3 -c 'import secrets; print(secrets.token_hex(32))'
-```
-
-**2. Start the database** (Postgres + pgvector). It must come first: it creates the `h2-infra`
-network the app joins.
-
-```bash
-docker compose -f deployment/docker-compose-infra.yaml -f deployment/compose/infra.full.yaml up -d
-docker inspect -f '{{.State.Health.Status}}' h2-postgres     # repeat until: healthy
-```
-
-**3. Index the knowledge pack into pgvector.** Once; it persists in the Docker volume. Nothing
-else does this: the committed index is Chroma, and the containers read pgvector, so skipping it
-means every question answers "no sufficiently relevant passage found".
-
-```bash
-DOMAIN=vendor_risk VECTOR_BACKEND=pgvector uv run python -m agentcore.rag.index --reset
-```
-
-It takes about 15 seconds and ends with `11 file(s) -> 81 chunks` / `done: 81 chunks`. A
-`Collection not found` line on the first run is harmless: `--reset` tries to drop a collection
-that does not exist yet.
-
-**4. Build the image, then start the app** (API, chat UI, MCP systems server). Build **once**,
-through one service: all three services share the image `h2-api:0.1.0`, and `up --build` builds it
-three times in parallel, which recent Docker versions reject with `image ... already exists`.
-
-```bash
-docker compose -f deployment/docker-compose.yml -f deployment/compose/app.full.yaml \
-  --project-directory deployment build api
-docker compose -f deployment/docker-compose.yml -f deployment/compose/app.full.yaml \
-  --project-directory deployment up -d
-docker ps --format 'table {{.Names}}\t{{.Status}}'    # h2-api, h2-chainlit, h2-mcp-systems: healthy
-```
-
-The first build takes a few minutes. Health checks turn `healthy` within about a minute.
-`h2-db-init` showing `Exited (0)` is correct: it is a one-shot job. After changing code, repeat
-both commands.
-
-**5. Check it.**
-
-```bash
-curl -s localhost:8020/healthz
-uv run bash scripts/smoke.sh   # health, login, a normal request, an injection refusal, a 401
-```
-
-(`uv run` puts the project's `python` on the PATH; the script calls `python`, which a stock macOS
-does not have.) `/healthz` should report `"domain": "vendor_risk"` and `"tools": 8`: two
-in-process retrieval tools plus six MCP tools reached over HTTP. The smoke test ends with
-`smoke test passed.` after about a minute.
-
-**6. Use it.** Open **http://localhost:8030** and send the handout's request:
-
-> Evaluate Asteria AI Systems as an enterprise Generative AI platform for 2,000 employees. The
-> platform may process confidential corporate documents. Identify material risks and recommend
-> APPROVE, CONDITIONAL APPROVAL or REJECT.
-
-It takes about two minutes. The plan pauses for **human approval**, because the request is high
-risk. Approve, approve with conditions, or reject, then read the assessment: findings per risk
-domain, citations, UNKNOWN evidence, and conditions. API logins for scripts are `alice@example.com`
-/ `demo1234` (also `bob@`, `admin@`).
-
-To exercise every feature from the chat UI (lookups, contradictions, refusals, injection, MCP tools,
-roles), use the prepared questions in **[UI_Test_Questions.md](UI_Test_Questions.md)**.
-
-**7. Evaluate** (optional; uses the live model):
-
-```bash
-DOMAIN=vendor_risk VECTOR_BACKEND=pgvector uv run python -m evaluation.agent_eval
-bash scripts/eval_gate.sh    # exits non-zero on a regression
-```
-
-**8. Stop.**
-
-```bash
-docker compose -f deployment/docker-compose.yml --project-directory deployment down
-docker compose -f deployment/docker-compose-infra.yaml down
-```
-
-**Never add `-v`.** It deletes the volume that holds the vector index and the checkpoints.
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| `network h2-infra ... could not be found` | app started before the database | step 2 first |
-| `image "docker.io/library/h2-api:0.1.0": already exists` | `up --build` building the shared image three times in parallel | step 4 as written: `build api`, then `up -d` |
-| every answer is "no sufficiently relevant passage" / "the corpus does not contain" | pgvector never indexed, or indexed before chunks carried `scope` | step 3, then restart the app (step 4 `up -d`) |
-| `Could not connect to Postgres at localhost:5446` | Postgres not healthy yet | wait for `healthy`, retry |
-| a GDPR answer instead of a vendor assessment | `DOMAIN` still `sample_policy` | set it in `.env`, then redo step 4 |
-
----
-
 ## The line of processing
 
 ```
@@ -202,7 +88,7 @@ request -> s1_intake -> s2_guard_in -> s3_ground -> s4_plan -> s5_gate --+-> s6_
 
 ## The corpus decides everything
 
-11 PDFs in `src/domains/vendor_risk/docs/`, indexed to 81 chunks. The pack is built around conflicts
+11 PDFs in `src/domains/vendor_risk/docs/`, indexed to 84 chunks. The pack is built around conflicts
 between what policy REQUIRES and what the vendor OFFERS, so the interesting questions need two
 documents rather than one:
 
@@ -336,7 +222,6 @@ DOMAIN=<name> uv run pytest tests/test_domain_contract.py
 |---|---|
 | **[architecture/](architecture/)** | you want the system map, the stage table, and the handout |
 | **[CORPUS.md](CORPUS.md)** | **the knowledge pack changes** - reindex, recalibrate, relabel, remeasure, in order |
-| [UI_Test_Questions.md](UI_Test_Questions.md) | you want to try every feature in the chat UI, with what each reply should show |
 | [CONSOLE.md](CONSOLE.md) | you want the terminal front end: commands, output, how to script it |
 | [RUNBOOK.md](RUNBOOK.md) | something is broken, or you want the landmine list |
 | [DECISIONS.md](DECISIONS.md) | you want to know *why*, or are about to reverse something |

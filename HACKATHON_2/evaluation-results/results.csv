@@ -478,15 +478,3 @@ at,domain,experiment,arm,metric,value,n,note
 2026-09-24T12:28:55+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@3,0.9286,14,filter=None hybrid=True
 2026-09-24T12:28:55+00:00,vendor_risk,retrieval,hybrid (v+bm25),recall@5,1.0,14,filter=None hybrid=True
 2026-09-24T12:28:55+00:00,vendor_risk,retrieval,hybrid (v+bm25),mrr,0.9107,14,filter=None hybrid=True
-2026-09-24T12:42:38+00:00,vendor_risk,chunking,corpus,chunks,81.0,81,size=900 overlap=120
-2026-09-24T12:42:38+00:00,vendor_risk,chunking,corpus,pages,11.0,81,size=900 overlap=120
-2026-09-24T12:42:38+00:00,vendor_risk,chunking,corpus,sections,81.0,81,size=900 overlap=120
-2026-09-24T12:42:38+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,201.7901,81,size=900 overlap=120
-2026-09-24T13:00:41+00:00,vendor_risk,chunking,corpus,chunks,81.0,81,size=900 overlap=120
-2026-09-24T13:00:41+00:00,vendor_risk,chunking,corpus,pages,11.0,81,size=900 overlap=120
-2026-09-24T13:00:41+00:00,vendor_risk,chunking,corpus,sections,81.0,81,size=900 overlap=120
-2026-09-24T13:00:41+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,201.7901,81,size=900 overlap=120
-2026-09-24T13:18:49+00:00,vendor_risk,chunking,corpus,chunks,81.0,81,size=900 overlap=120
-2026-09-24T13:18:49+00:00,vendor_risk,chunking,corpus,pages,11.0,81,size=900 overlap=120
-2026-09-24T13:18:49+00:00,vendor_risk,chunking,corpus,sections,81.0,81,size=900 overlap=120
-2026-09-24T13:18:49+00:00,vendor_risk,chunking,corpus,avg_chunk_chars,201.7901,81,size=900 overlap=120
