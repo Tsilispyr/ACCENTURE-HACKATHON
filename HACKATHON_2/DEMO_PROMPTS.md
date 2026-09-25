@@ -7,10 +7,10 @@ This guide provides tested, ready-to-use prompts to demonstrate every core capab
 Ensure the vendor_risk domain is active:
 
 ```bash
-DOMAIN=vendor_risk uv run chainlit run src/agentcore/api/chainlit_app.py -w
+uv run chainlit run src/agentcore/api/chainlit_app.py -w
 ```
 
-(Or use the interactive console CLI: `DOMAIN=vendor_risk uv run python -m agentcore.console`)
+(Or use the interactive console CLI: `uv run python -m agentcore.console`)
 
 ### 1. Human-In-The-Loop (HITL) Showcase (FR12)
 

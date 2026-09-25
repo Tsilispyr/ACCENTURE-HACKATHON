@@ -8,14 +8,28 @@ COPY --from=ghcr.io/astral-sh/uv:0.12.11 /uv /uvx /bin/
 WORKDIR /app
 
 # Layer 1: dependencies only, so a code change does not re-resolve them.
-# README.md is copied because pyproject.toml declares readme = "README.md".
 # --frozen installs exactly what uv.lock pins and FAILS if the lock is stale.
-COPY pyproject.toml uv.lock README.md ./
-RUN uv sync --frozen --no-install-project --no-dev
+#
+# README.md is NOT copied here, even though pyproject.toml declares
+# readme = "README.md". Copying it put the documentation in the cache key for
+# the dependency layer, so editing a paragraph of prose invalidated it and
+# every wheel was downloaded again. A stub satisfies the metadata read; the
+# real file arrives with the source in layer 2 and overwrites it.
+COPY pyproject.toml uv.lock ./
+RUN touch README.md
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --no-dev
 
 # Layer 2: application source.
+#
+# The cache mount is what makes a rebuild cheap when this layer DOES change.
+# Without it, any invalidation above means re-downloading every wheel from the
+# network; with it, uv reuses what it already has on this machine and only
+# fetches what genuinely changed. The cache lives in the builder, not in the
+# image, so it costs nothing in the shipped layers.
 COPY . .
-RUN uv sync --frozen --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
 # uv sync installs into /app/.venv, so put it first on PATH.
 ENV PATH="/app/.venv/bin:$PATH"

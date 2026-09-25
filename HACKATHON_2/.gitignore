@@ -46,3 +46,17 @@ wheels/
 .idea/
 Thumbs.db
 .DS_Store
+
+# Office lock files. Created while a .pptx or .docx is OPEN, and they are
+# invisible in Explorer, so they get committed by accident.
+~$*
+
+# The deck is BUILT, not stored. team-docs/build_deck.py is the source of
+# truth and re-renders it from the ledger; a committed .pptx goes stale the
+# moment the numbers move, and a binary in git cannot be reviewed in a diff.
+team-docs/*.pptx
+
+# The share bundle: copies of files that live elsewhere, plus the built deck.
+# Rebuilt on demand, never the source of truth.
+team-docs/share/
+team-docs/*.zip

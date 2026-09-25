@@ -53,7 +53,7 @@ been run against the live LLM and embedding model.
 | File | What it is |
 |---|---|
 | `DECISIONS_2.md` | The change log for my track: R1–R12 (what and why for every change), the backlog B1–B15, proposals P1–P3, and a run-sheet. |
-| `Why.md` | The rationale for PMs and judges: the business scenario, the cross-document facts retrieval must connect, each design choice, and 12 prepared Q&As. |
+| `Why.md` | The rationale for a non-technical reader: the business scenario, the cross-document facts retrieval must connect, each design choice, and 12 prepared questions and answers. |
 | `Notes.pdf` | Presentation notes: the problem, architecture diagrams, what was built, alternatives, the best-practice mapping, a demo script, and manager Q&A. |
 | `RAG_MCP.md` | This file. |
 | `MCP_RAG_Best_Practices.md` | The course cheatsheet every choice was checked against (not mine; the reference). |
@@ -113,7 +113,7 @@ question -> vector arm (cosine, top-k) --+
 ## 4. How to run it
 
 ```bash
-cd hack2tests
+cd <project root>
 uv sync && uv run pytest -q                    # offline, no keys: 378 passed
 bash scripts/preflight.sh                      # once: writes .env (Azure embedding key needed)
 

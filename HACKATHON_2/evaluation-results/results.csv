@@ -496,3 +496,9 @@ at,domain,experiment,arm,metric,value,n,note
 2026-09-24T14:23:57+00:00,vendor_risk,agent,pipeline,tool_correctness,1.0,19,agent_eval
 2026-09-24T14:23:57+00:00,vendor_risk,agent,pipeline,agent_delegation,0.711,19,agent_eval
 2026-09-24T14:23:57+00:00,vendor_risk,agent,pipeline,decision_quality,0.877,19,agent_eval
+2026-09-24T16:33:09+00:00,vendor_risk,agent,pipeline,pass_rate,0.4737,19,agent_eval role=admin
+2026-09-24T16:33:09+00:00,vendor_risk,agent,pipeline,citation_correctness,0.989,19,agent_eval role=admin
+2026-09-24T16:33:09+00:00,vendor_risk,agent,pipeline,task_completion,0.987,19,agent_eval role=admin
+2026-09-24T16:33:09+00:00,vendor_risk,agent,pipeline,tool_correctness,1.0,19,agent_eval role=admin
+2026-09-24T16:33:09+00:00,vendor_risk,agent,pipeline,agent_delegation,0.789,19,agent_eval role=admin
+2026-09-24T16:33:09+00:00,vendor_risk,agent,pipeline,decision_quality,1.0,19,agent_eval role=admin

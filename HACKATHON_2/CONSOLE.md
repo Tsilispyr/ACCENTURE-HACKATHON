@@ -3,7 +3,18 @@
 The terminal front end. The whole pipeline, no browser, no port, no localhost.
 
 ```bash
-DOMAIN=vendor_risk uv run python -m agentcore.console
+uv run python -m agentcore.console
+```
+
+Works as written in PowerShell, Git Bash, WSL, Linux and macOS. `DOMAIN` and `VECTOR_BACKEND` come
+from `.env`, so no prefix is needed and none should be added: `DOMAIN=vendor_risk uv run ...` is
+bash syntax, and PowerShell reads it as a command name and fails with *"The term
+'DOMAIN=vendor_risk' is not recognized"*.
+
+To point at a different domain, the flag works in every shell and needs no export:
+
+```bash
+uv run python -m agentcore.console --domain deterministic
 ```
 
 That is the whole setup. It starts in under a second.
@@ -40,7 +51,7 @@ works, the product works.
 corpus. The hackathon scenario is `vendor_risk`, so either export it per run or change that line.
 
 ```bash
-DOMAIN=vendor_risk uv run python -m agentcore.console --demo
+uv run python -m agentcore.console --demo
 ```
 
 `python -m` rather than a script in `scripts/` because it is a Python entry point, not a shell

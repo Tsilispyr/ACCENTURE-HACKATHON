@@ -18,11 +18,19 @@ if [ -z "${BASH_VERSION:-}" ]; then
         exec bash "$0" "$@"
     fi
     echo "ERROR: this script needs bash (pipefail, associative arrays)." >&2
-    echo "       On Windows run it from WSL, or use:  .\\scripts\\deploy.ps1" >&2
+    echo "       On Windows, PowerShell can call it directly: bash scripts/deploy.sh" >&2
     exit 1
 fi
 
 set -euo pipefail
+
+# BuildKit, because the Dockerfile uses `--mount=type=cache` to keep uv's
+# download cache between builds. Without BuildKit that flag is not an error, it
+# is silently ignored, and every rebuild downloads every wheel again. Recent
+# Docker enables it by default; setting it here keeps the behaviour the same on
+# an older engine rather than quietly getting slower.
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -55,6 +63,16 @@ if ! command -v docker >/dev/null 2>&1; then
                 exec wsl.exe -e bash -lc "cd '$_wsl_dir' && ${_fwd}bash scripts/deploy.sh"
             fi
             echo "ERROR: 'docker' is not on PATH and wsl.exe was not found." >&2
+            exit 1
+            ;;
+        darwin*)
+            # On macOS the docker CLI is installed but reports nothing when the
+            # engine is not running, which reads as "not installed" and sends
+            # people to reinstall something they already have.
+            echo "ERROR: 'docker' is not on PATH on this Mac." >&2
+            echo "       Start the engine, then run this again:" >&2
+            echo "         Docker Desktop   open -a Docker" >&2
+            echo "         Colima           colima start --cpu 2 --memory 4" >&2
             exit 1
             ;;
         *)

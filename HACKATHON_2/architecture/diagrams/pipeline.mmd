@@ -1,0 +1,64 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Segoe UI, Calibri, sans-serif",
+    "fontSize": "15px",
+    "background": "#FBFAF7",
+    "primaryColor": "#FFFEFC",
+    "primaryTextColor": "#171A21",
+    "primaryBorderColor": "#1F6F78",
+    "lineColor": "#8A8F99",
+    "tertiaryColor": "#F3F1EC",
+    "clusterBkg": "#F5F3EE",
+    "clusterBorder": "#DADCE2"
+  },
+  "flowchart": { "curve": "basis", "nodeSpacing": 30, "rankSpacing": 46 }
+}}%%
+
+%% LAYOUT CONSTRAINT, learned by measuring rather than guessing: mermaid drops
+%% a subgraph's `direction` as soon as ANY edge joins a node inside one
+%% subgraph to a node inside another. Measured on this diagram: three rows of
+%% stages render at 1.6:1 with only subgraph-to-subgraph edges, and collapse to
+%% 0.36:1 (a column too narrow to read on a slide) the moment one cross edge is
+%% added. The refusal and rejection routes are therefore written into the node
+%% that takes them, instead of being drawn as edges.
+
+flowchart TB
+    subgraph A["1 · είσοδος και τεκμηρίωση"]
+        direction LR
+        REQ([αίτημα]) --> S1["<b>s1_intake</b><br/><span style='font-size:12px'>δόμηση αιτήματος</span>"]
+        S1 --> S2{{"<b>s2_guard_in</b><br/><span style='font-size:12px'>μέγεθος · regex · μοντέλο</span><br/><span style='font-size:11px;color:#C2412D'>άρνηση: κατευθείαν στο s9</span>"}}
+        S2 -- "πέρασε" --> S3["<b>s3_ground</b><br/><span style='font-size:12px'>ανάκτηση · σάρωση injection</span>"]
+    end
+
+    subgraph B["2 · σχέδιο και έγκριση"]
+        direction LR
+        S4["<b>s4_plan</b><br/><span style='font-size:12px'>πολυβηματικό σχέδιο</span>"]
+        S4 --> S5{{"<b>s5_gate</b><br/><span style='font-size:12px'>max(floor, assessed)</span><br/><span style='font-size:11px;color:#C2412D'>low · medium: χωρίς παύση</span>"}}
+        S5 == "high" ==> HUMAN[["<b>άνθρωπος</b><br/><span style='font-size:12px'>approve · with conditions · reject</span><br/><span style='font-size:11px;color:#C2412D'>απόρριψη ή timeout: στο s9</span>"]]
+    end
+
+    subgraph C["3 · εκτέλεση και έξοδος"]
+        direction LR
+        S6["<b>s6_act</b><br/><span style='font-size:12px'>εκτέλεση · ανάθεση σε ειδικούς</span>"]
+        S6 --> S7["<b>s7_replan</b><br/><span style='font-size:12px'>τελείωσε ή συνεχίζει;</span>"]
+        S7 -- "μένουν βήματα" --> S6
+        S7 -- "ολοκληρώθηκε" --> S8["<b>s8_compose</b><br/><span style='font-size:12px'>ευρήματα · αντιφάσεις · απόφαση</span>"]
+        S8 --> S9{{"<b>s9_guard_out</b><br/><span style='font-size:12px'>PII · ισχυρισμοί · εξουσία</span>"}}
+        S9 --> ANS([απάντηση<br/>με παραπομπές])
+    end
+
+    A -- "τεκμηριωμένο αίτημα" --> B
+    B == "εγκεκριμένο σχέδιο" ==> C
+
+    classDef guard fill:#FDF0EC,stroke:#C2412D,stroke-width:2px,color:#171A21;
+    classDef stage fill:#FFFEFC,stroke:#1F6F78,stroke-width:1.5px,color:#171A21;
+    classDef human fill:#FBE9E4,stroke:#C2412D,stroke-width:2.5px,color:#171A21;
+    classDef edge fill:#F3F1EC,stroke:#8A8F99,stroke-width:1px,color:#3A3F49;
+
+    class S2,S5,S9 guard;
+    class S1,S3,S4,S6,S7,S8 stage;
+    class HUMAN human;
+    class REQ,ANS edge;
+
+    linkStyle default stroke:#8A8F99,stroke-width:1.4px;

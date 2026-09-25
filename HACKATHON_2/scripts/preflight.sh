@@ -181,10 +181,28 @@ preflight_credentials() {
 
 preflight_profile() {
     local mem_total_kb mem_total_gb mem_avail_gb cpus
-    mem_total_kb="$(awk '/^MemTotal:/{print $2}' /proc/meminfo)"
+    # /proc/meminfo and nproc are Linux only. On macOS neither exists, so this
+    # failed here, before deploy had printed anything useful: awk found no
+    # file, mem_total_kb came back empty, and the arithmetic died on a Mac that
+    # was otherwise perfectly able to run the stack.
+    if [ -r /proc/meminfo ]; then
+        mem_total_kb="$(awk '/^MemTotal:/{print $2}' /proc/meminfo)"
+        mem_avail_gb=$(( $(awk '/^MemAvailable:/{print $2}' /proc/meminfo) / 1024 / 1024 ))
+        cpus="$(nproc)"
+    elif sysctl -n hw.memsize >/dev/null 2>&1; then
+        # macOS. hw.memsize is bytes. There is no cheap equivalent of
+        # MemAvailable, and the profile is decided on TOTAL anyway, so free is
+        # reported as total rather than invented.
+        mem_total_kb=$(( $(sysctl -n hw.memsize) / 1024 ))
+        mem_avail_gb=$(( mem_total_kb / 1024 / 1024 ))
+        cpus="$(sysctl -n hw.ncpu)"
+    else
+        echo "[preflight] cannot read this machine's RAM; assuming lean." >&2
+        mem_total_kb=0
+        mem_avail_gb=0
+        cpus="?"
+    fi
     mem_total_gb=$(( mem_total_kb / 1024 / 1024 ))
-    mem_avail_gb=$(( $(awk '/^MemAvailable:/{print $2}' /proc/meminfo) / 1024 / 1024 ))
-    cpus="$(nproc)"
 
     if [ "$mem_total_gb" -ge "$MEM_THRESHOLD_GB" ]; then
         DEPLOY_PROFILE="full"

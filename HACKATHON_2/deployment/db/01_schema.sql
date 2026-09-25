@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS plan_revision (
 );
 
 -- Everything security-relevant, append-only. This is what the trajectory eval
--- reads, and what a judge is shown when asked "how do you know it was gated?".
+-- reads, and the answer to "how do you know it was gated?".
 CREATE TABLE IF NOT EXISTS audit_log (
     id         BIGSERIAL PRIMARY KEY,
     request_id TEXT,

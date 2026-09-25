@@ -1,0 +1,78 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Segoe UI, Calibri, sans-serif",
+    "fontSize": "14px",
+    "background": "#FBFAF7",
+    "primaryColor": "#FFFEFC",
+    "primaryTextColor": "#171A21",
+    "primaryBorderColor": "#1F6F78",
+    "lineColor": "#8A8F99",
+    "tertiaryColor": "#F3F1EC",
+    "clusterBkg": "#F5F3EE",
+    "clusterBorder": "#DADCE2"
+  },
+  "flowchart": { "curve": "basis", "nodeSpacing": 28, "rankSpacing": 60 }
+}}%%
+
+%% The RUNTIME system only. The evaluation harness and the results ledger have
+%% their own slide, and drawing them here added two long edges across
+%% everything else for no gain. Left to right is the request's own path:
+%% a view, the core graph, what the graph reaches for, and what is outside us.
+
+flowchart LR
+    subgraph UI["όψεις"]
+        direction TB
+        CHAT["<b>Chainlit</b><br/><span style='font-size:11px'>η όψη του χρήστη</span>"]
+        CONSOLE["<b>console</b><br/><span style='font-size:11px'>η όψη του μηχανικού</span>"]
+        API["<b>FastAPI</b><br/><span style='font-size:11px'>/healthz · /assess</span>"]
+    end
+
+    subgraph RAG["ανάκτηση"]
+        direction TB
+        CORPUS["<b>11 PDF</b><br/><span style='font-size:11px'>81 chunks</span>"]
+        VEC[("pgvector ή Chroma")]
+        BM25["<b>BM25</b><br/><span style='font-size:11px'>λεξιλογικό</span>"]
+        RRF["<b>RRF σύντηξη</b><br/><span style='font-size:11px'>κατώφλι 0,64</span>"]
+        CORPUS --> VEC --> RRF
+        CORPUS --> BM25 --> RRF
+    end
+
+    subgraph CORE["agentcore · χωρίς λεξιλόγιο σεναρίου"]
+        direction TB
+        GRAPH["<b>LangGraph StateGraph</b><br/><span style='font-size:11px'>εννιά στάδια</span>"]
+        CKPT[("SQLite checkpointer<br/><span style='font-size:11px'>κάνει το interrupt δυνατό</span>")]
+        REG["<b>tools/registry</b><br/><span style='font-size:11px'>allowlist + ταβάνι ρόλου</span>"]
+        AUDIT["<b>audit trail</b><br/><span style='font-size:11px'>πάντα ενεργό</span>"]
+    end
+
+    subgraph WORK["ό,τι καλεί ο γράφος"]
+        direction TB
+        SPEC["<b>τέσσερις ειδικοί</b><br/><span style='font-size:11px'>security · commercial<br/>ai governance · legal</span>"]
+        SYS["<b>MCP systems</b><br/><span style='font-size:11px'>6 εργαλεία · γράφει</span>"]
+        POLICY["<b>domain plugin</b><br/><span style='font-size:11px'>ACTION_RISK · patterns · PII</span>"]
+    end
+
+    subgraph OUT["εκτός του συστήματος"]
+        direction TB
+        LLM["<b>Azure OpenAI</b><br/><span style='font-size:11px'>chat + embeddings</span>"]
+        LF["<b>Langfuse</b><br/><span style='font-size:11px'>ανάβει με κλειδιά</span>"]
+        KNOW["<b>MCP knowledge</b><br/><span style='font-size:11px'>read-only · για άλλους clients</span>"]
+    end
+
+    UI --> CORE
+    RAG --> CORE
+    CORE --> WORK
+    WORK --> OUT
+
+    classDef core fill:#FFFEFC,stroke:#1F6F78,stroke-width:1.6px,color:#171A21;
+    classDef hot fill:#FDF0EC,stroke:#C2412D,stroke-width:1.8px,color:#171A21;
+    classDef store fill:#F3F1EC,stroke:#8A8F99,stroke-width:1.2px,color:#3A3F49;
+    classDef ext fill:#EDF3F3,stroke:#1F6F78,stroke-width:1.2px,color:#171A21;
+
+    class GRAPH,AUDIT,CHAT,CONSOLE,API,BM25,RRF,SPEC core;
+    class REG,POLICY hot;
+    class CKPT,VEC,CORPUS store;
+    class LLM,LF,SYS,KNOW ext;
+
+    linkStyle default stroke:#8A8F99,stroke-width:1.6px;

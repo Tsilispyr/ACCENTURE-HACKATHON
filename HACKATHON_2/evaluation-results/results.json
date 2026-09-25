@@ -2194,5 +2194,22 @@
     "n": 19,
     "note": "agent_eval",
     "detail": {}
+  },
+  {
+    "at": "2026-09-24T16:33:09+00:00",
+    "domain": "vendor_risk",
+    "experiment": "agent",
+    "arm": "pipeline",
+    "metrics": {
+      "pass_rate": 0.4737,
+      "citation_correctness": 0.989,
+      "task_completion": 0.987,
+      "tool_correctness": 1.0,
+      "agent_delegation": 0.789,
+      "decision_quality": 1.0
+    },
+    "n": 19,
+    "note": "agent_eval role=admin",
+    "detail": {}
   }
 ]

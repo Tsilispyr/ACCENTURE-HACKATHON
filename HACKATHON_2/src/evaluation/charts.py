@@ -28,13 +28,22 @@ from evaluation.ledger import latest, load  # noqa: E402
 
 CHARTS_DIR = Path(__file__).resolve().parents[2] / "evaluation-results" / "charts"
 
-# Validated categorical palette, assigned in fixed order. Slot 1 is the
-# subject of the chart; later slots are comparisons.
-BLUE, ORANGE, AQUA, YELLOW = "#2a78d6", "#eb6834", "#1baf7a", "#eda100"
-SURFACE = "#fcfcfb"
-INK = "#0b0b0b"
-INK_SOFT = "#52514e"
-GRID = "#e3e2de"
+# Categorical palette, assigned in fixed order. Slot 1 is the subject of the
+# chart; later slots are comparisons.
+#
+# These are the PRESENTATION's colours, not matplotlib's. A chart rendered in
+# default blue and green sits on a deck slide as a foreign object - the reader
+# sees a screenshot pasted in rather than a figure that belongs. SURFACE also
+# matches the slide background, so the plot area blends into the page instead
+# of floating in a white box.
+PRIMARY = "#1f6f78"      # teal: the subject
+ATTENTION = "#c2412d"    # rust: the thing that matters, and only that
+SUPPORT = "#4e9ba3"      # pale teal: a second series beside the subject
+HIGHLIGHT = "#c98a2e"    # amber: a third, used rarely
+SURFACE = "#fbfaf7"
+INK = "#171a21"
+INK_SOFT = "#6b707c"
+GRID = "#dadce2"
 
 plt.rcParams.update(
     {
@@ -133,7 +142,7 @@ def retrieval_arms(domain: str = "sample_policy") -> Path | None:
         data["hybrid"] = data["hybrid (v+bm25)"]
     order = [a for a in ("vector", "hybrid", "unfiltered") if a in data]
     metrics = ["recall@1", "recall@3", "recall@5"]
-    colours = {"vector": BLUE, "hybrid": ORANGE, "unfiltered": AQUA}
+    colours = {"vector": PRIMARY, "hybrid": ATTENTION, "unfiltered": SUPPORT}
 
     fig, ax = plt.subplots(figsize=(7.5, 4.2))
     width = 0.8 / len(order)
@@ -142,7 +151,7 @@ def retrieval_arms(domain: str = "sample_policy") -> Path | None:
         values = [data[arm].get(m, 0) for m in metrics]
         offsets = [x + i * width - 0.4 + width / 2 for x in range(len(metrics))]
         bars = ax.bar(offsets, values, width * 0.88, label=arm.capitalize(),
-                      color=colours.get(arm, BLUE), zorder=3)
+                      color=colours.get(arm, PRIMARY), zorder=3)
         _label_bars(ax, bars)
 
     ax.set_xticks(range(len(metrics)))
@@ -164,7 +173,7 @@ def metadata_filter_effect(domain: str = "sample_policy") -> Path | None:
     values = [data["unfiltered"].get("recall@1", 0), data["vector"].get("recall@1", 0)]
 
     fig, ax = plt.subplots(figsize=(5.4, 4.2))
-    bars = ax.bar(labels, values, 0.5, color=[AQUA, BLUE], zorder=3)
+    bars = ax.bar(labels, values, 0.5, color=[SUPPORT, PRIMARY], zorder=3)
     _label_bars(ax, bars)
     ax.yaxis.set_major_formatter(lambda v, _: f"{v:.0%}")
     _style(ax, title="Effect of one metadata filter", ylabel="Top 1 accuracy", ymax=1.12)
@@ -187,9 +196,9 @@ def calibration(domain: str = "sample_policy") -> Path | None:
         return None
 
     fig, ax = plt.subplots(figsize=(7.5, 3.2))
-    ax.scatter(real, [1] * len(real), s=90, color=BLUE, zorder=3,
+    ax.scatter(real, [1] * len(real), s=90, color=PRIMARY, zorder=3,
                label="Real questions", edgecolor=SURFACE, linewidth=1.5)
-    ax.scatter(junk, [0.55] * len(junk), s=90, color=ORANGE, zorder=3,
+    ax.scatter(junk, [0.55] * len(junk), s=90, color=ATTENTION, zorder=3,
                label="Nonsense questions", edgecolor=SURFACE, linewidth=1.5)
 
     # THE LIVE CEILING, not the recorded one. The ledger stores
@@ -240,7 +249,7 @@ def pipeline_costs(domain: str = "sample_policy") -> Path | None:
 
     fig, ax = plt.subplots(figsize=(7.0, 4.4))
     bars = ax.barh([p[0] for p in pairs], [p[1] for p in pairs], 0.6,
-                   color=BLUE, zorder=3)
+                   color=PRIMARY, zorder=3)
     for bar in bars:
         width = bar.get_width()
         ax.annotate(f"{width:.1f}s", (width, bar.get_y() + bar.get_height() / 2),
@@ -269,7 +278,7 @@ def chunking_shape(domain: str = "sample_policy") -> Path | None:
     values = [m.get("pages", 0), m.get("sections", 0), m.get("chunks", 0)]
 
     fig, ax = plt.subplots(figsize=(5.8, 4.2))
-    bars = ax.bar(labels, values, 0.5, color=BLUE, zorder=3)
+    bars = ax.bar(labels, values, 0.5, color=PRIMARY, zorder=3)
     _label_bars(ax, bars, fmt="{:.0f}")
     _style(ax, title="Corpus after structure aware chunking", ylabel="Count",
            ymax=max(values) * 1.18)
@@ -290,7 +299,7 @@ def store_backends(domain: str = "sample_policy") -> Path | None:
     arms = list(data)
     metrics = ["recall@1", "recall@3", "mrr"]
     labels = ["Top 1", "Top 3", "Rank score"]
-    colours = [BLUE, AQUA]
+    colours = [PRIMARY, SUPPORT]
 
     fig, ax = plt.subplots(figsize=(6.6, 4.2))
     width = 0.8 / len(arms)
@@ -336,7 +345,7 @@ def run_cost(domain: str = "sample_policy") -> Path | None:
     # the shape of the comparison, which is horizontal.
     fig, ax = plt.subplots(figsize=(6.6, 3.2))
     bars = ax.barh(["Output", "Input"], [tokens_out, tokens_in], 0.38,
-                   color=[ORANGE, BLUE], zorder=3)
+                   color=[ATTENTION, PRIMARY], zorder=3)
     for bar, value in zip(bars, (tokens_out, tokens_in)):
         ax.text(bar.get_width() * 1.01, bar.get_y() + bar.get_height() / 2,
                 f"{value:,.0f}", va="center", fontsize=10, color=INK)

@@ -12,11 +12,11 @@ root. Moving one out breaks `uv sync` inside the Docker build, three output path
 ## Running it
 
 ```bash
-DOMAIN=vendor_risk uv run python -m evaluation.retrieval_eval   # recall@k, MRR
-DOMAIN=vendor_risk uv run python -m evaluation.agent_eval       # the full pipeline per case
-DOMAIN=vendor_risk uv run python -m evaluation.agent_eval --role user   # as a role that is NOT admin
-DOMAIN=vendor_risk uv run python -m evaluation.timing           # per-stage wall time
-DOMAIN=vendor_risk uv run python -m evaluation.usage            # tokens and cost per run
+uv run python -m evaluation.retrieval_eval   # recall@k, MRR
+uv run python -m evaluation.agent_eval       # the full pipeline per case
+uv run python -m evaluation.agent_eval --role user   # as a role that is NOT admin
+uv run python -m evaluation.timing           # per-stage wall time
+uv run python -m evaluation.usage            # tokens and cost per run
 bash scripts/eval_gate.sh                                       # CI gate; EXITS NON-ZERO
 uv run python -m evaluation.ledger                              # everything recorded so far
 uv run python -m evaluation.charts                              # render the PNGs
@@ -62,9 +62,9 @@ and one case is 8.3 points (PROBLEMS P53).
 ledger under `reliability`, labelled, so an A/B sits side by side permanently:
 
 ```bash
-DOMAIN=vendor_risk uv run python -m evaluation.reliability --runs 10 --label before
+uv run python -m evaluation.reliability --runs 10 --label before
 # make the change
-DOMAIN=vendor_risk uv run python -m evaluation.reliability --runs 10 --label after
+uv run python -m evaluation.reliability --runs 10 --label after
 ```
 
 Read `clean_rate` and `assessed_mean` together. A difference in one and not the other usually means

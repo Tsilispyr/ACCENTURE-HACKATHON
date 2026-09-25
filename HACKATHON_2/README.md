@@ -81,7 +81,7 @@ number is derived from it.
 No account is needed to see what a run did. The audit trail is always on:
 
 ```bash
-DOMAIN=vendor_risk uv run python -m agentcore.tracing "your question"
+uv run python -m agentcore.tracing "your question"
 ```
 
 ---
@@ -163,8 +163,8 @@ that appear on all eleven files - present everywhere, discriminating between not
 stripped corpus-wide the lexical arm matches on content and wins. The prediction that a vendor pack
 full of `SOC 2` and `EUR 100,000` would suit BM25 turned out right, for a reason nobody predicted.
 
-The distance ceiling is calibrated, never inherited: worst real question 0.5, best nonsense 0.8,
-so 0.65. A ceiling copied from another corpus once rejected everything while the eval still reported
+The distance ceiling is calibrated, never inherited: worst real question 0.473, best nonsense 0.803,
+so 0.64. A ceiling copied from another corpus once rejected everything while the eval still reported
 91% recall, because the eval measured ranking and never saw the gate.
 
 Every number comes from `evaluation-results/results.json` and is plotted in

@@ -2,7 +2,7 @@
 
 The brief names three top-level things: the evaluation code, the evaluation
 RESULTS, and the deployment artifacts. Keeping them where a reader expects is
-not decoration - a judge with ten minutes looks for `deployment/` and
+not decoration - someone with ten minutes looks for `deployment/` and
 `evaluation-results/`, and does not go spelunking in `src/`.
 
 The compose checks earn their place separately. Moving the compose files into
@@ -43,7 +43,8 @@ def test_deployment_holds_the_whole_stack():
 
 
 def test_the_deliverables_named_at_the_root_are_at_the_root():
-    """Section 15 names these by name, and a judge scans for them.
+    """The specification names these directories explicitly, and a reviewer
+    looks for them by name.
 
     This assertion used to say the OPPOSITE - that no Dockerfile or
     docker-compose.yml existed at the root - because the stack had been

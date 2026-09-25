@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Copy this project into the ACCENTURE-HACKATHON clone, under HACKATHON_2/.
 #
-# TWO REPOSITORIES, ON PURPOSE. `hack2tests` is where the work happens and
+# TWO REPOSITORIES, ON PURPOSE. The private working repository holds everything and
 # keeps everything: the plan, the status log, the defect log, the team split.
 # `ACCENTURE-HACKATHON` is the DELIVERABLE, one folder per hackathon beside
 # HACKATHON_1, and it carries only what a judge or a new engineer needs to run
@@ -60,6 +60,9 @@ INTERNAL_DOCS=(
     STATUS.md        # the running work log
     HANDOVER.md      # notes for the next session
     PROBLEMS.md      # the defect log
+    DECISIONS.md     # the decision log: why, at length, for us
+    CORPUS.md        # the playbook for re-deriving numbers after a corpus change
+    RUNBOOK.md       # operating the stack: the team removed it from the deliverable
 )
 
 # Whole directories that stay behind. Same reasoning as INTERNAL_DOCS, but a
